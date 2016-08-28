@@ -90,6 +90,12 @@ sp_int32 IncomingPacket::UnPackREQID(REQID* _rid) {
   return 0;
 }
 
+sp_int32 IncomingPacket::UnPackData(char* _data, sp_int32 _sz) {
+  memcpy(_data, data_ + position_, _sz);
+  position_ += _sz;
+  return 0;
+}
+
 sp_uint32 IncomingPacket::GetTotalPacketSize() const {
   return PacketHeader::get_packet_size(header_) + kSPPacketSize;
 }
@@ -219,6 +225,21 @@ sp_int32 OutgoingPacket::PackREQID(const REQID& _rid) {
   }
   memcpy(data_ + position_, _rid.c_str(), REQID_size);
   position_ += REQID_size;
+  return 0;
+}
+
+sp_int32 OutgoingPacket::PackData(const sp_string& _type_name,
+                                  const REQID& _id,
+                                  const char* _data,
+                                  sp_int32 _byte_size) {
+  CHECK_EQ(PackString(_type_name), 0);
+  CHECK_EQ(PackREQID(_id), 0);
+  if (PackInt(_byte_size) != 0) return -1;
+  if (_byte_size + position_ > total_packet_size_) {
+    return -1;
+  }
+  memcpy(data_ + position_ , _data, _byte_size);
+  position_ += _byte_size;
   return 0;
 }
 

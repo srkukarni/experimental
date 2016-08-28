@@ -75,6 +75,7 @@
 #include "network/networkoptions.h"
 #include "network/network_error.h"
 #include "network/packet.h"
+#include "network/mempool.h"
 
 /*
  * Server class definition
@@ -155,6 +156,17 @@ class Server : public BaseServer {
     messageHandlers[m->GetTypeName()] = std::bind(&Server::dispatchMessage<T, M>, this, t, method,
                                                   std::placeholders::_1, std::placeholders::_2);
     delete m;
+  }
+
+  // Register a handler for a particular raw data type
+  template <typename T>
+  void InstallDataHandler(const std::string &_type_name,
+                          void (T::*method)(Connection* conn, const char *data, sp_int32 sz,
+                                            const std::string &_type_name)) {
+    T* t = static_cast<T*>(this);
+    dataHandlers[_type_name] = std::bind(&Server::dispatchData<T>, this, t, method,
+                                                  std::placeholders::_1, std::placeholders::_2,
+                                                  std::placeholders::_3);
   }
 
   // One can also send requests to the client
@@ -243,6 +255,27 @@ class Server : public BaseServer {
     cb();
   }
 
+    template <typename T>
+    void dispatchData(T* _t, void (T::*method)(
+                      Connection* conn, const std::string &, const char *, sp_int32),
+                      Connection* _conn, IncomingPacket* _ipkt, const std::string &_type_name) {
+      REQID rid;
+      CHECK(_ipkt->UnPackREQID(&rid) == 0) << "REQID unpacking failed";
+      sp_int32 sz;
+      if (_ipkt->UnPackInt(&sz) != 0) {
+         // We could not decode the pb properly
+         std::cerr << "Could not decode size of data " << _type_name;
+         CloseConnection(_conn);
+         return;
+      }
+      char *data = new char[sz];
+      _ipkt->UnPackData(data, sz);
+
+      std::function<void()> cb = std::bind(method, _t, _conn, _type_name, data, sz);
+
+      cb();
+    }
+
   void InternalSendRequest(Connection* _conn, google::protobuf::Message* _request, sp_int64 _msecs,
                            google::protobuf::Message* _response_placeholder, void* _ctx);
   void OnPacketTimer(REQID _id, EventLoop::Status status);
@@ -250,10 +283,13 @@ class Server : public BaseServer {
   typedef std::function<void(Connection*, IncomingPacket*)> handler;
   std::unordered_map<std::string, handler> requestHandlers;
   std::unordered_map<std::string, handler> messageHandlers;
+  std::unordered_map<std::string, handler> dataHandlers;
 
   // For acting like a client
   std::unordered_map<REQID, std::pair<google::protobuf::Message*, void*> > context_map_;
   REQID_Generator* request_rid_gen_;
+
+  std::unordered_map<std::type_index, std::list<void*>> _heron_message_pool;
 };
 
 #endif  // SERVER_H_

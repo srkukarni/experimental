@@ -152,6 +152,16 @@ class Client : public BaseClient {
     delete m;
   }
 
+  // Register a handler for a particular raw data type
+  template <typename T>
+  void InstallDataHandler(const std::string& _type_name,
+                          void (T::*method)(const char* _data, sp_int32 _sz)) {
+    T* t = static_cast<T*>(this);
+    dataHandlers[_type_name] =
+        std::bind(&Client::dispatchData<T>, this, t, method, std::placeholders::_1,
+                  std::placeholders::_2);
+  }
+
   sp_int64 getOutstandingPackets() const {
     if (conn_) {
       return (reinterpret_cast<Connection*>(conn_))->getOutstandingPackets();
@@ -282,12 +292,27 @@ class Client : public BaseClient {
     cb();
   }
 
+  template <typename T>
+  void dispatchData(T* _t, void (T::*method)(const char*, sp_int32), IncomingPacket* _ipkt) {
+    sp_int32 sz;
+    CHECK(_ipkt->UnPackInt(&sz) == 0) << "Size unpacking failed";
+
+    char *data = new char[sz];
+    _ipkt->UnPackData(data, sz);
+
+    std::function<void()> cb = std::bind(method, _t, data, sz);
+
+    cb();
+  }
+
   //! Map from reqid to the response/context pair of the request
   std::unordered_map<REQID, std::pair<sp_string, void*> > context_map_;
 
   typedef std::function<void(IncomingPacket*)> handler;
   std::unordered_map<std::string, handler> requestHandlers;
   std::unordered_map<std::string, handler> messageHandlers;
+  std::unordered_map<std::string, handler> dataHandlers;
+
   typedef std::function<void(IncomingPacket*, NetworkErrorCode)> res_handler;
   std::unordered_map<std::string, res_handler> responseHandlers;
   std::unordered_map<std::string, std::string> requestResponseMap_;

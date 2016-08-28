@@ -38,6 +38,7 @@ cc_library(
         "server.h",
     ],
     hdrs = [
+        "mempool.h",
         "network.h",
         "modinit.h",
     ],

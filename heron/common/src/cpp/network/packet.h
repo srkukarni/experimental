@@ -99,6 +99,9 @@ class IncomingPacket {
   // unpack a request id
   sp_int32 UnPackREQID(REQID* _rid);
 
+  // unpack raw data in char*
+  sp_int32 UnPackData(char* _data, sp_int32 _sz);
+
   // resets the read pointer to the start of the data.
   void Reset();
 
@@ -189,6 +192,10 @@ class OutgoingPacket {
 
   // get the number of bytes left
   sp_uint32 GetBytesLeft() const;
+
+  // Utils method to pack data directly in byte[]
+  sp_int32 PackData(const sp_string& _type_name, const REQID& _id,
+                    const char* _data, sp_int32 _byte_size);
 
  private:
   // Only the Connection class can call the following functions
