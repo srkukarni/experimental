@@ -79,6 +79,7 @@ cc_library(
     deps = [
         "//config:config-cxx",
         "//heron/proto:proto-cxx",
+        "//heron/common/src/cpp/config:config-cxx",
         "//heron/common/src/cpp/network:network-cxx",
         "//third_party/yaml-cpp:yaml-cxx",
     ],

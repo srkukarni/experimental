@@ -53,7 +53,7 @@ def print_usage():
       " <heron_java_home> <shell-port> <heron_shell_binary> <metricsmgr_port>"
       " <cluster> <role> <environ> <instance_classpath> <metrics_sinks_config_file>"
       " <scheduler_classpath> <scheduler_port> <python_instance_binary> <is_stateful>"
-      " <ckptmgr_binary> <ckptmgr_port>")
+      " <ckptmgr_binary> <ckptmgr_port> <stateful_config_file>")
 
 def id_map(prefix, container_plans, add_zero_id=False):
   ids = {}
@@ -191,6 +191,7 @@ class HeronExecutor(object):
     self.scheduler_port = parsed_args.scheduler_port
     self.python_instance_binary = parsed_args.python_instance_binary
     self.ckptmgr_port = parsed_args.ckptmgr_port
+    self.stateful_config_file = parsed_args.stateful_config_file
 
     # Read the heron_internals.yaml for logging dir
     self.log_dir = self._load_logging_dir(self.heron_internals_config_file)
@@ -248,6 +249,7 @@ class HeronExecutor(object):
     parser.add_argument("is_stateful", type=bool)
     parser.add_argument("ckptmgr_binary")
     parser.add_argument("ckptmgr_port")
+    parser.add_argument("stateful_config_file")
 
     parsed_args, unknown_args = parser.parse_known_args(args[1:])
 
@@ -510,6 +512,7 @@ class HeronExecutor(object):
         self.topology_id,
         self.ckptmgr_ids[self.shard],
         self.ckptmgr_port,
+        self.stateful_config_file
     ]
     retval[self.ckptmgr_ids[self.shard]] = ckptmgr_cmd
 

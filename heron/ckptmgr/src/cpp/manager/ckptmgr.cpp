@@ -22,6 +22,7 @@
 #include "basics/basics.h"
 #include "errors/errors.h"
 #include "network/network.h"
+#include "config/stateful-config-reader.h"
 
 namespace heron {
 namespace ckptmgr {

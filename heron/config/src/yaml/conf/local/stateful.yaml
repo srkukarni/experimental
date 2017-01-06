@@ -1,1 +1,3 @@
 heron.is.stateful: True
+heron.stateful.checkpoint.interval: 10
+heron.stateful.checkpoint.storage: HDFS
