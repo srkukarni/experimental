@@ -37,6 +37,7 @@ cc_library(
         "stateful-config-vars.h",
     ],
     hdrs = [ 
+        "config-map.h",
         "metrics-sinks-reader.h",
         "yaml-file-reader.h",
     ],
