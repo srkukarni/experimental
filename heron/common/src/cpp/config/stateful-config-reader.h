@@ -34,7 +34,6 @@ class StatefulConfigReader : public YamlFileReader {
 
   virtual void OnConfigFileLoad();
 
-  sp_int32 GetCheckpointIntervalSec();
   sp_string GetCheckpointStorageType();
 
  protected:

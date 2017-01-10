@@ -19,9 +19,6 @@
 namespace heron {
 namespace config {
 
-const sp_string StatefulConfigVars::CHECKPOINT_INTERVAL = "heron.stateful.checkpoint.interval";
 const sp_string StatefulConfigVars::STORAGE_TYPE = "heron.stateful.checkpoint.storage";
-const sp_string StatefulConfigVars::CHECKPOINT_DIR = "heron.stateful.checkpoint.directory";
-
 }  // namespace config
 }  // namespace heron

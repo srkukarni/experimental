@@ -61,10 +61,6 @@ void StatefulConfigReader::OnConfigFileLoad() {
   // Do Nothing
 }
 
-sp_int32 StatefulConfigReader::GetCheckpointIntervalSec() {
-  return config_[StatefulConfigVars::CHECKPOINT_INTERVAL].as<int>();
-}
-
 sp_string StatefulConfigReader::GetCheckpointStorageType() {
   return config_[StatefulConfigVars::STORAGE_TYPE].as<std::string>();
 }

@@ -24,8 +24,6 @@ namespace config {
 
 class StatefulConfigVars {
  public:
-  static const sp_string CHECKPOINT_INTERVAL;
-  static const sp_string CHECKPOINT_DIR;
   static const sp_string STORAGE_TYPE;
 };
 }  // namespace config
