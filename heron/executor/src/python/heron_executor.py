@@ -510,6 +510,9 @@ class HeronExecutor(object):
         self.topology_id,
         self.ckptmgr_ids[self.shard],
         self.ckptmgr_port,
+        self.cluster,
+        self.role,
+        self.environ
     ]
     retval[self.ckptmgr_ids[self.shard]] = ckptmgr_cmd
 

@@ -26,9 +26,9 @@
 #include "manager/ckptmgr.h"
 
 int main(int argc, char* argv[]) {
-  if (argc != 5) {
+  if (argc != 8) {
     std::cout << "Usage: " << argv[0] << " "
-              << "<topname> <topid> <ckptmgr_id> <myport>"
+              << "<topname> <topid> <ckptmgr_id> <myport> <cluster> <role> <env>"
               << std::endl;
     ::exit(1);
   }
@@ -37,6 +37,10 @@ int main(int argc, char* argv[]) {
   std::string topology_id = argv[2];
   std::string ckptmgr_id = argv[3];
   sp_int32 my_port = atoi(argv[4]);
+  std::string cluster = argv[5];
+  std::string role = argv[6];
+  std::string env = argv[7];
+
   EventLoopImpl ss;
 
   heron::common::Initialize(argv[0], ckptmgr_id.c_str());
