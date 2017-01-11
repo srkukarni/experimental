@@ -19,6 +19,7 @@
 
 #include "basics/sptypes.h"
 #include "config/yaml-file-reader.h"
+#include "config/config-map.h"
 
 class EventLoop;
 
@@ -35,6 +36,7 @@ class StatefulConfigReader : public YamlFileReader {
   virtual void OnConfigFileLoad();
 
   sp_string GetCheckpointStorageType();
+  Config GetConfigMap();
 
  protected:
   StatefulConfigReader(EventLoop* eventLoop, const sp_string& _defaults_file);

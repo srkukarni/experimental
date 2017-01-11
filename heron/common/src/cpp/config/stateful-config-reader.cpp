@@ -65,5 +65,20 @@ sp_string StatefulConfigReader::GetCheckpointStorageType() {
   return config_[StatefulConfigVars::STORAGE_TYPE].as<std::string>();
 }
 
+Config StatefulConfigReader::GetConfigMap() {
+  auto config_map_builder = heron::config::Config::Builder();
+
+  for (auto it = config_.begin(); it != config_.end(); ++it) {
+    if (!it->second.IsScalar()) {
+      LOG(ERROR) << "nested config value provided" << std::endl;
+      exit(1);
+    }
+
+    config_map_builder.putstr(it->first.as<std::string>(), it->second.as<std::string>());
+  }
+
+  return config_map_builder.build();
+}
+
 }  // namespace config
 }  // namespace heron
