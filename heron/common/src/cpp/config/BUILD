@@ -5,6 +5,7 @@ cc_library(
     srcs = [
         "cluster-config-reader.cpp",
         "cluster-config-vars.cpp",
+        "common-config-vars.cpp",
         "heron-internals-config-reader.cpp",
         "heron-internals-config-vars.cpp",
         "metrics-sinks-reader.cpp",
@@ -18,9 +19,11 @@ cc_library(
         "yaml-file-reader.cpp",
         "stateful-config-reader.cpp",
         "stateful-config-vars.cpp",
+        "config-map.cpp",
 
         "cluster-config-reader.h",
         "cluster-config-vars.h",
+        "common-config-vars.h",
         "config.h",
         "helper.h",
         "heron-internals-config-reader.h",

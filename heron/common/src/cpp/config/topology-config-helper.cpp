@@ -202,6 +202,18 @@ sp_int64 TopologyConfigHelper::GetContainerRamRequested(const proto::api::Topolo
   return max_components_per_container * 1073741824l;
 }
 
+bool TopologyConfigHelper::IsTopologyStateful(const proto::api::Topology& _topology) {
+  sp_string value_true_ = "true";
+  const proto::api::Config& cfg = _topology.topology_config();
+  for (sp_int32 i = 0; i < cfg.kvs_size(); ++i) {
+    if (cfg.kvs(i).key() == TopologyConfigVars::TOPOLOGY_STATEFUL) {
+      return value_true_.compare(cfg.kvs(i).value().c_str()) == 0;
+    }
+  }
+  // There was no value specified. The default is false.
+  return false;
+}
+
 sp_int64 TopologyConfigHelper::GetStatefulCheckpointInterval(
                                const proto::api::Topology& _topology) {
   const proto::api::Config& cfg = _topology.topology_config();
@@ -243,32 +255,6 @@ std::vector<sp_string> TopologyConfigHelper::GetSpoutComponentNames(
     retval.push_back(_topology.spouts(i).comp().name());
   }
   return retval;
-}
-
-sp_string TopologyConfigHelper::GetProducerComponentName(const proto::api::Topology& _topology,
-                                                         const proto::api::StreamId& _stream) {
-  for (int i = 0; i < _topology.spouts_size(); ++i) {
-    const proto::api::Spout& spout = _topology.spouts(i);
-    for (int j = 0; j < spout.outputs_size(); ++i) {
-      const proto::api::StreamId& stream = spout.outputs(j).stream();
-      if (stream.id() == _stream.id() &&
-          stream.component_name() == _stream.component_name()) {
-        return spout.comp().name();
-      }
-    }
-  }
-  for (int i = 0; i < _topology.bolts_size(); ++i) {
-    const proto::api::Bolt& bolt = _topology.bolts(i);
-    for (int j = 0; j < bolt.outputs_size(); ++i) {
-      const proto::api::StreamId& stream = bolt.outputs(j).stream();
-      if (stream.id() == _stream.id() &&
-          stream.component_name() == _stream.component_name()) {
-        return bolt.comp().name();
-      }
-    }
-  }
-
-  return "";
 }
 }  // namespace config
 }  // namespace heron

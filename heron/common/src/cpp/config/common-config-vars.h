@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 //
-// Defines the class that implements several string utils
+// common-config-vars.h
 //
-/////////////////////////////////////////////////////////////////////
+// This is the common configuration parameter names
+//
+///////////////////////////////////////////////////////////////
+#ifndef COMMON_CONFIG_VARS_H_
+#define COMMON_CONFIG_VARS_H_
 
-#if !defined(__SP_STR_UTILS_H)
-#define __SP_STR_UTILS_H
+namespace heron {
+namespace config {
 
-#include <string>
-#include <vector>
-#include "basics/sptypes.h"
-
-class StrUtils {
+class CommonConfigVars {
  public:
-  //! Given a string and a delim, split it
-  static std::vector<std::string> split(const std::string& _input, const std::string& _delim);
-
-  //! Trim the white spaces both in lhs and rhs of a string
-  static std::string trim(const std::string &s);
+  static const sp_string CLUSTER;
+  static const sp_string ROLE;
+  static const sp_string ENVIRON;
+  static const sp_string TOPOLOGY_NAME;
 };
+}  // namespace config
+}  // namespace heron
 
 #endif

@@ -63,9 +63,7 @@ void StatefulHelper::Reconstruct(const proto::system::PhysicalPlan& _pplan) {
                                 bolt_tasks);
 
     for (auto input_stream : _pplan.topology().bolts(i).inputs()) {
-      sp_string producer_comp =
-        config::TopologyConfigHelper::GetProducerComponentName(_pplan.topology(),
-                                                               input_stream.stream());
+      sp_string producer_comp = input_stream.stream().component_name();
       std::set<sp_int32> tasks;
       config::PhysicalPlanHelper::GetComponentTasks(_pplan, producer_comp, tasks);
       // each of the bolt task needs to recv from all the producer tasks
@@ -78,6 +76,9 @@ void StatefulHelper::Reconstruct(const proto::system::PhysicalPlan& _pplan) {
       }
     }
   }
+
+  LOG(INFO) << "Reconstructed Upstream/Downstream Checkpoint Dependencies";
+  LOG(INFO) << *this;
 }
 
 void StatefulHelper::add(std::map<sp_int32, std::set<sp_int32>>& _map,
@@ -103,6 +104,24 @@ std::set<sp_int32> StatefulHelper::get_upstreamers(sp_int32 _task_id) {
   } else {
     return from_recv_list_[_task_id];
   }
+}
+
+std::ostream& operator<<(std::ostream& _os, const StatefulHelper& _obj) {
+  for (auto kv : _obj.from_recv_list_) {
+    _os << "Upstream Dependencies for task_id " << kv.first << ": ";
+    for (auto upstream_task : kv.second) {
+      _os << " " << upstream_task;
+    }
+    _os << "\n";
+  }
+  for (auto kv : _obj.to_send_list_) {
+    _os << "Downstream Dependencies for task_id " << kv.first << ": ";
+    for (auto downstream_task : kv.second) {
+      _os << " " << downstream_task;
+    }
+    _os << "\n";
+  }
+  return _os;
 }
 }  // namespace stmgr
 }  // namespace heron

@@ -59,7 +59,7 @@ public class BoltInstance implements IInstance {
   // The bolt will read Data tuples from streamInQueue
   private final Communicator<Message> streamInQueue;
 
-  private final boolean isStatefulComponent;
+  private final boolean isTopologyStateful;
   // This instance should be able to pick up previous one.
   // TODO(mfu): Currently we hardcode it as a HashMapState
   private final State instanceState = new HashMapState();
@@ -86,10 +86,10 @@ public class BoltInstance implements IInstance {
         SystemConfig.HERON_SYSTEM_CONFIG);
 
     Map<String, Object> config = helper.getTopologyContext().getTopologyConfig();
-    this.isStatefulComponent =
-        Boolean.parseBoolean((String) config.get(Config.TOPOLOGY_COMPONENT_STATEFUL));
+    this.isTopologyStateful =
+        Boolean.parseBoolean((String) config.get(Config.TOPOLOGY_STATEFUL));
 
-    LOG.info("Is stateful component: " + this.isStatefulComponent);
+    LOG.info("Is stateful component: " + this.isTopologyStateful);
 
     if (helper.getMyBolt() == null) {
       throw new RuntimeException("HeronBoltInstance has no bolt in physical plan.");
@@ -114,12 +114,6 @@ public class BoltInstance implements IInstance {
       throw new RuntimeException("Neither java_object nor java_class_name set for bolt");
     }
 
-    // Safe check
-    // TODO(mfu): Allow stateful spout with non-stateful-component config or not?
-    if (this.isStatefulComponent && !(bolt instanceof IStatefulComponent)) {
-      throw new RuntimeException("Stateful config does not match component type");
-    }
-
     collector = new BoltOutputCollectorImpl(serializer, helper, streamOutQueue, boltMetrics);
   }
 
@@ -133,6 +127,10 @@ public class BoltInstance implements IInstance {
 
   @Override
   public void persistState(String checkpointId) {
+    if (!isTopologyStateful) {
+      throw new RuntimeException("Should not save state in a non-stateful topology");
+    }
+
     // Do a check point
     if (bolt instanceof IStatefulComponent) {
       LOG.info("Starting checkpoint");
@@ -155,7 +153,7 @@ public class BoltInstance implements IInstance {
 
     // Init the state for the spout
     // TODO(mfu): Pick up previous state: instanceState.putAll(...);
-    if (this.isStatefulComponent) {
+    if (this.isTopologyStateful && bolt instanceof IStatefulComponent) {
       ((IStatefulComponent) bolt).initState(instanceState);
     }
 
