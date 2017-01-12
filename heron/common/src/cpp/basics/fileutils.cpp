@@ -72,24 +72,24 @@ sp_int32 FileUtils::existsDirectory(const std::string& directory) {
 }
 
 sp_int32 FileUtils::makePath(const std::string& path) {
-  mode_t mode = 0700;
-  auto retcode = makeDirectory(path, mode);
-  if (retcode == SP_OK)
+  mode_t mode = 0755;
+  auto retcode = ::mkdir(path.c_str(), mode);
+  if (retcode == 0)
     return SP_OK;
 
   switch (errno) {
     case ENOENT: {
-      // parent didn't exist, try to create it
+      // parent directory does not exist, try to create it
       auto pos = path.find_last_of('/');
       if (pos == std::string::npos)
         return SP_NOTOK;
 
-      auto retcode = makeDirectory(path.substr(0, pos), mode);
-      if (retcode == SP_OK)
-        return SP_OK;
+      auto retcode = makePath(path.substr(0, pos));
+      if (retcode == SP_NOTOK)
+        return SP_NOTOK;
 
       // now, try to create again
-      return makeDirectory(path, mode);
+      return 0 == ::mkdir(path.c_str(), mode) ? SP_OK : SP_NOTOK;
     }
     case EEXIST:
     // done!

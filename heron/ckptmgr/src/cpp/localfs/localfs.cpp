@@ -50,7 +50,7 @@ std::string LFS::ckptFile(const Checkpoint& _ckpt) {
 
 std::string LFS::tempCkptFile(const Checkpoint& _ckpt) {
   std::string directory(ckptDirectory(_ckpt) + "/");
-  return directory.append("_").append(_ckpt.getInstance());
+  return directory.append(".").append(_ckpt.getInstance());
 }
 
 std::string LFS::logMessageFragment(const Checkpoint& _ckpt) {
@@ -71,8 +71,8 @@ int LFS::createCkptDirectory(const Checkpoint& _ckpt) {
 }
 
 int LFS::createTmpCkptFile(const Checkpoint& _ckpt) {
-  auto code = ::open(tempCkptFile(_ckpt).c_str(), O_CREAT | O_WRONLY);
-  if (code != 0) {
+  auto code = ::open(tempCkptFile(_ckpt).c_str(), O_CREAT | O_WRONLY, 0644);
+  if (code < 0) {
     PLOG(ERROR) << "Unable to create temporary checkpoint file " << tempCkptFile(_ckpt);
     return SP_NOTOK;
   }
@@ -82,11 +82,11 @@ int LFS::createTmpCkptFile(const Checkpoint& _ckpt) {
 int LFS::writeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
   size_t count = 0;
   size_t len = _ckpt.nbytes();
-  void* buf = static_cast<void*>(_ckpt.checkpoint());
+  char* buf = reinterpret_cast<char*>(_ckpt.checkpoint());
 
   while (count < _ckpt.nbytes()) {
-    int i = ::write(fd, count + reinterpret_cast<char *>(buf), len - count);
-    if (i != 0) {
+    int i = ::write(fd, buf + count, len - count);
+    if (i < 0) {
       PLOG(ERROR) << "Unable to write to temporary checkpoint file " << tempCkptFile(_ckpt);
       return SP_NOTOK;
     }
@@ -98,14 +98,14 @@ int LFS::writeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
 int LFS::closeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
   // force flush the file contents to persistent store
   auto code = ::fsync(fd);
-  if (code != 0) {
+  if (code < 0) {
     PLOG(ERROR) << "Unable to sync temporary checkpoint file " << tempCkptFile(_ckpt);
     return SP_NOTOK;
   }
 
   // close the file descriptor
   code = ::close(fd);
-  if (code != 0) {
+  if (code < 0) {
     PLOG(ERROR) << "Unable to close temporary checkpoint file " << tempCkptFile(_ckpt);
     return SP_NOTOK;
   }
@@ -114,7 +114,7 @@ int LFS::closeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
 
 int LFS::moveTmpCkptFile(const Checkpoint& _ckpt) {
   auto code = ::rename(tempCkptFile(_ckpt).c_str(), ckptFile(_ckpt).c_str());
-  if (code != 0) {
+  if (code < 0) {
     PLOG(ERROR) << "Unable to move temporary checkpoint file " << tempCkptFile(_ckpt);
     return SP_NOTOK;
   }
@@ -127,6 +127,7 @@ int LFS::store(const Checkpoint& _ckpt) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
+  LOG(INFO) << "Created checkpoint directory " << ckptDirectory(_ckpt);
 
   // create and open the temporary checkpoint file
   auto fd = createTmpCkptFile(_ckpt);
@@ -134,24 +135,30 @@ int LFS::store(const Checkpoint& _ckpt) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
+  LOG(INFO) << "Created temp checkpoint file " << tempCkptFile(_ckpt);
 
   // write the protobuf into the temporary checkpoint file
   if (writeTmpCkptFile(fd, _ckpt) == SP_NOTOK) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
+  LOG(INFO) << "Write temp checkpoint file " << tempCkptFile(_ckpt);
 
   // close the temporary checkpoint file
   if (closeTmpCkptFile(fd, _ckpt) == SP_NOTOK) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
+  LOG(INFO) << "Closed temp checkpoint file " << tempCkptFile(_ckpt);
 
   // move the temporary checkpoint file to final destination
   if (moveTmpCkptFile(_ckpt) == SP_NOTOK) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
+  LOG(INFO) << "Moved temp checkpoint file " << tempCkptFile(_ckpt) << " "
+            << "to " << ckptFile(_ckpt);
+  LOG(INFO) << "Checkpoint successful for " << logMessageFragment(_ckpt);
 
   return SP_OK;
 }

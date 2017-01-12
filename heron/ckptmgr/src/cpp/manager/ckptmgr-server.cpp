@@ -41,7 +41,7 @@ CkptMgrServer::~CkptMgrServer() {
 
 void CkptMgrServer::HandleNewConnection(Connection* _conn) {
   // Do nothing here, wait for the hello from stmgr
-  LOG(INFO) << "Got new connection" << _conn << " from " << _conn->getIPAddress() << ":"
+  LOG(INFO) << "Got new connection " << _conn << " from " << _conn->getIPAddress() << ":"
             << _conn->getPort();
 }
 
@@ -52,7 +52,7 @@ void CkptMgrServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) {
 
 void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
                                             proto::ckptmgr::RegisterStMgrRequest* _request) {
-  LOG(INFO) << "Got a register message from " << _request->stmgr() << " on connection" << _conn;
+  LOG(INFO) << "Got a register message from " << _request->stmgr() << " on connection " << _conn;
   proto::ckptmgr::RegisterStMgrResponse response;
   // Some basic checks
   if (_request->topology_name() != topology_name_) {
@@ -82,7 +82,7 @@ void CkptMgrServer::HandleSaveStateCheckpoint(Connection* _conn,
   Checkpoint checkpoint(topology_name_, _message);
   LOG(INFO) << "Got a save checkpoint for " << checkpoint.getCkptId() << " "
             << checkpoint.getComponent() << " " << checkpoint.getInstance() << " "
-            << " on connection" << _conn;
+            << "on connection " << _conn;
 
   auto ret = ckptmgr_->storage()->store(checkpoint);
   if (ret != SP_OK) {
