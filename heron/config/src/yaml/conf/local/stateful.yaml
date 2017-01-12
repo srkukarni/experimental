@@ -2,4 +2,4 @@
 heron.stateful.checkpoint.storage:    LFS
 
 # the root path in the local file system where checkpoints needs to be stored
-heron.stateful.localfs.root.path:     ${HOME}/.herondata/topologies/${CLUSTER}/${ROLE}/${TOPOLOGY}/state
+heron.stateful.localfs.root.path:     ${HOME}/.herondata/topologies/${CLUSTER}/${ROLE}/${TOPOLOGY}/checkpoints

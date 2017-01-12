@@ -37,7 +37,6 @@ LFS::LFS(const heron::config::Config& _config) {
 
 std::string LFS::ckptDirectory(const Checkpoint& _ckpt) {
   std::string directory(base_dir_ + "/");
-  directory.append(_ckpt.getTopology()).append("/");
   directory.append(_ckpt.getCkptId()).append("/");
   directory.append(_ckpt.getComponent());
   return directory;
