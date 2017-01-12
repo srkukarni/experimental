@@ -34,9 +34,9 @@ Config::expand() {
     for (auto kv = config_map.begin(); kv != config_map.end(); kv++) {
       const std::string value = substitute(kv->second);
       if (value != kv->second) {
+        LOG(INFO) << "Value " << kv->second << " is changed to " << value;
         any_change = true;
         kv->second = value;
-        LOG(INFO) << "Value " << kv->second << " is changed to " << value;
       }
     }
   } while (any_change);
