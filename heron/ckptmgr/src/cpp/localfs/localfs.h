@@ -22,6 +22,7 @@
 
 #include "common/checkpoint.h"
 #include "common/storage.h"
+#include "config/config.h"
 
 namespace heron {
 namespace ckptmgr {
@@ -29,7 +30,7 @@ namespace ckptmgr {
 class LFS : public Storage {
  public:
   // constructor
-  explicit LFS(const std::string& _base_dir) : base_dir_(_base_dir) {}
+  explicit LFS(const heron::config::Config& _config);
 
   // destructor
   virtual ~LFS() {}

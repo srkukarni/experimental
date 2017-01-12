@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-#include "lfs/lfs.h"
+#include "localfs/localfs.h"
 #include <fcntl.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 
+#include "config/config.h"
+#include "localfs/localfs-config-vars.h"
+
 namespace heron {
 namespace ckptmgr {
+
+LFS::LFS(const heron::config::Config& _config) {
+  std::string storage_type = _config.getstr(heron::config::StatefulConfigVars::STORAGE_TYPE);
+  CHECK_EQ("LFS", storage_type);
+
+  // get the root directory for storing checkpoints
+  base_dir_ = _config.getstr(LocalfsConfigVars::ROOT_DIR);
+  LOG_IF(FATAL, base_dir_.empty()) << "Local File System root directory not set";
+}
 
 std::string LFS::ckptDirectory(const Checkpoint& _ckpt) {
   std::string directory(base_dir_ + "/");

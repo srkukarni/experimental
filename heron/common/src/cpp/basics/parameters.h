@@ -183,8 +183,8 @@ class Parameters {
       return *this;
     }
 
-    Builder& putall(const Builder& builder) {
-      map_.insert(builder.map_.begin(), builder.map_.end());
+    Builder& putall(const Parameters& _params) {
+      map_.insert(_params.map_.begin(), _params.map_.end());
       return *this;
     }
 

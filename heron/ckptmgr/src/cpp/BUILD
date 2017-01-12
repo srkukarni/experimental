@@ -20,9 +20,9 @@ cc_library(
 )
 
 cc_library(
-    name = "lfs-cxx",
-    srcs = glob(["lfs/*.cpp"]),
-    hdrs = glob(["lfs/*.h"]),
+    name = "localfs-cxx",
+    srcs = glob(["localfs/*.cpp"]),
+    hdrs = glob(["localfs/*.h"]),
     copts = [
         "-Iheron",
         "-I$(GENDIR)/heron",
@@ -72,7 +72,7 @@ cc_binary(
         "-I$(GENDIR)/heron/common/src/cpp",
     ],
     deps = [
-        ":lfs-cxx",
+        ":localfs-cxx",
         ":manager-cxx",
     ],
     linkstatic = 1,

@@ -34,5 +34,7 @@
 #include "config/operational-config-reader.h"
 #include "config/heron-internals-config-vars.h"
 #include "config/heron-internals-config-reader.h"
+#include "config/stateful-config-vars.h"
+#include "config/stateful-config-reader.h"
 
 #endif

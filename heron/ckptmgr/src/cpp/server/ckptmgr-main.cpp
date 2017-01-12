@@ -20,16 +20,28 @@
 #include <string>
 
 #include "basics/basics.h"
+#include "config/config.h"
 #include "network/network.h"
 #include "proto/messages.h"
-#include "config/stateful-config-reader.h"
-#include "lfs/lfs.h"
+#include "localfs/localfs.h"
 #include "manager/ckptmgr.h"
 
+heron::ckptmgr::Storage*
+GetStorageInstance(const heron::config::Config& config) {
+  std::string storage_type = config.getstr(heron::config::StatefulConfigVars::STORAGE_TYPE);
+
+  if (storage_type == "LFS") {
+    return new heron::ckptmgr::LFS(config);
+  }
+
+  LOG(FATAL) << "Unknown storage type " <<  storage_type;
+}
+
 int main(int argc, char* argv[]) {
-  if (argc != 6) {
+  if (argc != 9) {
     std::cout << "Usage: " << argv[0] << " "
-              << "<topname> <topid> <ckptmgr_id> <myport> <stateful_config_filename>"
+              << "<topname> <topid> <ckptmgr_id> <myport> <stateful_config_filename> "
+              << "<cluster> <role> <environ>"
               << std::endl;
     ::exit(1);
   }
@@ -39,25 +51,38 @@ int main(int argc, char* argv[]) {
   std::string ckptmgr_id = argv[3];
   sp_int32 my_port = atoi(argv[4]);
   std::string stateful_config_filename = argv[5];
+  std::string cluster = argv[6];
+  std::string role = argv[7];
+  std::string environ = argv[8];
+
+  // initialize glog and other chores
+  heron::common::Initialize(argv[0], ckptmgr_id.c_str());
+
+  // declare the event loop
   EventLoopImpl ss;
 
   // Read stateful config from local file
   heron::config::StatefulConfigReader::Create(&ss, stateful_config_filename);
+  auto state_config = heron::config::StatefulConfigReader::Instance()->GetConfigMap();
 
-  heron::common::Initialize(argv[0], ckptmgr_id.c_str());
+  // construct a full config that includes environment and expand, if necessary
+  auto full_config = heron::config::Config::Builder()
+    .putstr(heron::config::CommonConfigVars::CLUSTER, cluster)
+    .putstr(heron::config::CommonConfigVars::ROLE, role)
+    .putstr(heron::config::CommonConfigVars::ENVIRON, environ)
+    .putstr(heron::config::CommonConfigVars::TOPOLOGY_NAME, topology_name)
+    .putall(state_config)
+    .build()
+    .expand();
 
-  std::string home_dir(::getenv("HOME"));
-  home_dir.append("/").append(".herondata");
-  home_dir.append("/").append("topologies");
-  home_dir.append("/").append("local");
-  home_dir.append("/").append(::getenv("USER"));
-  home_dir.append("/").append(topology_name);
-  home_dir.append("/").append("state");
+  // get an instance of the storage instance
+  heron::ckptmgr::Storage* storage = ::GetStorageInstance(full_config);
 
-  heron::ckptmgr::Storage* storage = new heron::ckptmgr::LFS(home_dir);
+  // start the check point manager
   heron::ckptmgr::CkptMgr mgr(&ss, my_port, topology_name, topology_id, ckptmgr_id, storage);
-
   mgr.Init();
   ss.loop();
+
+  delete storage;
   return 0;
 }

@@ -142,8 +142,8 @@ class Config {
       return *this;
     }
 
-    Builder& putall(const Builder& _builder) {
-      builder_.putall(_builder.builder_);
+    Builder& putall(const Config& _config) {
+      builder_.putall(_config.params_);
       return *this;
     }
 
