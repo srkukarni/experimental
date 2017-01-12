@@ -27,10 +27,9 @@ Config
 Config::expand() {
   bool any_change;
   auto config_map = params_.getmap();
-  auto i = 1;
+
   // keep iterating until no more variable substitutions are possible
   do {
-    LOG(INFO) << "Iteration " << i++;
     any_change = false;
     for (auto kv = config_map.begin(); kv != config_map.end(); kv++) {
       const std::string value = substitute(kv->second);
