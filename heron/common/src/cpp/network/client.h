@@ -265,8 +265,8 @@ class Client : public BaseClient {
   void dispatchRequest(T* _t, void (T::*method)(REQID id, M*), IncomingPacket* _ipkt) {
     REQID rid;
     CHECK(_ipkt->UnPackREQID(&rid) == 0) << "REQID unpacking failed";
-
-    M* m = __global_protobuf_pool__->acquire(m);
+    M* m = nullptr;
+    m = acquire(m);
     if (_ipkt->UnPackProtocolBuffer(m) != 0) {
       // We could not decode the pb properly
       std::cerr << "Could not decode protocol buffer of type " << m->GetTypeName();
@@ -282,11 +282,12 @@ class Client : public BaseClient {
 
   template <typename T, typename M>
   void dispatchMessage(T* _t, void (T::*method)(M*), IncomingPacket* _ipkt) {
-    M* m = new M();
+    M* m = nullptr;
+    m = acquire(m);
     if (_ipkt->UnPackProtocolBuffer(m) != 0) {
       // We could not decode the pb properly
       std::cerr << "Could not decode protocol buffer of type " << m->GetTypeName();
-      delete m;
+      release(m);
       return;
     }
     CHECK(m->IsInitialized());
