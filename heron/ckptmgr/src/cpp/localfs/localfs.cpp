@@ -26,33 +26,33 @@
 namespace heron {
 namespace ckptmgr {
 
-LFS::LFS(const heron::config::Config& _config) {
-  std::string storage_type = _config.getstr(heron::config::StatefulConfigVars::STORAGE_TYPE);
-  CHECK_EQ("LFS", storage_type);
+LocalFS::LocalFS(const heron::config::Config& _config) {
+  std::string stype = _config.getstr(heron::config::StatefulConfigVars::STORAGE_TYPE);
+  CHECK_EQ(storage_type(), stype);
 
   // get the root directory for storing checkpoints
   base_dir_ = _config.getstr(LocalfsConfigVars::ROOT_DIR);
   LOG_IF(FATAL, base_dir_.empty()) << "Local File System root directory not set";
 }
 
-std::string LFS::ckptDirectory(const Checkpoint& _ckpt) {
+std::string LocalFS::ckptDirectory(const Checkpoint& _ckpt) {
   std::string directory(base_dir_ + "/");
   directory.append(_ckpt.getCkptId()).append("/");
   directory.append(_ckpt.getComponent());
   return directory;
 }
 
-std::string LFS::ckptFile(const Checkpoint& _ckpt) {
+std::string LocalFS::ckptFile(const Checkpoint& _ckpt) {
   std::string directory(ckptDirectory(_ckpt) + "/");
-  return directory.append(_ckpt.getInstance());
+  return directory.append(_ckpt.getTaskId());
 }
 
-std::string LFS::tempCkptFile(const Checkpoint& _ckpt) {
+std::string LocalFS::tempCkptFile(const Checkpoint& _ckpt) {
   std::string directory(ckptDirectory(_ckpt) + "/");
-  return directory.append(".").append(_ckpt.getInstance());
+  return directory.append(".").append(_ckpt.getTaskId());
 }
 
-std::string LFS::logMessageFragment(const Checkpoint& _ckpt) {
+std::string LocalFS::logMessageFragment(const Checkpoint& _ckpt) {
   std::string message(_ckpt.getTopology() + " ");
   message.append(_ckpt.getCkptId()).append(" ");
   message.append(_ckpt.getComponent()).append(" ");
@@ -60,7 +60,7 @@ std::string LFS::logMessageFragment(const Checkpoint& _ckpt) {
   return message;
 }
 
-int LFS::createCkptDirectory(const Checkpoint& _ckpt) {
+int LocalFS::createCkptDirectory(const Checkpoint& _ckpt) {
   std::string directory = ckptDirectory(_ckpt);
   if (FileUtils::makePath(directory) != SP_OK) {
     LOG(ERROR) << "Unable to create directory " << directory;
@@ -69,7 +69,7 @@ int LFS::createCkptDirectory(const Checkpoint& _ckpt) {
   return SP_OK;
 }
 
-int LFS::createTmpCkptFile(const Checkpoint& _ckpt) {
+int LocalFS::createTmpCkptFile(const Checkpoint& _ckpt) {
   auto code = ::open(tempCkptFile(_ckpt).c_str(), O_CREAT | O_WRONLY, 0644);
   if (code < 0) {
     PLOG(ERROR) << "Unable to create temporary checkpoint file " << tempCkptFile(_ckpt);
@@ -78,7 +78,7 @@ int LFS::createTmpCkptFile(const Checkpoint& _ckpt) {
   return code;
 }
 
-int LFS::writeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
+int LocalFS::writeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
   size_t count = 0;
   size_t len = _ckpt.nbytes();
   char* buf = reinterpret_cast<char*>(_ckpt.checkpoint());
@@ -94,7 +94,7 @@ int LFS::writeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
   return SP_OK;
 }
 
-int LFS::closeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
+int LocalFS::closeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
   // force flush the file contents to persistent store
   auto code = ::fsync(fd);
   if (code < 0) {
@@ -111,7 +111,7 @@ int LFS::closeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
   return SP_OK;
 }
 
-int LFS::moveTmpCkptFile(const Checkpoint& _ckpt) {
+int LocalFS::moveTmpCkptFile(const Checkpoint& _ckpt) {
   auto code = ::rename(tempCkptFile(_ckpt).c_str(), ckptFile(_ckpt).c_str());
   if (code < 0) {
     PLOG(ERROR) << "Unable to move temporary checkpoint file " << tempCkptFile(_ckpt);
@@ -120,7 +120,7 @@ int LFS::moveTmpCkptFile(const Checkpoint& _ckpt) {
   return SP_OK;
 }
 
-int LFS::store(const Checkpoint& _ckpt) {
+int LocalFS::store(const Checkpoint& _ckpt) {
   // create the checkpoint directory, if not there
   if (createCkptDirectory(_ckpt) == SP_NOTOK) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
@@ -162,7 +162,7 @@ int LFS::store(const Checkpoint& _ckpt) {
   return SP_OK;
 }
 
-int LFS::restore(Checkpoint& _ckpt) {
+int LocalFS::restore(Checkpoint& _ckpt) {
   std::string file = ckptFile(_ckpt);
 
   // open the checkpoint file

@@ -38,4 +38,4 @@ class Storage {
 }  // namespace ckptmgr
 }  // namespace heron
 
-#endif  // ckpt.h
+#endif  // storage.h

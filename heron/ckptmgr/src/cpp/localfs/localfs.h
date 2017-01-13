@@ -27,13 +27,17 @@
 namespace heron {
 namespace ckptmgr {
 
-class LFS : public Storage {
+class LocalFS : public Storage {
  public:
   // constructor
-  explicit LFS(const heron::config::Config& _config);
+  explicit LocalFS(const heron::config::Config& _config);
 
   // destructor
-  virtual ~LFS() {}
+  virtual ~LocalFS() {}
+
+  static std::string storage_type() {
+    return "LocalFS";
+  }
 
   // store the checkpoint
   virtual int store(const Checkpoint& _ckpt);

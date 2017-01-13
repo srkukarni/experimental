@@ -30,8 +30,8 @@ heron::ckptmgr::Storage*
 GetStorageInstance(const heron::config::Config& config) {
   std::string storage_type = config.getstr(heron::config::StatefulConfigVars::STORAGE_TYPE);
 
-  if (storage_type == "LFS") {
-    return new heron::ckptmgr::LFS(config);
+  if (storage_type == heron::ckptmgr::LocalFS::storage_type()) {
+    return new heron::ckptmgr::LocalFS(config);
   }
 
   LOG(FATAL) << "Unknown storage type " <<  storage_type;
