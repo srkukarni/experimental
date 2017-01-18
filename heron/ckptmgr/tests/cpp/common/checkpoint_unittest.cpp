@@ -31,8 +31,8 @@ class CheckpointTest : public ::testing::Test {
   void SetUp() {}
   void TearDown() {}
 
-  heron::proto::ckptmgr::SaveStateCheckpoint* createSaveMessage() {
-    auto protomsg = new heron::proto::ckptmgr::SaveStateCheckpoint;
+  heron::proto::ckptmgr::SaveInstanceStateRequest* createSaveMessage() {
+    auto protomsg = new heron::proto::ckptmgr::SaveInstanceStateRequest;
     auto instance = protomsg->mutable_instance();
     instance->mutable_instance_id()->assign("instance-1");
     instance->mutable_stmgr_id()->assign("stmgr-1");
@@ -48,8 +48,8 @@ class CheckpointTest : public ::testing::Test {
     return protomsg;
   }
 
-  heron::proto::ckptmgr::RestoreStateCheckpointRequest* createRestoreMessage() {
-    auto protomsg = new heron::proto::ckptmgr::RestoreStateCheckpointRequest;
+  heron::proto::ckptmgr::GetInstanceStateRequest* createRestoreMessage() {
+    auto protomsg = new heron::proto::ckptmgr::GetInstanceStateRequest;
     auto instance = protomsg->mutable_instance();
     instance->mutable_instance_id()->assign("instance-2");
     instance->mutable_stmgr_id()->assign("stmgr-2");

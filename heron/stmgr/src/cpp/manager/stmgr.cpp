@@ -757,10 +757,11 @@ void StMgr::HandleInstanceStateCheckpointMessage(sp_int32 _task_id,
   }
 
   // save the checkpoint
-  proto::ckptmgr::SaveStateCheckpoint* message = new proto::ckptmgr::SaveStateCheckpoint();
+  proto::ckptmgr::SaveInstanceStateRequest* message =
+         new proto::ckptmgr::SaveInstanceStateRequest();
   message->mutable_instance()->CopyFrom(*_instance);
   message->mutable_checkpoint()->CopyFrom(*_message);
-  checkpoint_manager_client_->SaveStateCheckpoint(message);
+  checkpoint_manager_client_->SaveInstanceState(message);
 }
 
 // Send checkpoint message to this task_id
