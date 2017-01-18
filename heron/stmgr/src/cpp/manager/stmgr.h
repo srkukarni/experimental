@@ -19,6 +19,7 @@
 
 #include <list>
 #include <map>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -32,7 +33,6 @@ namespace heron {
 namespace common {
 class HeronStateMgr;
 class MetricsMgrSt;
-class CheckpointMgrClient;
 class MultiAssignableMetric;
 }
 }
@@ -110,6 +110,9 @@ class StMgr {
   void CheckTMasterLocation(EventLoop::Status);
   void UpdateProcessMetrics(EventLoop::Status);
   void CreateCheckpointMgrClient();
+  // Called when ckpt mgr saves a state
+  void HandleSavedInstanceState(const proto::system::Instance& _instance,
+                                const std::string& _checkpoint_id);
 
   void CleanupStreamConsumers();
   void PopulateStreamConsumers(

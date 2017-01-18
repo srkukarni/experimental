@@ -29,19 +29,24 @@ namespace ckptmgr {
 
 CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _options,
                              const sp_string& _topology_name, const sp_string& _topology_id,
-                             const sp_string& _ckptmgr_id, const sp_string& _stmgr_id)
+                             const sp_string& _ckptmgr_id, const sp_string& _stmgr_id,
+                             std::function<void(const proto::system::Instance&,
+                                                const std::string&)> _ckpt_saved_watcher)
     : Client(eventloop, _options),
       topology_name_(_topology_name),
       topology_id_(_topology_id),
       ckptmgr_id_(_ckptmgr_id),
       stmgr_id_(_stmgr_id),
-      quit_(false) {
+      quit_(false),
+      ckpt_saved_watcher_(_ckpt_saved_watcher) {
 
   reconnect_cpktmgr_interval_sec_ =
     config::HeronInternalsConfigReader::Instance()->GetHeronStreammgrClientReconnectIntervalSec();
 
   InstallResponseHandler(new proto::ckptmgr::RegisterStMgrRequest(),
                          &CkptMgrClient::HandleStMgrRegisterResponse);
+  InstallResponseHandler(new proto::ckptmgr::SaveInstanceStateRequest(),
+                         &CkptMgrClient::HandleSaveInstanceStateResponse);
 }
 
 CkptMgrClient::~CkptMgrClient() {
@@ -137,11 +142,21 @@ void CkptMgrClient::SendRegisterRequest() {
 
 
 void CkptMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request) {
-  SendMessage(*_request);
-
-  delete _request;
+  SendRequest(_request, NULL);
 }
 
+void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
+                             proto::ckptmgr::SaveInstanceStateResponse* _response,
+                             NetworkErrorCode _status) {
+  if (_status != OK) {
+    LOG(ERROR) << "NonOK response message for SaveInstanceStateResponse" << std::endl;
+    delete _response;
+    Stop();
+    return;
+  }
+  ckpt_saved_watcher_(_response->instance(), _response->checkpoint_id());
+  delete _response;
+}
 }  // namespace ckptmgr
 }  // namespace heron
 

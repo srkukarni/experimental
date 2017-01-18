@@ -17,6 +17,7 @@
 #ifndef SRC_CPP_SVCS_STMGR_SRC_MANAGER_TMASTER_CLIENT_H_
 #define SRC_CPP_SVCS_STMGR_SRC_MANAGER_TMASTER_CLIENT_H_
 
+#include <string>
 #include <vector>
 #include "network/network_error.h"
 #include "proto/messages.h"
@@ -44,6 +45,10 @@ class TMasterClient : public Client {
 
   // returns the tmaster address "host:port" form.
   sp_string getTmasterHostPort();
+
+  // Send a TopologyStateStored message to tmaster
+  void SavedInstanceState(const proto::system::Instance& _instance,
+                          const std::string& _checkpoint_id);
 
  protected:
   virtual void HandleConnect(NetworkErrorCode status);

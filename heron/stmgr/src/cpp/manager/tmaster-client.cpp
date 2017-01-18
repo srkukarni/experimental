@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <vector>
+#include <string>
 #include <iostream>
 #include "manager/stmgr.h"
 #include "proto/messages.h"
@@ -227,6 +227,14 @@ void TMasterClient::SendHeartbeatRequest() {
   request->mutable_stats();
   SendRequest(request, NULL);
   return;
+}
+
+void TMasterClient::SavedInstanceState(const proto::system::Instance& _instance,
+                                       const std::string& _checkpoint_id) {
+  proto::ckptmgr::TopologyStateStored message;
+  message.set_checkpoint_id(_checkpoint_id);
+  message.mutable_instance()->CopyFrom(_instance);
+  SendMessage(message);
 }
 
 }  // namespace stmgr

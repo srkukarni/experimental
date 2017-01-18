@@ -239,9 +239,11 @@ void StMgr::CreateCheckpointMgrClient() {
   client_options.set_port(checkpoint_manager_port_);
   client_options.set_socket_family(PF_INET);
   client_options.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);
+  auto watcher = std::bind(&StMgr::HandleSavedInstanceState, this,
+                           std::placeholders::_1, std::placeholders::_2);
   checkpoint_manager_client_ = new ckptmgr::CkptMgrClient(eventLoop_, client_options,
                                                           topology_name_, topology_id_,
-                                                          ckptmgr_id_, stmgr_id_);
+                                                          ckptmgr_id_, stmgr_id_, watcher);
   checkpoint_manager_client_->Start();
 }
 
@@ -762,6 +764,11 @@ void StMgr::HandleInstanceStateCheckpointMessage(sp_int32 _task_id,
   message->mutable_instance()->CopyFrom(*_instance);
   message->mutable_checkpoint()->CopyFrom(*_message);
   checkpoint_manager_client_->SaveInstanceState(message);
+}
+
+void StMgr::HandleSavedInstanceState(const proto::system::Instance& _instance,
+                                     const std::string& _checkpoint_id) {
+  tmaster_client_->SavedInstanceState(_instance, _checkpoint_id);
 }
 
 // Send checkpoint message to this task_id
