@@ -32,7 +32,7 @@ CkptMgrServer::CkptMgrServer(EventLoop* eventloop, const NetworkOptions& _option
 
     // handlers
     InstallRequestHandler(&CkptMgrServer::HandleStMgrRegisterRequest);
-    InstallMessageHandler(&CkptMgrServer::HandleSaveStateCheckpoint);
+    InstallRequestHandler(&CkptMgrServer::HandleSaveInstanceStateRequest);
 }
 
 CkptMgrServer::~CkptMgrServer() {
@@ -77,9 +77,9 @@ void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
   delete _request;
 }
 
-void CkptMgrServer::HandleSaveStateCheckpoint(Connection* _conn,
-                                        heron::proto::ckptmgr::SaveStateCheckpoint* _message) {
-  Checkpoint checkpoint(topology_name_, _message);
+void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
+                                        heron::proto::ckptmgr::SaveInstanceStateRequest* _req) {
+  Checkpoint checkpoint(topology_name_, _req);
   LOG(INFO) << "Got a save checkpoint for " << checkpoint.getCkptId() << " "
             << checkpoint.getComponent() << " " << checkpoint.getInstance() << " "
             << " on connection" << _conn;

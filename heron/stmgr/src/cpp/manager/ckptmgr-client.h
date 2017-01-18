@@ -35,7 +35,7 @@ class CkptMgrClient : public Client {
   void Quit();
 
   // TODO(nlu): add requests methods
-  void SaveStateCheckpoint(proto::ckptmgr::SaveStateCheckpoint* _message);
+  void SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request);
 
  protected:
   virtual void HandleConnect(NetworkErrorCode status);

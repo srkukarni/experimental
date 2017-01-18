@@ -22,7 +22,7 @@ namespace heron {
 namespace ckptmgr {
 
 Checkpoint::Checkpoint(const std::string& _topology,
-                       ::heron::proto::ckptmgr::SaveStateCheckpoint* _checkpoint) {
+                       ::heron::proto::ckptmgr::SaveInstanceStateRequest* _checkpoint) {
   topology_ = _topology;
   ckptid_ = _checkpoint->checkpoint().checkpoint_id();
   component_ = _checkpoint->instance().info().component_name();
@@ -32,7 +32,7 @@ Checkpoint::Checkpoint(const std::string& _topology,
 }
 
 Checkpoint::Checkpoint(const std::string& _topology,
-                       ::heron::proto::ckptmgr::RestoreStateCheckpointRequest* _checkpoint) {
+                       ::heron::proto::ckptmgr::GetInstanceStateRequest* _checkpoint) {
   topology_ = _topology;
   ckptid_ = _checkpoint->checkpoint_id();
   component_ = _checkpoint->instance().info().component_name();

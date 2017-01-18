@@ -38,7 +38,7 @@ class CheckpointMgrClient : public Client {
   CheckpointMgrClient(EventLoop* eventLoop, const NetworkOptions& options);
   ~CheckpointMgrClient();
 
-  void SaveStateCheckpoint(proto::ckptmgr::SaveStateCheckpoint* _message);
+  void SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request);
 
  protected:
   virtual void HandleConnect(NetworkErrorCode status);

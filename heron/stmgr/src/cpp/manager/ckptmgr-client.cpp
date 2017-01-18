@@ -136,10 +136,10 @@ void CkptMgrClient::SendRegisterRequest() {
 }
 
 
-void CkptMgrClient::SaveStateCheckpoint(proto::ckptmgr::SaveStateCheckpoint* _message) {
-  SendMessage(*_message);
+void CkptMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request) {
+  SendMessage(*_request);
 
-  delete _message;
+  delete _request;
 }
 
 }  // namespace ckptmgr

@@ -51,10 +51,10 @@ void CheckpointMgrClient::HandleClose(NetworkErrorCode) {
 
 void CheckpointMgrClient::ReConnect() { Start(); }
 
-void CheckpointMgrClient::SaveStateCheckpoint(proto::ckptmgr::SaveStateCheckpoint* _message) {
-  SendMessage(*_message);
+void CheckpointMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request) {
+  SendMessage(*_request);
 
-  delete _message;
+  delete _request;
 }
 
 }  // namespace common

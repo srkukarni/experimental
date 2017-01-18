@@ -27,10 +27,10 @@ namespace ckptmgr {
 class Checkpoint {
  public:
   Checkpoint(const std::string& topology,
-             ::heron::proto::ckptmgr::SaveStateCheckpoint* _checkpoint);
+             ::heron::proto::ckptmgr::SaveInstanceStateRequest* _checkpoint);
 
   Checkpoint(const std::string& topology,
-             ::heron::proto::ckptmgr::RestoreStateCheckpointRequest* _checkpoint);
+             ::heron::proto::ckptmgr::GetInstanceStateRequest* _checkpoint);
 
   virtual ~Checkpoint() {
     if (savebytes_ != nullptr)
@@ -50,13 +50,13 @@ class Checkpoint {
   std::string getInstance() const { return instance_; }
 
   // get the checkpoint bytes for storing
-  ::heron::proto::ckptmgr::SaveStateCheckpoint* checkpoint() const { return savebytes_; }
+  ::heron::proto::ckptmgr::SaveInstanceStateRequest* checkpoint() const { return savebytes_; }
 
   // get the total number of bytes to be saved
   sp_int32 nbytes() const { return nbytes_; }
 
   // set the bytes, used for restoring the checkpoint
-  void set_checkpoint(::heron::proto::ckptmgr::SaveStateCheckpoint* _bytes) {
+  void set_checkpoint(::heron::proto::ckptmgr::SaveInstanceStateRequest* _bytes) {
     CHECK(savebytes_ == nullptr);
     savebytes_ = _bytes;
     nbytes_ = _bytes->ByteSize();
@@ -68,7 +68,7 @@ class Checkpoint {
   std::string  component_;   // component id
   std::string  instance_;    // instance id
   sp_int32     nbytes_;      // number of bytes
-  ::heron::proto::ckptmgr::SaveStateCheckpoint*  savebytes_;
+  ::heron::proto::ckptmgr::SaveInstanceStateRequest*  savebytes_;
 };
 
 }  // namespace ckptmgr
