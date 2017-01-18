@@ -69,7 +69,7 @@ message RegisterStMgrResponse {
 
 // This is the message that StMgr sends to Checkpoint Mgr
 // to store instance checkpoint data
-message SaveStateCheckpoint {
+message SaveInstanceState {
   // Information about the instance whose state this is
   required heron.proto.system.Instance instance = 1;
   required InstanceStateCheckpoint checkpoint = 2;
@@ -77,21 +77,21 @@ message SaveStateCheckpoint {
 
 // After successfully saving state, this is what
 // Checkpoint Mgr sends back as response
-message SavedStateCheckpoint {
+message SavedInstanceState {
   required heron.proto.system.Instance instance = 2;
   required string checkpoint_id = 3;
 }
 
 // This is the message that StMgr sends to Checkpoint Mgr
 // to restore instance checkpoint data
-message RestoreInstanceStateRequest {
+message GetInstanceStateRequest {
   required heron.proto.system.Instance instance = 1;
   required string checkpoint_id = 2;
 }
 
 // This is the response that Checkpoint Mgr sends to StMgr
 // for its restore request
-message RestoreInstanceStateResponse {
+message GetInstanceStateResponse {
   required heron.proto.system.Status status = 1;
   required string checkpoint_id = 2;
   optional InstanceStateCheckpoint checkpoint = 3;
