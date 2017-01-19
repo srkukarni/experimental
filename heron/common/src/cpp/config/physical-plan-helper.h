@@ -60,6 +60,10 @@ class PhysicalPlanHelper {
                                 const sp_string& _component,
                                 std::set<sp_int32>& _return);
 
+  // Return the set of all task_ids across the entire topology
+  static void GetAllTasks(const proto::system::PhysicalPlan& _pplan,
+                          std::set<sp_int32>& _return);
+
   static void LogPhysicalPlan(const proto::system::PhysicalPlan& _pplan);
 };
 }  // namespace config

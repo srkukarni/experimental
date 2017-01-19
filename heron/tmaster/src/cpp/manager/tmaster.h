@@ -78,7 +78,14 @@ class TMaster {
   // Timer function to start the stateful checkpoint process
   void SendCheckpointMarker();
 
+  // Called by tmaster server when it gets TopologyStateStored message
+  void HandleTopologyStateStored(const std::string& _checkpoint_id,
+                                 const proto::system::Instance& _instance);
+
  private:
+  // Helper function to fetch physical plan
+  void FetchPhysicalPlan();
+
   // Function to be called that calls MakePhysicalPlan and sends it to all stmgrs
   void DoPhysicalPlan(EventLoop::Status _code);
 
@@ -107,6 +114,13 @@ class TMaster {
   void SetTMasterLocationDone(proto::system::StatusCode _code);
   // Function called after we get the topology
   void GetTopologyDone(proto::system::StatusCode _code);
+  // Function called after we get StatefulMostRecentCheckpoint
+  void GetStatefulCheckpointDone(proto::ckptmgr::StatefulMostRecentCheckpoint* _ckpt,
+                                 proto::system::StatusCode _code);
+  // Function called after we set an initial StatefulMostRecentCheckpoint
+  void SetStatefulCheckpointDone(proto::system::StatusCode _code);
+  // Helper function to setup stateful coordinator
+  void SetupStatefulCoordinator(const std::string& _checkpoint_id);
 
   // Function called after we try to get assignment
   void GetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan, proto::system::StatusCode _code);

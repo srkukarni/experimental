@@ -23,6 +23,14 @@
 #include "basics/basics.h"
 
 namespace heron {
+namespace proto {
+namespace ckptmgr {
+class TopologyStateStored;
+}
+}
+}
+
+namespace heron {
 namespace tmaster {
 
 class TMaster;
@@ -45,6 +53,7 @@ class TMasterServer : public Server {
   void HandleStMgrHeartbeatRequest(REQID _id, Connection* _conn,
                                    proto::tmaster::StMgrHeartbeatRequest* _request);
   void HandleMetricsMgrStats(Connection*, proto::tmaster::PublishMetrics* _request);
+  void HandleTopologyStateStored(Connection*, proto::ckptmgr::TopologyStateStored* _message);
 
   // our tmaster
   TMetricsCollector* collector_;

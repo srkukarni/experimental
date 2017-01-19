@@ -18,8 +18,9 @@
 #include <iostream>
 #include <sstream>
 #include <chrono>
+#include <string>
 #include <vector>
-#include "config/topology-config-helper.h"
+#include "config/physical-plan-helper.h"
 #include "manager/tmaster.h"
 #include "manager/stmgrstate.h"
 #include "basics/basics.h"
@@ -30,8 +31,14 @@ namespace heron {
 namespace tmaster {
 
 StatefulCoordinator::StatefulCoordinator(
+  const std::string& _topology_name,
+  const std::string& _latest_consistent_checkpoint,
+  heron::common::HeronStateMgr* _state_mgr,
   std::chrono::high_resolution_clock::time_point _tmaster_start_time)
-  : tmaster_start_time_(_tmaster_start_time) {
+  : topology_name_(_topology_name),
+    tmaster_start_time_(_tmaster_start_time),
+    state_mgr_(_state_mgr),
+    latest_consistent_checkpoint_(_latest_consistent_checkpoint) {
   // nothing really
 }
 
@@ -57,6 +64,54 @@ void StatefulCoordinator::DoCheckpoint(const StMgrMap& _stmgrs) {
     proto::ckptmgr::StartStatefulCheckpoint request;
     request.set_checkpoint_id(checkpoint_id);
     iter->second->StatefulNewCheckpoint(request);
+  }
+}
+
+void StatefulCoordinator::RegisterNewPplan(const proto::system::PhysicalPlan& _pplan) {
+  config::PhysicalPlanHelper::GetAllTasks(_pplan, all_tasks_);
+}
+
+void StatefulCoordinator::HandleTopologyStateStored(const std::string& _checkpoint_id,
+                                           const proto::system::Instance& _instance) {
+  LOG(INFO) << "Handling TopologyStateStored for checkpoint:- " << _checkpoint_id
+            << " and instance " << _instance.info().task_id();
+  if (current_partial_checkpoint_.empty()) {
+    LOG(INFO) << "Seeing the checkpoint id for the first time";
+    partial_checkpoint_remaining_tasks_ = all_tasks_;
+    current_partial_checkpoint_ = _checkpoint_id;
+    partial_checkpoint_remaining_tasks_.erase(_instance.info().task_id());
+  } else if (_checkpoint_id > current_partial_checkpoint_) {
+    LOG(INFO) << "This new checkpoint id is newer than old partial one "
+              << current_partial_checkpoint_;
+    partial_checkpoint_remaining_tasks_ = all_tasks_;
+    current_partial_checkpoint_ = _checkpoint_id;
+    partial_checkpoint_remaining_tasks_.erase(_instance.info().task_id());
+  } else {
+    LOG(INFO) << "This checkpoint id is older than partial one "
+              << current_partial_checkpoint_;
+  }
+  if (partial_checkpoint_remaining_tasks_.empty()) {
+    LOG(INFO) << "All task ids have their state stored for "
+              << current_partial_checkpoint_;
+    proto::ckptmgr::StatefulMostRecentCheckpoint ckpt;
+    ckpt.set_checkpoint_id(current_partial_checkpoint_);
+    state_mgr_->SetStatefulCheckpoint(topology_name_, ckpt,
+       std::bind(&StatefulCoordinator::HandleCkptSave, this,
+                 current_partial_checkpoint_, std::placeholders::_1));
+    current_partial_checkpoint_ = "";
+  }
+}
+
+void StatefulCoordinator::HandleCkptSave(std::string _checkpoint_id,
+                                         proto::system::StatusCode _status) {
+  if (_status == proto::system::OK) {
+    LOG(INFO) << "Successfully saved " << _checkpoint_id
+              << " as the new globally consistent checkpoint";
+    latest_consistent_checkpoint_ = _checkpoint_id;
+  } else {
+    LOG(ERROR) << "Error saving " << _checkpoint_id
+              << " as the new globally consistent checkpoint "
+              << _status;
   }
 }
 
