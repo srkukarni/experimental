@@ -55,6 +55,9 @@ void HeronLocalFileStateMgr::InitTree() {
   path = dpath;
   path += "/executionstate";
   FileUtils::makeDirectory(path);
+  path = dpath;
+  path += "statefulcheckpoint";
+  FileUtils::makeDirectory(path);
 }
 
 void HeronLocalFileStateMgr::SetTMasterLocationWatch(const std::string& topology_name,
