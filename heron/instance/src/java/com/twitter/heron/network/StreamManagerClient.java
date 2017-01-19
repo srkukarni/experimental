@@ -112,6 +112,8 @@ public class StreamManagerClient extends HeronClient {
 
     // Following messages are for stateful processing
     registerOnMessage(CheckpointManager.InitiateStatefulCheckpoint.newBuilder());
+    registerOnMessage(CheckpointManager.RestoreInstanceStateRequest.newBuilder());
+    registerOnMessage(CheckpointManager.StartInstanceStatefulProcessing.newBuilder());
   }
 
 
@@ -195,6 +197,10 @@ public class StreamManagerClient extends HeronClient {
       handleNewTuples2((HeronTuples.HeronTupleSet2) message);
     } else if (message instanceof CheckpointManager.InitiateStatefulCheckpoint) {
       handleCheckpointRequest((CheckpointManager.InitiateStatefulCheckpoint) message);
+    } else if (message instanceof CheckpointManager.RestoreInstanceStateRequest) {
+      handleRestoreInstanceStateRequest((CheckpointManager.RestoreInstanceStateRequest) message);
+    } else if (message instanceof CheckpointManager.StartInstanceStatefulProcessing) {
+      handleStartStatefulRequest((CheckpointManager.StartInstanceStatefulProcessing) message);
     } else {
       throw new RuntimeException("Unknown kind of message received from Stream Manager");
     }
@@ -256,6 +262,26 @@ public class StreamManagerClient extends HeronClient {
     } else {
       LOG.info("Stop reading due to not yet connected to Stream Manager.");
     }
+  }
+
+  private void handleStartStatefulRequest(
+      CheckpointManager.StartInstanceStatefulProcessing startRequest) {
+    LOG.info("Received a StartInstanceStatefulProcessing: " + startRequest);
+
+    InstanceControlMsg instanceControlMsg = InstanceControlMsg.newBuilder().
+        setStartInstanceStatefulProcessing(startRequest).
+        build();
+    inControlQueue.offer(instanceControlMsg);
+  }
+
+  private void handleRestoreInstanceStateRequest(
+      CheckpointManager.RestoreInstanceStateRequest restoreInstanceStateRequest) {
+    LOG.info("Received a RestoreInstanceStateRequest: " + restoreInstanceStateRequest);
+
+    InstanceControlMsg instanceControlMsg = InstanceControlMsg.newBuilder().
+        setRestoreInstanceStateRequest(restoreInstanceStateRequest).
+        build();
+    inControlQueue.offer(instanceControlMsg);
   }
 
   private void handleCheckpointRequest(

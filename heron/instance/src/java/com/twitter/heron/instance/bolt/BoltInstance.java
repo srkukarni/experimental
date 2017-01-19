@@ -27,7 +27,6 @@ import com.twitter.heron.api.bolt.OutputCollector;
 import com.twitter.heron.api.generated.TopologyAPI;
 import com.twitter.heron.api.metric.GlobalMetrics;
 import com.twitter.heron.api.serializer.IPluggableSerializer;
-import com.twitter.heron.api.state.HashMapState;
 import com.twitter.heron.api.state.State;
 import com.twitter.heron.api.topology.IStatefulComponent;
 import com.twitter.heron.api.topology.IUpdatable;
@@ -61,8 +60,8 @@ public class BoltInstance implements IInstance {
 
   private final boolean isTopologyStateful;
   // This instance should be able to pick up previous one.
-  // TODO(mfu): Currently we hardcode it as a HashMapState
-  private final State instanceState = new HashMapState();
+  // It is set during start(...)
+  private State instanceState;
 
   private final SlaveLooper looper;
 
@@ -142,9 +141,9 @@ public class BoltInstance implements IInstance {
     collector.sendOutState(instanceState, checkpointId);
   }
 
-  @Override
   public void start() {
     TopologyContextImpl topologyContext = helper.getTopologyContext();
+
 
     // Initialize the GlobalMetrics
     GlobalMetrics.init(topologyContext, systemConfig.getHeronMetricsExportIntervalSec());
@@ -171,16 +170,18 @@ public class BoltInstance implements IInstance {
   }
 
   @Override
+  public void start(State state) {
+    this.instanceState = state;
+    start();
+  }
+
+  @Override
   public void stop() {
     // Invoke clean up hook before clean() is called
     helper.getTopologyContext().invokeHookCleanup();
 
     // Delegate to user-defined clean-up method
     bolt.cleanup();
-
-    // Clean the resources we own
-    looper.exitLoop();
-    streamInQueue.clear();
     collector.clear();
   }
 
