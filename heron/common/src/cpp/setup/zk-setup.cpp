@@ -49,10 +49,20 @@ void AllDone(sp_int32 _status) {
   }
 }
 
+void StatefulDone(sp_int32 _status) {
+  if (_status == ZNODEEXISTS || _status == ZOK) {
+    zkclient->CreateNode(zkroot + "/statefulcheckpoint", "Heron Cluster " + clustername, false,
+                         [](sp_int32 status) { AllDone(status); });
+  } else {
+    LOG(ERROR) << "Error creating node in zk " << _status << std::endl;
+    ::exit(1);
+  }
+}
+
 void TMastersDone(sp_int32 _status) {
   if (_status == ZNODEEXISTS || _status == ZOK) {
     zkclient->CreateNode(zkroot + "/executionstate", "Heron Cluster " + clustername, false,
-                         [](sp_int32 status) { AllDone(status); });
+                         [](sp_int32 status) { StatefulDone(status); });
   } else {
     LOG(ERROR) << "Error creating node in zk " << _status << std::endl;
     ::exit(1);
