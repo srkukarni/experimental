@@ -85,14 +85,24 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
             << " on connection" << _conn;
 
   auto ret = ckptmgr_->storage()->store(checkpoint);
+  proto::system::StatusCode status;
   if (ret != SP_OK) {
     LOG(ERROR) << "Checkpoint failed for " << checkpoint.getCkptId() << " "
             << checkpoint.getComponent() << " " << checkpoint.getInstance();
-    return;
+    status = proto::system::NOTOK;
+  } else {
+    status = proto::system::OK;
   }
+
+  heron::proto::ckptmgr::SaveInstanceStateResponse response;
+  response.mutable_status()->set_status(status);
+  response.set_checkpoint_id(_req->checkpoint().checkpoint_id());
+  response.mutable_instance()->CopyFrom(_req->instance());
 
   LOG(INFO) << "Checkpoint successful for " << checkpoint.getCkptId() << " "
             << checkpoint.getComponent() << " " << checkpoint.getInstance();
+
+  SendResponse(_id, _conn, response);
 }
 
 }  // namespace ckptmgr
