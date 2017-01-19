@@ -149,9 +149,14 @@ void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
                              proto::ckptmgr::SaveInstanceStateResponse* _response,
                              NetworkErrorCode _status) {
   if (_status != OK) {
-    LOG(ERROR) << "NonOK response message for SaveInstanceStateResponse" << std::endl;
+    LOG(ERROR) << "NonOK response message for SaveInstanceStateResponse";
     delete _response;
     Stop();
+    return;
+  }
+  if (_response->status().status() != proto::system::OK) {
+    LOG(ERROR) << "CkptMgr could not save " << _response->status().status();
+    delete _response;
     return;
   }
   ckpt_saved_watcher_(_response->instance(), _response->checkpoint_id());
