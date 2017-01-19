@@ -78,6 +78,7 @@ message SaveInstanceStateRequest {
 // After successfully saving state, this is what
 // Checkpoint Mgr sends back as response
 message SaveInstanceStateResponse {
+  required heron.proto.system.Status status = 1;
   required heron.proto.system.Instance instance = 2;
   required string checkpoint_id = 3;
 }
