@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.Message;
 
 import com.twitter.heron.api.generated.TopologyAPI;
+import com.twitter.heron.proto.ckptmgr.CheckpointManager;
 import com.twitter.heron.proto.scheduler.Scheduler;
 import com.twitter.heron.proto.system.ExecutionEnvironment;
 import com.twitter.heron.proto.system.PackingPlans;
@@ -48,6 +49,7 @@ public abstract class FileSystemStateManager implements IStateManager {
     PHYSICAL_PLAN("pplans", "Physical plan"),
     EXECUTION_STATE("executionstate", "Execution state"),
     SCHEDULER_LOCATION("schedulers", "Scheduler location"),
+    STATEFUL_CHECKPOINT("statefulcheckpoint", "Stateful checkpoint"),
     LOCKS("locks", "Distributed locks");
 
     private final String dir;
@@ -87,6 +89,7 @@ public abstract class FileSystemStateManager implements IStateManager {
   protected abstract <M extends Message> ListenableFuture<M> getNodeData(WatchCallback watcher,
                                                                          String path,
                                                                          Message.Builder builder);
+
   protected abstract Lock getLock(String path);
 
   protected String getStateDirectory(StateLocation location) {
@@ -182,6 +185,18 @@ public abstract class FileSystemStateManager implements IStateManager {
   }
 
   @Override
+  public ListenableFuture<CheckpointManager.StatefulMostRecentCheckpoint> getStatefulCheckpoint(
+      WatchCallback watcher, String topologyName) {
+    return getNodeData(watcher, StateLocation.STATEFUL_CHECKPOINT, topologyName,
+        CheckpointManager.StatefulMostRecentCheckpoint.newBuilder());
+  }
+
+  @Override
+  public ListenableFuture<Boolean> deleteStatefulCheckpoint(String topologyName) {
+    return deleteNode(StateLocation.STATEFUL_CHECKPOINT, topologyName);
+  }
+
+  @Override
   public ListenableFuture<Boolean> isTopologyRunning(String topologyName) {
     return nodeExists(getStatePath(StateLocation.TOPOLOGY, topologyName));
   }
@@ -220,16 +235,15 @@ public abstract class FileSystemStateManager implements IStateManager {
   /**
    * Returns all information stored in the StateManager. This is a utility method used for debugging
    * while developing. To invoke, run:
-   *
-   *  bazel run heron/statemgrs/src/java:localfs-statemgr-unshaded -- \
-   *    &lt;topology-name&gt; [new_instance_distribution]
-   *
+   * <p>
+   * bazel run heron/statemgrs/src/java:localfs-statemgr-unshaded -- \
+   * &lt;topology-name&gt; [new_instance_distribution]
+   * <p>
    * If a new_instance_distribution is provided, the instance distribution will be updated to
    * trigger a scaling event. For example:
-   *
-   *  bazel run heron/statemgrs/src/java:localfs-statemgr-unshaded -- \
-   *    ExclamationTopology 1:word:3:0:exclaim1:2:0:exclaim1:1:0
-   *
+   * <p>
+   * bazel run heron/statemgrs/src/java:localfs-statemgr-unshaded -- \
+   * ExclamationTopology 1:word:3:0:exclaim1:2:0:exclaim1:1:0
    */
   protected void doMain(String[] args, Config config)
       throws ExecutionException, InterruptedException, InstantiationException,
