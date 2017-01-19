@@ -56,7 +56,7 @@ void HeronLocalFileStateMgr::InitTree() {
   path += "/executionstate";
   FileUtils::makeDirectory(path);
   path = dpath;
-  path += "statefulcheckpoint";
+  path += "/statefulcheckpoint";
   FileUtils::makeDirectory(path);
 }
 
