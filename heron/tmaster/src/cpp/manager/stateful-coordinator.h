@@ -51,6 +51,10 @@ class StatefulCoordinator {
   void HandleTopologyStateStored(const std::string& _checkpoint_id,
                                  const proto::system::Instance& _instance);
 
+  const std::string& GetLatestConsistentCheckpoint() const {
+    return latest_consistent_checkpoint_;
+  }
+
  private:
   void HandleCkptSave(std::string checkpoint_id, proto::system::StatusCode _status);
   sp_string GenerateCheckpointId();

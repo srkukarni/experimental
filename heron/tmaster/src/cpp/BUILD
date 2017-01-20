@@ -5,6 +5,7 @@ cc_library(
     srcs = [
         "manager/stats-interface.cpp",
         "manager/stateful-coordinator.cpp",
+        "manager/stateful-restorer.cpp",
         "manager/stmgrstate.cpp",
         "manager/tcontroller.cpp",
         "manager/tmaster.cpp",
@@ -17,6 +18,7 @@ cc_library(
 
         "manager/stats-interface.h",
         "manager/stateful-coordinator.h",
+        "manager/stateful-restorer.h",
         "manager/stmgrstate.h",
         "manager/tcontroller.h",
         "manager/tmasterserver.h",

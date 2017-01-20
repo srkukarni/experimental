@@ -58,6 +58,12 @@ class StMgrState {
   // Send stateful checkpoint message to the stmgr
   void StatefulNewCheckpoint(const proto::ckptmgr::StartStatefulCheckpoint& _request);
 
+  // Send RestoreTopologyStateRequest to stmgr
+  void SendRestoreTopologyStateMessage(const proto::ckptmgr::RestoreTopologyStateRequest& _message);
+
+  // Send StartStmgrStatefulProcessing to stmgr
+  void SendStartStatefulProcessingMessage(const std::string& _checkpoint_id);
+
   bool TimedOut() const;
 
   // getters

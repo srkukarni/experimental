@@ -20,6 +20,7 @@
 #include "network/network_error.h"
 #include "network/network.h"
 #include "proto/tmaster.pb.h"
+#include "proto/ckptmgr.pb.h"
 #include "basics/basics.h"
 
 namespace heron {
@@ -54,6 +55,10 @@ class TMasterServer : public Server {
                                    proto::tmaster::StMgrHeartbeatRequest* _request);
   void HandleMetricsMgrStats(Connection*, proto::tmaster::PublishMetrics* _request);
   void HandleTopologyStateStored(Connection*, proto::ckptmgr::TopologyStateStored* _message);
+  void HandleRestoreTopologyStateResponse(Connection*,
+                                     proto::ckptmgr::RestoreTopologyStateResponse* _message);
+  void HandleResetTopologyStateMessage(Connection*,
+                                     proto::ckptmgr::ResetTopologyState* _message);
 
   // our tmaster
   TMetricsCollector* collector_;
