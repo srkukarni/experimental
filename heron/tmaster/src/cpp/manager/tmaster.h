@@ -37,6 +37,7 @@ class StatsInterface;
 class TMasterServer;
 class TMetricsCollector;
 class StatefulCoordinator;
+class StatefulRestorer;
 
 typedef std::map<std::string, StMgrState*> StMgrMap;
 typedef StMgrMap::iterator StMgrMapIter;
@@ -81,6 +82,14 @@ class TMaster {
   // Called by tmaster server when it gets TopologyStateStored message
   void HandleTopologyStateStored(const std::string& _checkpoint_id,
                                  const proto::system::Instance& _instance);
+
+  // Called by tmaster server when it gets RestoreTopologyStateResponse message
+  void HandleRestoreTopologyStateResponse(Connection* _conn,
+                                          const std::string& _checkpoint_id,
+                                          int64_t _restore_txid);
+
+  // Called by tmaster server when it gets ResetTopologyState message
+  void ResetTopologyState();
 
  private:
   // Helper function to fetch physical plan
@@ -193,6 +202,8 @@ class TMaster {
 
   // Stateful coordinator
   StatefulCoordinator* stateful_coordinator_;
+  // Stateful restorer
+  StatefulRestorer* stateful_restorer_;
 
   // Copy of the EventLoop
   EventLoop* eventLoop_;
