@@ -28,9 +28,10 @@
 namespace heron {
 namespace tmaster {
 
-StatefulRestorer::StatefulRestorer()
+StatefulRestorer::StatefulRestorer(std::function<void()> _fn)
   : in_progress_(false),
-    restore_txid_(0) {
+    restore_txid_(0),
+    after_2pc_cb_(_fn) {
 }
 
 StatefulRestorer::~StatefulRestorer() { }
@@ -97,6 +98,7 @@ void StatefulRestorer::Finish2PC(const StMgrMap& _stmgrs) {
   }
   in_progress_ = false;
   checkpoint_id_in_progress_ = "";
+  after_2pc_cb_();
 }
 }  // namespace tmaster
 }  // namespace heron
