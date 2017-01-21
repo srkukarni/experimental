@@ -205,6 +205,19 @@ bool FileUtils::writeAll(const std::string& filename, const char* data, size_t l
   return true;
 }
 
+bool FileUtils::writeAll(int fd, const char* data, size_t len) {
+  size_t count = 0;
+  while (count < len) {
+    int i = ::write(fd, data + count, len - count);
+    if (i < 0) {
+      PLOG(ERROR) << "Unable to write to file " << fd;
+      return false;
+    }
+    count += i;
+  }
+  return true;
+}
+
 sp_int32 FileUtils::getCwd(std::string& path) {
   char maxpath[MAXPATHLEN];
   if (::getcwd(maxpath, MAXPATHLEN) == nullptr) {

@@ -79,18 +79,14 @@ int LocalFS::createTmpCkptFile(const Checkpoint& _ckpt) {
 }
 
 int LocalFS::writeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
-  size_t count = 0;
   size_t len = _ckpt.nbytes();
   char* buf = reinterpret_cast<char*>(_ckpt.checkpoint());
 
-  while (count < _ckpt.nbytes()) {
-    int i = ::write(fd, buf + count, len - count);
-    if (i < 0) {
-      PLOG(ERROR) << "Unable to write to temporary checkpoint file " << tempCkptFile(_ckpt);
-      return SP_NOTOK;
-    }
-    count += i;
+  if (!FileUtils::writeAll(fd, buf, len)) {
+    PLOG(ERROR) << "Unable to write to temporary checkpoint file " << tempCkptFile(_ckpt);
+    return SP_NOTOK;
   }
+
   return SP_OK;
 }
 

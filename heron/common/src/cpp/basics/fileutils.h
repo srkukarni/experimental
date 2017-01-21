@@ -62,6 +62,9 @@ class FileUtils {
   //! write the contents of a string into the file
   static bool writeAll(const std::string& filename, const char* data, size_t len);
 
+  //! write the contents using file descriptor
+  static bool writeAll(int fd, const char* data, size_t len);
+
   //! get the current working directory
   static sp_int32 getCwd(std::string& path);
 
