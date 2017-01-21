@@ -140,14 +140,14 @@ int LocalFS::store(const Checkpoint& _ckpt) {
   LOG(INFO) << "Write temp checkpoint file " << tempCkptFile(_ckpt);
 
   // close the temporary checkpoint file
-  if (closeTmpCkptFile(fd, _ckpt) == SP_NOTOK) {
+  if (!FileUtils::closeSync(fd)) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
   LOG(INFO) << "Closed temp checkpoint file " << tempCkptFile(_ckpt);
 
   // move the temporary checkpoint file to final destination
-  if (moveTmpCkptFile(_ckpt) == SP_NOTOK) {
+  if (!FileUtils::rename(tempCkptFile(_ckpt).c_str(), ckptFile(_ckpt).c_str())) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }

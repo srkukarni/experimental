@@ -218,6 +218,39 @@ bool FileUtils::writeAll(int fd, const char* data, size_t len) {
   return true;
 }
 
+bool FileUtils::close(int fd) {
+  auto code = ::close(fd);
+  if (code < 0) {
+    PLOG(ERROR) << "Unable to close file " << fd;
+    return false;
+  }
+  return true;
+}
+
+bool FileUtils::closeSync(int fd) {
+  // force flush the file contents to persistent store
+  if (::fsync(fd) < 0) {
+    PLOG(ERROR) << "Unable to sync file " << fd;
+    return false;
+  }
+
+  // close the file descriptor
+  if (::close(fd) < 0) {
+    PLOG(ERROR) << "Unable to close file " << fd;
+    return false;
+  }
+  return true;
+}
+
+bool FileUtils::rename(const std::string& from, const std::string& to) {
+  auto code = ::rename(from.c_str(), to.c_str());
+  if (code < 0) {
+    PLOG(ERROR) << "Unable to rename file " << from << " to " << to;
+    return false;
+  }
+  return true;
+}
+
 sp_int32 FileUtils::getCwd(std::string& path) {
   char maxpath[MAXPATHLEN];
   if (::getcwd(maxpath, MAXPATHLEN) == nullptr) {

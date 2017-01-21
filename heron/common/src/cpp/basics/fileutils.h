@@ -65,6 +65,15 @@ class FileUtils {
   //! write the contents using file descriptor
   static bool writeAll(int fd, const char* data, size_t len);
 
+  //! close the file using file descriptor
+  static bool close(int fd);
+
+  //! close and sync the file using file descriptor
+  static bool closeSync(int fd);
+
+  //! rename file from one name to another name
+  static bool rename(const std::string& src, const std::string& dest);
+
   //! get the current working directory
   static sp_int32 getCwd(std::string& path);
 
