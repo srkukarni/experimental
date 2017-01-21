@@ -28,6 +28,7 @@
 #include "manager/tmasterserver.h"
 #include "manager/stmgrstate.h"
 #include "manager/stateful-coordinator.h"
+#include "manager/stateful-restorer.h"
 #include "processor/processor.h"
 #include "proto/messages.h"
 #include "basics/basics.h"
@@ -139,6 +140,7 @@ TMaster::TMaster(const std::string& _zk_hostport, const std::string& _topology_n
   }, true, PROCESS_METRICS_FREQUENCY), 0);
 
   stateful_coordinator_ = NULL;
+  stateful_restorer_ = NULL;
 }
 
 void TMaster::EstablishTMaster(EventLoop::Status) {
@@ -169,6 +171,7 @@ TMaster::~TMaster() {
   delete mMetricsMgrClient;
   delete tmasterProcessMetrics;
   delete stateful_coordinator_;
+  delete stateful_restorer_;
 }
 
 void TMaster::UpdateProcessMetrics(EventLoop::Status) {
@@ -239,22 +242,83 @@ void TMaster::GetTopologyDone(proto::system::StatusCode _code) {
   }
   LOG(INFO) << "Topology Read and Validated\n";
 
-  // In case we are a stateful topology we need to start our checkpointing timer
+  // In case we are a stateful topology we need load latest checkpoint state
   if (config::TopologyConfigHelper::IsTopologyStateful(*topology_)) {
-    sp_int64 stateful_checkpoint_interval =
-               config::TopologyConfigHelper::GetStatefulCheckpointInterval(*topology_);
-    if (stateful_checkpoint_interval > 0) {
-      // Instantiate the stateful coordinator
-      stateful_coordinator_ = new StatefulCoordinator(start_time_);
-      LOG(INFO) << "Starting timer to checkpoint state every "
-                << stateful_checkpoint_interval << " seconds";
-      CHECK_GT(eventLoop_->registerTimer(
-                   [this](EventLoop::Status) { this->SendCheckpointMarker(); }, true,
-                   stateful_checkpoint_interval * 1000 * 1000),
-               0);
-    }
-  }
+    // Now see if there is already a pplan
+    auto ckpt = new proto::ckptmgr::StatefulMostRecentCheckpoint();
+    auto cb = [ckpt, this](proto::system::StatusCode code) {
+      this->GetStatefulCheckpointDone(ckpt, code);
+    };
 
+    state_mgr_->GetStatefulCheckpoint(tmaster_location_->topology_name(), ckpt, std::move(cb));
+  } else {
+    FetchPhysicalPlan();
+  }
+}
+
+void TMaster::GetStatefulCheckpointDone(proto::ckptmgr::StatefulMostRecentCheckpoint* _ckpt,
+                                        proto::system::StatusCode _code) {
+  if (_code != proto::system::OK && _code != proto::system::PATH_DOES_NOT_EXIST) {
+    LOG(FATAL) << "For topology " << tmaster_location_->topology_name()
+               << " Getting Stateful Checkpoint failed with error " << _code;
+  }
+  if (_code == proto::system::PATH_DOES_NOT_EXIST) {
+    LOG(INFO) << "For topology " << tmaster_location_->topology_name()
+              << " No existing globally consistent checkpoint found "
+              << " inserting a empty one";
+    delete _ckpt;
+    // We need to set an empty one
+    proto::ckptmgr::StatefulMostRecentCheckpoint ckpt;
+    ckpt.set_checkpoint_id("");
+    auto cb = [this](proto::system::StatusCode code) {
+      this->SetStatefulCheckpointDone(code);
+    };
+
+    state_mgr_->CreateStatefulCheckpoint(tmaster_location_->topology_name(), ckpt, std::move(cb));
+  } else {
+    LOG(INFO) << "For topology " << tmaster_location_->topology_name()
+              << " An existing globally consistent checkpoint found "
+              << _ckpt->checkpoint_id();
+    SetupStatefulCoordinator(_ckpt->checkpoint_id());
+    delete _ckpt;
+    FetchPhysicalPlan();
+  }
+}
+
+void TMaster::SetStatefulCheckpointDone(proto::system::StatusCode _code) {
+  if (_code != proto::system::OK) {
+    LOG(FATAL) << "For topology " << tmaster_location_->topology_name()
+               << " Setting empty Stateful Checkpoint failed with error " << _code;
+  }
+  SetupStatefulCoordinator("");
+  FetchPhysicalPlan();
+}
+
+void TMaster::SetupStatefulCoordinator(const std::string& _checkpoint_id) {
+  sp_int64 stateful_checkpoint_interval =
+             config::TopologyConfigHelper::GetStatefulCheckpointInterval(*topology_);
+  if (stateful_checkpoint_interval > 0) {
+    // Instantiate the stateful coordinator
+    stateful_coordinator_ = new StatefulCoordinator(topology_->name(), _checkpoint_id,
+                                state_mgr_, start_time_);
+    stateful_restorer_ = new StatefulRestorer(std::bind(&TMaster::DistributePhysicalPlan, this));
+    LOG(INFO) << "Starting timer to checkpoint state every "
+              << stateful_checkpoint_interval << " seconds";
+    CHECK_GT(eventLoop_->registerTimer(
+                 [this](EventLoop::Status) { this->SendCheckpointMarker(); }, true,
+                 stateful_checkpoint_interval * 1000 * 1000),
+             0);
+  }
+}
+
+void TMaster::ResetTopologyState() {
+  LOG(INFO) << "Got a message from stmgr to reset our topology state";
+  if (stateful_coordinator_ && stateful_restorer_ && absent_stmgrs_.empty()) {
+    stateful_restorer_->Start(stateful_coordinator_->GetLatestConsistentCheckpoint(), stmgrs_);
+  }
+}
+
+void TMaster::FetchPhysicalPlan() {
   // Now see if there is already a pplan
   proto::system::PhysicalPlan* pplan = new proto::system::PhysicalPlan();
   auto cb = [pplan, this](proto::system::StatusCode code) {
@@ -266,6 +330,27 @@ void TMaster::GetTopologyDone(proto::system::StatusCode _code) {
 
 void TMaster::SendCheckpointMarker() {
   stateful_coordinator_->DoCheckpoint(stmgrs_);
+}
+
+void TMaster::HandleTopologyStateStored(const std::string& _checkpoint_id,
+                                        const proto::system::Instance& _instance) {
+  if (stateful_coordinator_) {
+    stateful_coordinator_->HandleTopologyStateStored(_checkpoint_id, _instance);
+  }
+}
+
+void TMaster::HandleRestoreTopologyStateResponse(Connection* _conn,
+                                                 const std::string& _checkpoint_id,
+                                                 int64_t _restore_txid) {
+  if (connection_to_stmgr_id_.find(_conn) == connection_to_stmgr_id_.end()) {
+    LOG(ERROR) << "Got HandleRestoreState Response from unknown connection "
+               << _conn->getIPAddress() << " : " << _conn->getPort();
+    return;
+  }
+  if (stateful_restorer_) {
+    stateful_restorer_->HandleRestored(connection_to_stmgr_id_[_conn], _checkpoint_id,
+                                       _restore_txid, stmgrs_);
+  }
 }
 
 void TMaster::GetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan,
@@ -289,6 +374,9 @@ void TMaster::GetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan,
     LOG(INFO) << "There was an existing assignment\n";
     CHECK_EQ(_code, proto::system::OK);
     current_pplan_ = _pplan;
+    if (stateful_coordinator_) {
+      stateful_coordinator_->RegisterNewPplan(*current_pplan_);
+    }
     absent_stmgrs_.clear();
     for (sp_int32 i = 0; i < current_pplan_->stmgrs_size(); ++i) {
       absent_stmgrs_.insert(current_pplan_->stmgrs(i).id());
@@ -494,8 +582,16 @@ void TMaster::SetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan,
     delete current_pplan_;
     current_pplan_ = _pplan;
     assignment_in_progress_ = false;
-    // We need to pass that on to all streammanagers
-    DistributePhysicalPlan();
+    if (stateful_coordinator_) {
+      stateful_coordinator_->RegisterNewPplan(*current_pplan_);
+      LOG(INFO) << "Starting Stateful 2PC now that all stmgrs have connected";
+      stateful_restorer_->Start(stateful_coordinator_->GetLatestConsistentCheckpoint(), stmgrs_);
+      // The restorer will call DistributePhysicalPlan after he is done
+      // with the 2pc
+    } else {
+      // We need to pass that on to all streammanagers
+      DistributePhysicalPlan();
+    }
   }
 }
 

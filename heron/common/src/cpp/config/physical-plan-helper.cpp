@@ -70,6 +70,14 @@ void PhysicalPlanHelper::GetTasks(const proto::system::PhysicalPlan& _pplan,
   return;
 }
 
+void PhysicalPlanHelper::GetAllTasks(const proto::system::PhysicalPlan& _pplan,
+                                     std::set<sp_int32>& _return) {
+  for (auto stmgr : _pplan.stmgrs()) {
+    GetTasks(_pplan, stmgr.id(), _return);
+  }
+  return;
+}
+
 void PhysicalPlanHelper::GetComponentTasks(const proto::system::PhysicalPlan& _pplan,
                                            const sp_string& _component,
                                            std::set<sp_int32>& _return) {

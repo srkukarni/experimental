@@ -16,6 +16,7 @@
 
 #include "manager/stmgrstate.h"
 #include <iostream>
+#include <string>
 #include <vector>
 #include "manager/tmasterserver.h"
 #include "proto/messages.h"
@@ -92,6 +93,21 @@ void StMgrState::heartbeat(sp_int64, proto::system::StMgrStats* _stats) {
 void StMgrState::StatefulNewCheckpoint(const proto::ckptmgr::StartStatefulCheckpoint& _request) {
   LOG(INFO) << "Sending a new stateful checkpoint request to stmgr " << stmgr_->id();
   server_->SendMessage(connection_, _request);
+}
+
+void StMgrState::SendRestoreTopologyStateMessage(
+             const proto::ckptmgr::RestoreTopologyStateRequest& _message) {
+  LOG(INFO) << "Sending restore topology state message to stmgr " << stmgr_->id()
+            << " with checkpoint " << _message.checkpoint_id();
+  server_->SendMessage(connection_, _message);
+}
+
+void StMgrState::SendStartStatefulProcessingMessage(const std::string& _checkpoint_id) {
+  LOG(INFO) << "Sending Start Stateful Processing message to stmgr " << stmgr_->id()
+            << " with checkpoint " << _checkpoint_id;
+  proto::ckptmgr::StartStmgrStatefulProcessing message;
+  message.set_checkpoint_id(_checkpoint_id);
+  server_->SendMessage(connection_, message);
 }
 
 void StMgrState::NewPhysicalPlan(const proto::system::PhysicalPlan& _pplan) {

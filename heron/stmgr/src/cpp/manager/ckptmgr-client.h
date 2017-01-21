@@ -17,6 +17,7 @@
 #ifndef SRC_CPP_SVCS_CKPTMGR_SRC_CKPTCLIENT_CLIENT_H_
 #define SRC_CPP_SVCS_CKPTMGR_SRC_CKPTCLIENT_CLIENT_H_
 
+#include <string>
 #include "basics/basics.h"
 #include "network/network.h"
 #include "network/network_error.h"
@@ -29,15 +30,20 @@ class CkptMgrClient : public Client {
  public:
   CkptMgrClient(EventLoop* eventLoop, const NetworkOptions& _options,
                 const sp_string& _topology_name, const sp_string& _topology_id,
-                const sp_string& _our_ckptmgr_id, const sp_string& _our_stmgr_id);
+                const sp_string& _our_ckptmgr_id, const sp_string& _our_stmgr_id,
+                std::function<void(const proto::system::Instance&,
+                                   const std::string&)> _ckpt_saved_watcher);
   virtual ~CkptMgrClient();
 
   void Quit();
 
   // TODO(nlu): add requests methods
-  void SaveStateCheckpoint(proto::ckptmgr::SaveStateCheckpoint* _message);
+  void SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request);
 
  protected:
+  virtual void HandleSaveInstanceStateResponse(void*,
+                             proto::ckptmgr::SaveInstanceStateResponse* _response,
+                             NetworkErrorCode status);
   virtual void HandleConnect(NetworkErrorCode status);
   virtual void HandleClose(NetworkErrorCode status);
 
@@ -55,6 +61,8 @@ class CkptMgrClient : public Client {
   sp_string ckptmgr_id_;
   sp_string stmgr_id_;
   bool quit_;
+  std::function<void(const proto::system::Instance&,
+                     const std::string&)> ckpt_saved_watcher_;
 
   // Config
   sp_int32 reconnect_cpktmgr_interval_sec_;

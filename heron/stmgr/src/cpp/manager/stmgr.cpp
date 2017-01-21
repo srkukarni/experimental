@@ -239,9 +239,11 @@ void StMgr::CreateCheckpointMgrClient() {
   client_options.set_port(checkpoint_manager_port_);
   client_options.set_socket_family(PF_INET);
   client_options.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);
+  auto watcher = std::bind(&StMgr::HandleSavedInstanceState, this,
+                           std::placeholders::_1, std::placeholders::_2);
   checkpoint_manager_client_ = new ckptmgr::CkptMgrClient(eventLoop_, client_options,
                                                           topology_name_, topology_id_,
-                                                          ckptmgr_id_, stmgr_id_);
+                                                          ckptmgr_id_, stmgr_id_, watcher);
   checkpoint_manager_client_->Start();
 }
 
@@ -512,10 +514,10 @@ void StMgr::HandleStreamManagerData(const sp_string&,
     server_->SendToInstance2(_task_id, _message);
   } else {
     proto::system::HeronTupleSet2* tuple_set = NULL;
-    tuple_set = acquire(tuple_set);
+    tuple_set = __global_protobuf_pool_acquire__(tuple_set);
     tuple_set->ParsePartialFromString(_message->set());
     SendInBound(_task_id, tuple_set);
-    release(_message);
+    __global_protobuf_pool_release__(_message);
   }
 }
 
@@ -526,14 +528,14 @@ void StMgr::SendInBound(sp_int32 _task_id, proto::system::HeronTupleSet2* _messa
   if (_message->has_control()) {
     // We got a bunch of acks/fails
     ProcessAcksAndFails(_task_id, _message->control());
-    release(_message);
+    __global_protobuf_pool_release__(_message);
   }
 }
 
 void StMgr::ProcessAcksAndFails(sp_int32 _task_id,
                                 const proto::system::HeronControlTupleSet& _control) {
   proto::system::HeronTupleSet2* current_control_tuple_set = NULL;
-  current_control_tuple_set = acquire(current_control_tuple_set);
+  current_control_tuple_set = __global_protobuf_pool_acquire__(current_control_tuple_set);
 
   // First go over emits. This makes sure that new emits makes
   // a tuples stay alive before we process its acks
@@ -584,7 +586,7 @@ void StMgr::ProcessAcksAndFails(sp_int32 _task_id,
   if (current_control_tuple_set->has_control()) {
     server_->SendToInstance2(_task_id, current_control_tuple_set);
   } else {
-    release(current_control_tuple_set);
+    __global_protobuf_pool_release__(current_control_tuple_set);
   }
 }
 
@@ -644,7 +646,7 @@ void StMgr::DrainInstanceData(sp_int32 _task_id, proto::system::HeronTupleSet2* 
     SendInBound(_task_id, _tuple);
   } else {
     clientmgr_->SendTupleStreamMessage(_task_id, dest_stmgr_id, *_tuple);
-    release(_tuple);
+    __global_protobuf_pool_release__(_tuple);
   }
 }
 
@@ -757,10 +759,16 @@ void StMgr::HandleInstanceStateCheckpointMessage(sp_int32 _task_id,
   }
 
   // save the checkpoint
-  proto::ckptmgr::SaveStateCheckpoint* message = new proto::ckptmgr::SaveStateCheckpoint();
+  proto::ckptmgr::SaveInstanceStateRequest* message =
+         new proto::ckptmgr::SaveInstanceStateRequest();
   message->mutable_instance()->CopyFrom(*_instance);
   message->mutable_checkpoint()->CopyFrom(*_message);
-  checkpoint_manager_client_->SaveStateCheckpoint(message);
+  checkpoint_manager_client_->SaveInstanceState(message);
+}
+
+void StMgr::HandleSavedInstanceState(const proto::system::Instance& _instance,
+                                     const std::string& _checkpoint_id) {
+  tmaster_client_->SavedInstanceState(_instance, _checkpoint_id);
 }
 
 // Send checkpoint message to this task_id

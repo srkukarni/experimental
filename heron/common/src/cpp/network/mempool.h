@@ -20,6 +20,7 @@
 #include <vector>
 #include <unordered_map>
 #include <typeindex>
+#include <mutex>
 
 template<typename T>
 class BaseMemPool {
@@ -90,6 +91,19 @@ class MemPool {
 };
 
 extern MemPool<google::protobuf::Message>* __global_protobuf_pool__;
+extern std::mutex __global_protobuf_pool_mutex__;
+
+template<typename T>
+T* __global_protobuf_pool_acquire__(T* _m) {
+  std::lock_guard<std::mutex> guard(__global_protobuf_pool_mutex__);
+  return __global_protobuf_pool__->acquire(_m);
+}
+
+template<typename T>
+void __global_protobuf_pool_release__(T* _m) {
+  std::lock_guard<std::mutex> guard(__global_protobuf_pool_mutex__);
+  __global_protobuf_pool__->release(_m);
+}
 
 #endif
 

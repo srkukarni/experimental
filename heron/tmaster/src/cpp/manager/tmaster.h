@@ -37,6 +37,7 @@ class StatsInterface;
 class TMasterServer;
 class TMetricsCollector;
 class StatefulCoordinator;
+class StatefulRestorer;
 
 typedef std::map<std::string, StMgrState*> StMgrMap;
 typedef StMgrMap::iterator StMgrMapIter;
@@ -78,7 +79,22 @@ class TMaster {
   // Timer function to start the stateful checkpoint process
   void SendCheckpointMarker();
 
+  // Called by tmaster server when it gets TopologyStateStored message
+  void HandleTopologyStateStored(const std::string& _checkpoint_id,
+                                 const proto::system::Instance& _instance);
+
+  // Called by tmaster server when it gets RestoreTopologyStateResponse message
+  void HandleRestoreTopologyStateResponse(Connection* _conn,
+                                          const std::string& _checkpoint_id,
+                                          int64_t _restore_txid);
+
+  // Called by tmaster server when it gets ResetTopologyState message
+  void ResetTopologyState();
+
  private:
+  // Helper function to fetch physical plan
+  void FetchPhysicalPlan();
+
   // Function to be called that calls MakePhysicalPlan and sends it to all stmgrs
   void DoPhysicalPlan(EventLoop::Status _code);
 
@@ -107,6 +123,13 @@ class TMaster {
   void SetTMasterLocationDone(proto::system::StatusCode _code);
   // Function called after we get the topology
   void GetTopologyDone(proto::system::StatusCode _code);
+  // Function called after we get StatefulMostRecentCheckpoint
+  void GetStatefulCheckpointDone(proto::ckptmgr::StatefulMostRecentCheckpoint* _ckpt,
+                                 proto::system::StatusCode _code);
+  // Function called after we set an initial StatefulMostRecentCheckpoint
+  void SetStatefulCheckpointDone(proto::system::StatusCode _code);
+  // Helper function to setup stateful coordinator
+  void SetupStatefulCoordinator(const std::string& _checkpoint_id);
 
   // Function called after we try to get assignment
   void GetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan, proto::system::StatusCode _code);
@@ -179,6 +202,8 @@ class TMaster {
 
   // Stateful coordinator
   StatefulCoordinator* stateful_coordinator_;
+  // Stateful restorer
+  StatefulRestorer* stateful_restorer_;
 
   // Copy of the EventLoop
   EventLoop* eventLoop_;

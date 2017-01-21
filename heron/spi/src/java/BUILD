@@ -26,6 +26,7 @@ java_library(
         "//heron/proto:proto_topology_java",
         "//heron/proto:proto_packing_plan_java",
         "//heron/proto:proto_physical_plan_java",
+        "//heron/proto:proto_ckptmgr_java",
         "@org_yaml_snakeyaml//jar",
         "@com_google_guava_guava//jar",
         "@com_google_protobuf_protobuf_java//jar",

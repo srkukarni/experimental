@@ -38,6 +38,9 @@ TMasterServer::TMasterServer(EventLoop* eventLoop, const NetworkOptions& _option
 
   // Install the metricsmgr handlers
   InstallMessageHandler(&TMasterServer::HandleMetricsMgrStats);
+  InstallMessageHandler(&TMasterServer::HandleTopologyStateStored);
+  InstallMessageHandler(&TMasterServer::HandleRestoreTopologyStateResponse);
+  InstallMessageHandler(&TMasterServer::HandleResetTopologyStateMessage);
 }
 
 TMasterServer::~TMasterServer() {
@@ -74,6 +77,25 @@ void TMasterServer::HandleStMgrHeartbeatRequest(REQID _reqid, Connection* _conn,
 void TMasterServer::HandleMetricsMgrStats(Connection*, proto::tmaster::PublishMetrics* _request) {
   collector_->AddMetric(*_request);
   delete _request;
+}
+
+void TMasterServer::HandleTopologyStateStored(Connection*,
+                                              proto::ckptmgr::TopologyStateStored* _message) {
+  tmaster_->HandleTopologyStateStored(_message->checkpoint_id(), _message->instance());
+  delete _message;
+}
+
+void TMasterServer::HandleRestoreTopologyStateResponse(Connection* _conn,
+                                     proto::ckptmgr::RestoreTopologyStateResponse* _message) {
+  tmaster_->HandleRestoreTopologyStateResponse(_conn, _message->checkpoint_id(),
+                                               _message->restore_txid());
+  delete _message;
+}
+
+void TMasterServer::HandleResetTopologyStateMessage(Connection* _conn,
+                                     proto::ckptmgr::ResetTopologyState* _message) {
+  tmaster_->ResetTopologyState();
+  delete _message;
 }
 }  // namespace tmaster
 }  // namespace heron

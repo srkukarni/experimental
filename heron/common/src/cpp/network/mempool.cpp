@@ -22,3 +22,4 @@
 
 MemPool<google::protobuf::Message>* __global_protobuf_pool__ =
                                    new MemPool<google::protobuf::Message>();
+std::mutex __global_protobuf_pool_mutex__;
