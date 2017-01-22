@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-////////////////////////////////////////////////////////////////
-//
-// common-config-vars.h
-//
-// This is the common configuration parameter names
-//
-///////////////////////////////////////////////////////////////
-#ifndef COMMON_CONFIG_VARS_H_
-#define COMMON_CONFIG_VARS_H_
+#include "proto/messages.h"
+#include "basics/basics.h"
+#include "errors/errors.h"
+#include "threads/threads.h"
+#include "network/network.h"
+
+#include "config/environ-vars.h"
 
 namespace heron {
 namespace config {
 
-class CommonConfigVars {
- public:
-  static const sp_string CLUSTER;
-  static const sp_string ROLE;
-  static const sp_string ENVIRON;
-  static const sp_string TOPOLOGY_NAME;
-};
+const sp_string EnvironVars::CLUSTER = "heron.config.cluster";
+const sp_string EnvironVars::ROLE = "heron.config.role";
+const sp_string EnvironVars::ENVIRON = "heron.config.environ";
+const sp_string EnvironVars::TOPOLOGY_NAME = "heron.topology.name";
+
 }  // namespace config
 }  // namespace heron
-
-#endif
