@@ -69,53 +69,6 @@ int LocalFS::createCkptDirectory(const Checkpoint& _ckpt) {
   return SP_OK;
 }
 
-int LocalFS::createTmpCkptFile(const Checkpoint& _ckpt) {
-  auto code = ::open(tempCkptFile(_ckpt).c_str(), O_CREAT | O_WRONLY, 0644);
-  if (code < 0) {
-    PLOG(ERROR) << "Unable to create temporary checkpoint file " << tempCkptFile(_ckpt);
-    return SP_NOTOK;
-  }
-  return code;
-}
-
-int LocalFS::writeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
-  size_t len = _ckpt.nbytes();
-  char* buf = reinterpret_cast<char*>(_ckpt.checkpoint());
-
-  if (!FileUtils::writeAll(fd, buf, len)) {
-    PLOG(ERROR) << "Unable to write to temporary checkpoint file " << tempCkptFile(_ckpt);
-    return SP_NOTOK;
-  }
-
-  return SP_OK;
-}
-
-int LocalFS::closeTmpCkptFile(int fd, const Checkpoint& _ckpt) {
-  // force flush the file contents to persistent store
-  auto code = ::fsync(fd);
-  if (code < 0) {
-    PLOG(ERROR) << "Unable to sync temporary checkpoint file " << tempCkptFile(_ckpt);
-    return SP_NOTOK;
-  }
-
-  // close the file descriptor
-  code = ::close(fd);
-  if (code < 0) {
-    PLOG(ERROR) << "Unable to close temporary checkpoint file " << tempCkptFile(_ckpt);
-    return SP_NOTOK;
-  }
-  return SP_OK;
-}
-
-int LocalFS::moveTmpCkptFile(const Checkpoint& _ckpt) {
-  auto code = ::rename(tempCkptFile(_ckpt).c_str(), ckptFile(_ckpt).c_str());
-  if (code < 0) {
-    PLOG(ERROR) << "Unable to move temporary checkpoint file " << tempCkptFile(_ckpt);
-    return SP_NOTOK;
-  }
-  return SP_OK;
-}
-
 int LocalFS::store(const Checkpoint& _ckpt) {
   // create the checkpoint directory, if not there
   if (createCkptDirectory(_ckpt) == SP_NOTOK) {
@@ -124,35 +77,21 @@ int LocalFS::store(const Checkpoint& _ckpt) {
   }
   LOG(INFO) << "Created checkpoint directory " << ckptDirectory(_ckpt);
 
-  // create and open the temporary checkpoint file
-  auto fd = createTmpCkptFile(_ckpt);
-  if (fd == SP_NOTOK) {
-    LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
-    return SP_NOTOK;
-  }
-  LOG(INFO) << "Created temp checkpoint file " << tempCkptFile(_ckpt);
+  // write the contents to temporary file
+  size_t len = _ckpt.nbytes();
+  char* buf = reinterpret_cast<char*>(_ckpt.checkpoint());
 
-  // write the protobuf into the temporary checkpoint file
-  if (writeTmpCkptFile(fd, _ckpt) == SP_NOTOK) {
+  if (!FileUtils::writeSyncAll(tempCkptFile(_ckpt).c_str(), buf, len)) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
-  LOG(INFO) << "Write temp checkpoint file " << tempCkptFile(_ckpt);
-
-  // close the temporary checkpoint file
-  if (!FileUtils::closeSync(fd)) {
-    LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
-    return SP_NOTOK;
-  }
-  LOG(INFO) << "Closed temp checkpoint file " << tempCkptFile(_ckpt);
+  LOG(INFO) << "Wrote temp checkpoint file " << tempCkptFile(_ckpt);
 
   // move the temporary checkpoint file to final destination
   if (!FileUtils::rename(tempCkptFile(_ckpt).c_str(), ckptFile(_ckpt).c_str())) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
-  LOG(INFO) << "Moved temp checkpoint file " << tempCkptFile(_ckpt) << " "
-            << "to " << ckptFile(_ckpt);
   LOG(INFO) << "Checkpoint successful for " << logMessageFragment(_ckpt);
 
   return SP_OK;

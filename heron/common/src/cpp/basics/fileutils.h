@@ -63,7 +63,7 @@ class FileUtils {
   static bool writeAll(const std::string& filename, const char* data, size_t len);
 
   //! write the contents using file descriptor
-  static bool writeAll(int fd, const char* data, size_t len);
+  static bool writeSyncAll(const std::string& filename, const char* data, size_t len);
 
   //! close the file using file descriptor
   static bool close(int fd);

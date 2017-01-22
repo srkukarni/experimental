@@ -58,18 +58,6 @@ class LocalFS : public Storage {
   // create the checkpoint directory
   int createCkptDirectory(const Checkpoint& _ckpt);
 
-  // create the temporary checkpoint file
-  int createTmpCkptFile(const Checkpoint& _ckpt);
-
-  // write to temporary checkpoint file
-  int writeTmpCkptFile(int fd, const Checkpoint& _ckpt);
-
-  // close the temporary checkpoint file
-  int closeTmpCkptFile(int fd, const Checkpoint& _ckpt);
-
-  // move the temporary checkpoint file
-  int moveTmpCkptFile(const Checkpoint& _ckpt);
-
  private:
   // generate the log message prefix/suffix for printing
   std::string logMessageFragment(const Checkpoint& _ckpt);
@@ -81,4 +69,4 @@ class LocalFS : public Storage {
 }  // namespace ckptmgr
 }  // namespace heron
 
-#endif  // lfs.h
+#endif  // localfs.h

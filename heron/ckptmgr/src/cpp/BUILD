@@ -38,14 +38,8 @@ cc_library(
 
 cc_library(
     name = "manager-cxx",
-    srcs = [
-        "manager/ckptmgr-server.cpp",
-        "manager/ckptmgr.cpp",
-    ],
-    hdrs = [
-        "manager/ckptmgr-server.h",
-        "manager/ckptmgr.h",
-    ],
+    srcs = glob(["manager/*.cpp"]),
+    hdrs = glob(["manager/*.h"]),
     copts = [
         "-Iheron",
         "-Iheron/common/src/cpp",
@@ -61,9 +55,7 @@ cc_library(
 
 cc_binary(
     name = "heron-ckptmgr",
-    srcs = [
-        "server/ckptmgr-main.cpp",
-    ],
+    srcs = glob(["server/*.cpp"]),
     copts = [
         "-Iheron",
         "-Iheron/common/src/cpp",
@@ -77,4 +69,3 @@ cc_binary(
     ],
     linkstatic = 1,
 )
-

@@ -16,6 +16,7 @@
 
 #include "basics/fileutils.h"
 #include <dirent.h>
+#include <fcntl.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -205,15 +206,37 @@ bool FileUtils::writeAll(const std::string& filename, const char* data, size_t l
   return true;
 }
 
-bool FileUtils::writeAll(int fd, const char* data, size_t len) {
+bool FileUtils::writeSyncAll(const std::string& filename, const char* data, size_t len) {
+  // open the file for creation and write only mode
+  auto fd = ::open(filename.c_str(), O_CREAT | O_WRONLY, 0644);
+  if (fd < 0) {
+    PLOG(ERROR) << "Unable to open file " << filename;
+    return false;
+  }
+
+  // write the contents of the file
   size_t count = 0;
   while (count < len) {
     int i = ::write(fd, data + count, len - count);
     if (i < 0) {
-      PLOG(ERROR) << "Unable to write to file " << fd;
+      PLOG(ERROR) << "Unable to write contents to file " << filename;
       return false;
     }
     count += i;
+  }
+
+  // force flush the file contents to persistent store
+  auto code = ::fsync(fd);
+  if (code < 0) {
+    PLOG(ERROR) << "Unable to sync file " << filename;
+    return false;
+  }
+
+  // close the file descriptor
+  code = ::close(fd);
+  if (code < 0) {
+    PLOG(ERROR) << "Unable to close file " << filename;
+    return false;
   }
   return true;
 }

@@ -30,6 +30,7 @@ heron::ckptmgr::Storage*
 GetStorageInstance(const heron::config::Config& config) {
   std::string storage_type = config.getstr(heron::config::StatefulConfigVars::STORAGE_TYPE);
 
+  LOG(INFO) << "Storage type: " << storage_type;
   if (storage_type == heron::ckptmgr::LocalFS::storage_type()) {
     return new heron::ckptmgr::LocalFS(config);
   }
@@ -65,6 +66,8 @@ int main(int argc, char* argv[]) {
   heron::config::StatefulConfigReader::Create(&ss, stateful_config_filename);
   auto state_config = heron::config::StatefulConfigReader::Instance()->GetConfigMap();
 
+  LOG(INFO) << "Successfully read config ";
+
   // construct a full config that includes environment and expand, if necessary
   auto full_config = heron::config::Config::Builder()
     .putstr(heron::config::CommonConfigVars::CLUSTER, cluster)
@@ -74,6 +77,8 @@ int main(int argc, char* argv[]) {
     .putall(state_config)
     .build()
     .expand();
+
+  LOG(INFO) << "Successfully constructed full config ";
 
   // get an instance of the storage instance
   heron::ckptmgr::Storage* storage = ::GetStorageInstance(full_config);

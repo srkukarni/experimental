@@ -33,8 +33,6 @@ class Checkpoint {
              ::heron::proto::ckptmgr::GetInstanceStateRequest* _checkpoint);
 
   virtual ~Checkpoint() {
-    if (savebytes_ != nullptr)
-      delete savebytes_;
   }
 
   // get the topology name

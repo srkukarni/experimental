@@ -99,10 +99,16 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
   response.set_checkpoint_id(_req->checkpoint().checkpoint_id());
   response.mutable_instance()->CopyFrom(_req->instance());
 
-  LOG(INFO) << "Checkpoint successful for " << checkpoint.getCkptId() << " "
-            << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  if (status == proto::system::OK) {
+    LOG(INFO) << "Checkpoint successful for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  } else {
+    LOG(INFO) << "Checkpoint not successful for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  }
 
   SendResponse(_id, _conn, response);
+  delete _req;
 }
 
 }  // namespace ckptmgr
