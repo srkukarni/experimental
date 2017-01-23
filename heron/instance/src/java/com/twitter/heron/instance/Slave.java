@@ -146,6 +146,13 @@ public class Slave implements Runnable, AutoCloseable {
               resetCurrentAssignment();
             }
 
+            // Send back the response
+            LOG.info("Acknowledging back the restore instance state response");
+            CheckpointManager.RestoreInstanceStateResponse response =
+                CheckpointManager.RestoreInstanceStateResponse.newBuilder().
+                    setCheckpointId(request.getState().getCheckpointId()).
+                    build();
+            streamOutCommunicator.offer(response);
           }
 
           // Handle New Physical Plan
