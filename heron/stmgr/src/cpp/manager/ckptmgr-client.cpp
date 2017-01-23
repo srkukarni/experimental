@@ -155,6 +155,8 @@ void CkptMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* 
 
 void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
                                      const std::string& _checkpoint_id) {
+  LOG(INFO) << "Sending GetInstanceState to ckptmgr for task_id " << _instance.info().task_id()
+            << " and checkpoint_id " << _checkpoint_id;
   auto request = new proto::ckptmgr::GetInstanceStateRequest();
   request->mutable_instance()->CopyFrom(_instance);
   request->set_checkpoint_id(_checkpoint_id);

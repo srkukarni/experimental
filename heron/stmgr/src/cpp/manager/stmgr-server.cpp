@@ -737,6 +737,7 @@ void StMgrServer::HandleCheckpointMarker(sp_int32 _src_task_id, sp_int32 _destin
 
 void StMgrServer::SendRestoreInstanceStateRequest(sp_int32 _task_id,
             const proto::ckptmgr::InstanceStateCheckpoint& _state) {
+  LOG(INFO) << "Sending RestoreInstanceState request to task " << _task_id;
   CHECK(instance_info_.find(_task_id) != instance_info_.end());
   Connection* conn = instance_info_[_task_id]->conn_;
   if (conn) {

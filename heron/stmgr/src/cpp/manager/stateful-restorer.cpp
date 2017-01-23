@@ -62,6 +62,9 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
       restore_txid_ = _restore_txid;
       return;
     }
+  } else {
+    LOG(INFO) << "Starting Restore for checkpoint_id " << _checkpoint_id
+              << " and txid " << _restore_txid;
   }
   // This is a new one for this checkpoint
   in_progress_ = true;
@@ -75,8 +78,19 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
   checkpoint_id_ = _checkpoint_id;
   restore_txid_ = _restore_txid;
 
-  // Send messages to ckpt
-  GetCheckpoints();
+  if (checkpoint_id_.empty()) {
+    LOG(INFO) << "Checkpoint id is empty meaning we are starting from scratch";
+    get_ckpt_pending_.clear();
+    for (auto task_id : restore_pending_) {
+      proto::ckptmgr::InstanceStateCheckpoint dummy;
+      dummy.set_checkpoint_id(checkpoint_id_);
+      dummy.mutable_state();
+      server_->SendRestoreInstanceStateRequest(task_id, dummy);
+    }
+  } else {
+    // Send messages to ckpt
+    GetCheckpoints();
+  }
 }
 
 void StatefulRestorer::GetCheckpoints() {
@@ -87,7 +101,8 @@ void StatefulRestorer::GetCheckpoints() {
 
 void StatefulRestorer::HandleCheckpointState(sp_int32 _task_id,
                                        const proto::ckptmgr::InstanceStateCheckpoint& _state) {
-  LOG(INFO) << "Got State from checkpoint mgr for " << _task_id << " " << _state.checkpoint_id();
+  LOG(INFO) << "Got InstanceState from checkpoint mgr for task " << _task_id
+            << " and checkpoint " << _state.checkpoint_id();
   if (_state.checkpoint_id() != checkpoint_id_) {
     LOG(WARNING) << "Discarding state retrieved from checkpoint mgr because the checkpoint"
                  << " id in the response does not match ours " << checkpoint_id_;
