@@ -32,7 +32,9 @@ class TMasterClient : public Client {
   TMasterClient(EventLoop* eventLoop, const NetworkOptions& _options, const sp_string& _stmgr_id,
                 sp_int32 _stmgr_port, sp_int32 _shell_port,
                 VCallback<proto::system::PhysicalPlan*> _pplan_watch,
-                VCallback<sp_string> _stateful_checkpoint_watch);
+                VCallback<sp_string> _stateful_checkpoint_watch,
+                VCallback<sp_string, sp_int64> _restore_topology_watch,
+                VCallback<sp_string> _start_stateful_watch);
   virtual ~TMasterClient();
 
   // Told by the upper layer to disconnect and self destruct
@@ -50,6 +52,13 @@ class TMasterClient : public Client {
   void SavedInstanceState(const proto::system::Instance& _instance,
                           const std::string& _checkpoint_id);
 
+  // Send RestoreTopologyStateResponse to tmaster
+  void SendRestoreTopologyStateResponse(const std::string& _checkpoint_id,
+                                        sp_int64 _txid);
+
+  // Send ResetTopologyState message to tmaster
+  void SendResetTopologyState(const std::string& _reason);
+
  protected:
   virtual void HandleConnect(NetworkErrorCode status);
   virtual void HandleClose(NetworkErrorCode status);
@@ -62,6 +71,8 @@ class TMasterClient : public Client {
 
   void HandleNewAssignmentMessage(proto::stmgr::NewPhysicalPlanMessage* _message);
   void HandleStatefulCheckpointMessage(proto::ckptmgr::StartStatefulCheckpoint* _message);
+  void HandleRestoreTopologyStateRequest(proto::ckptmgr::RestoreTopologyStateRequest* _message);
+  void HandleStartStmgrStatefulProcessing(proto::ckptmgr::StartStmgrStatefulProcessing* _msg);
 
   void OnReConnectTimer();
   void OnHeartbeatTimer();
@@ -76,6 +87,8 @@ class TMasterClient : public Client {
   bool to_die_;
   VCallback<proto::system::PhysicalPlan*> pplan_watch_;
   VCallback<sp_string> stateful_checkpoint_watch_;
+  VCallback<sp_string, sp_int64> restore_topology_watch_;
+  VCallback<sp_string> start_stateful_watch_;
 
   // Configs to be read
   sp_int32 reconnect_tmaster_interval_sec_;

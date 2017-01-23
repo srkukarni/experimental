@@ -127,6 +127,14 @@ CheckpointGateway::get_info(sp_int32 _task_id) {
   }
 }
 
+void CheckpointGateway::Clear() {
+  for (auto kv : pending_tuples_) {
+    kv.second->Clear();
+    delete kv.second;
+  }
+  pending_tuples_.clear();
+}
+
 CheckpointGateway::CheckpointInfo::CheckpointInfo(sp_int32 _this_task_id,
                const std::set<sp_int32>& _all_upstream_dependencies) {
   checkpoint_id_ = "";
@@ -220,6 +228,19 @@ CheckpointGateway::CheckpointInfo::ForceDrain() {
 void CheckpointGateway::CheckpointInfo::add(Tuple _tuple, sp_uint64 _size) {
   pending_tuples_.push_back(_tuple);
   current_size_ += _size;
+}
+
+void CheckpointGateway::CheckpointInfo::Clear() {
+  for (auto tupl : pending_tuples_) {
+    if (std::get<0>(tupl)) {
+      __global_protobuf_pool_release__(std::get<0>(tupl));
+    } else if (std::get<1>(tupl)) {
+      __global_protobuf_pool_release__(std::get<1>(tupl));
+    } else {
+      delete std::get<2>(tupl);
+    }
+  }
+  pending_tuples_.clear();
 }
 }  // namespace stmgr
 }  // namespace heron

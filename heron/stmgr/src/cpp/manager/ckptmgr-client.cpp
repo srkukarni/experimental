@@ -31,14 +31,19 @@ CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _option
                              const sp_string& _topology_name, const sp_string& _topology_id,
                              const sp_string& _ckptmgr_id, const sp_string& _stmgr_id,
                              std::function<void(const proto::system::Instance&,
-                                                const std::string&)> _ckpt_saved_watcher)
+                                                const std::string&)> _ckpt_saved_watcher,
+                             std::function<void(sp_int32,
+                               const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
+                             std::function<void()> _register_watcher)
     : Client(eventloop, _options),
       topology_name_(_topology_name),
       topology_id_(_topology_id),
       ckptmgr_id_(_ckptmgr_id),
       stmgr_id_(_stmgr_id),
       quit_(false),
-      ckpt_saved_watcher_(_ckpt_saved_watcher) {
+      ckpt_saved_watcher_(_ckpt_saved_watcher),
+      ckpt_get_watcher_(_ckpt_get_watcher),
+      register_watcher_(_register_watcher) {
 
   reconnect_cpktmgr_interval_sec_ =
     config::HeronInternalsConfigReader::Instance()->GetHeronStreammgrClientReconnectIntervalSec();
@@ -47,6 +52,8 @@ CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _option
                          &CkptMgrClient::HandleStMgrRegisterResponse);
   InstallResponseHandler(new proto::ckptmgr::SaveInstanceStateRequest(),
                          &CkptMgrClient::HandleSaveInstanceStateResponse);
+  InstallResponseHandler(new proto::ckptmgr::GetInstanceStateRequest(),
+                         &CkptMgrClient::HandleGetInstanceStateResponse);
 }
 
 CkptMgrClient::~CkptMgrClient() {
@@ -125,6 +132,7 @@ void CkptMgrClient::HandleStMgrRegisterResponse(void*,
     LOG(INFO) << "Register request got response OK from ckptmgr " << ckptmgr_id_
               << " running at " << get_clientoptions().get_host() << ":"
               << get_clientoptions().get_port();
+    register_watcher_();
   }
   delete _response;
 }
@@ -145,6 +153,14 @@ void CkptMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* 
   SendRequest(_request, NULL);
 }
 
+void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
+                                     const std::string& _checkpoint_id) {
+  auto request = new proto::ckptmgr::GetInstanceStateRequest();
+  request->mutable_instance()->CopyFrom(_instance);
+  request->set_checkpoint_id(_checkpoint_id);
+  SendRequest(request, NULL);
+}
+
 void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
                              proto::ckptmgr::SaveInstanceStateResponse* _response,
                              NetworkErrorCode _status) {
@@ -160,6 +176,25 @@ void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
     return;
   }
   ckpt_saved_watcher_(_response->instance(), _response->checkpoint_id());
+  delete _response;
+}
+
+void CkptMgrClient::HandleGetInstanceStateResponse(void*,
+                             proto::ckptmgr::GetInstanceStateResponse* _response,
+                             NetworkErrorCode _status) {
+  if (_status != OK) {
+    LOG(ERROR) << "NonOK response message for GetInstanceStateResponse";
+    delete _response;
+    Stop();
+    return;
+  }
+  if (_response->status().status() != proto::system::OK ||
+      !_response->has_checkpoint()) {
+    LOG(ERROR) << "CkptMgr could not get " << _response->status().status();
+    delete _response;
+    return;
+  }
+  ckpt_get_watcher_(_response->instance().info().task_id(), _response->checkpoint());
   delete _response;
 }
 }  // namespace ckptmgr

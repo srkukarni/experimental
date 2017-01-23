@@ -96,8 +96,9 @@ message GetInstanceStateRequest {
 // for its get instance state request
 message GetInstanceStateResponse {
   required heron.proto.system.Status status = 1;
-  required string checkpoint_id = 2;
-  optional InstanceStateCheckpoint checkpoint = 3;
+  required heron.proto.system.Instance instance = 2;
+  required string checkpoint_id = 3;
+  optional InstanceStateCheckpoint checkpoint = 4;
 }
 
 // stmgr -> Instance messages

@@ -17,8 +17,10 @@
 #include "manager/stmgr-server.h"
 #include <iostream>
 #include <set>
+#include <string>
 #include <vector>
 #include "manager/stateful-helper.h"
+#include "manager/stateful-restorer.h"
 #include "manager/checkpoint-gateway.h"
 #include "manager/stmgr.h"
 #include "proto/messages.h"
@@ -84,7 +86,8 @@ StMgrServer::StMgrServer(EventLoop* eventLoop, const NetworkOptions& _options,
                          const sp_string& _stmgr_id,
                          const std::vector<sp_string>& _expected_instances, StMgr* _stmgr,
                          heron::common::MetricsMgrSt* _metrics_manager_client,
-                         StatefulHelper* _stateful_helper)
+                         StatefulHelper* _stateful_helper,
+                         StatefulRestorer* _stateful_restorer)
     : Server(eventLoop, _options),
       topology_name_(_topology_name),
       topology_id_(_topology_id),
@@ -92,7 +95,8 @@ StMgrServer::StMgrServer(EventLoop* eventLoop, const NetworkOptions& _options,
       expected_instances_(_expected_instances),
       stmgr_(_stmgr),
       metrics_manager_client_(_metrics_manager_client),
-      stateful_helper_(_stateful_helper) {
+      stateful_helper_(_stateful_helper),
+      stateful_restorer_(_stateful_restorer) {
   // stmgr related handlers
   InstallRequestHandler(&StMgrServer::HandleStMgrHelloRequest);
   InstallMessageHandler(&StMgrServer::HandleTupleStreamMessage);
@@ -104,6 +108,7 @@ StMgrServer::StMgrServer(EventLoop* eventLoop, const NetworkOptions& _options,
   InstallRequestHandler(&StMgrServer::HandleRegisterInstanceRequest);
   InstallMessageHandler(&StMgrServer::HandleTupleSetMessage);
   InstallMessageHandler(&StMgrServer::HandleInstanceStateCheckpointMessage);
+  InstallMessageHandler(&StMgrServer::HandleRestoreInstanceStateResponse);
 
   stmgr_server_metrics_ = new heron::common::MultiCountMetric();
   back_pressure_metric_aggr_ = new heron::common::TimeSpentMetric();
@@ -173,6 +178,15 @@ void StMgrServer::GetInstanceInfo(std::vector<proto::system::Instance*>& _return
   }
 }
 
+proto::system::Instance* StMgrServer::GetInstanceInfo(sp_int32 _task_id) {
+  auto iter = instance_info_.find(_task_id);
+  if (iter == instance_info_.end()) {
+    return NULL;
+  } else {
+    return iter->second->instance_;
+  }
+}
+
 sp_string StMgrServer::MakeBackPressureCompIdMetricName(const sp_string& instanceid) {
   return METRIC_TIME_SPENT_BACK_PRESSURE_COMPID + instanceid;
 }
@@ -233,7 +247,6 @@ void StMgrServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) {
               << " closed connection";
     instance_info_[task_id]->set_connection(NULL);
     active_instances_.erase(_conn);
-    stmgr_->HandleDeadInstanceConnection(task_id);
   }
 }
 
@@ -249,6 +262,9 @@ void StMgrServer::HandleStMgrHelloRequest(REQID _id, Connection* _conn,
   } else if (_request->topology_id() != topology_id_) {
     LOG(ERROR) << "The hello message was from a different topology id " << _request->topology_id()
                << std::endl;
+    response.mutable_status()->set_status(proto::system::NOTOK);
+  } else if (stateful_restorer_ && stateful_restorer_->InProgress()) {
+    LOG(ERROR) << "The hello message was came when we are in 2pc";
     response.mutable_status()->set_status(proto::system::NOTOK);
   } else if (stmgrs_.find(_request->stmgr()) != stmgrs_.end()) {
     LOG(WARNING) << "We already had an active connection from the stmgr " << _request->stmgr()
@@ -348,11 +364,7 @@ void StMgrServer::HandleRegisterInstanceRequest(REQID _reqid, Connection* _conn,
     }
     SendResponse(_reqid, _conn, response);
 
-    // Have all the instances connected to us?
-    if (HaveAllInstancesConnectedToUs()) {
-      // Now we can connect to the tmaster
-      stmgr_->StartTMasterClient();
-    }
+    stmgr_->HandleNewInstance(task_id);
   }
   delete _request;
 }
@@ -374,7 +386,11 @@ void StMgrServer::HandleTupleSetMessage(Connection* _conn,
     stmgr_server_metrics_->scope(METRIC_FAIL_TUPLES_FROM_INSTANCES)
         ->incr_by(_message->control().fails_size());
   }
-  stmgr_->HandleInstanceData(iter->second, instance_info_[iter->second]->local_spout_, _message);
+  if (stateful_restorer_ && stateful_restorer_->InProgress()) {
+    LOG(INFO) << "Dropping data received from instance because we are in 2PC";
+  } else {
+    stmgr_->HandleInstanceData(iter->second, instance_info_[iter->second]->local_spout_, _message);
+  }
   __global_protobuf_pool_release__(_message);
 }
 
@@ -685,6 +701,28 @@ void StMgrServer::HandleInstanceStateCheckpointMessage(Connection* _conn,
   delete _message;
 }
 
+void StMgrServer::HandleRestoreInstanceStateResponse(Connection* _conn,
+                               proto::ckptmgr::RestoreInstanceStateResponse* _message) {
+  ConnectionTaskIdMap::iterator iter = active_instances_.find(_conn);
+  if (iter == active_instances_.end()) {
+    LOG(ERROR) << "Hmm.. Got RestoreInstanceStateResponse Message from an unknown connection";
+    delete _message;
+    return;
+  }
+  sp_int32 task_id = iter->second;
+  TaskIdInstanceDataMap::iterator it = instance_info_.find(task_id);
+  if (it == instance_info_.end()) {
+    LOG(ERROR) << "Hmm.. Got RestoreInstanceStateResponse Message from unknown task_id "
+               << task_id;
+    delete _message;
+    return;
+  }
+
+  // send the checkpoint message to all downstream task ids
+  stmgr_->HandleRestoreInstanceStateResponse(task_id, _message->checkpoint_id());
+  delete _message;
+}
+
 void StMgrServer::HandleDownstreamStatefulCheckpointMessage(Connection* _conn,
                                proto::ckptmgr::DownstreamStatefulCheckpoint* _message) {
   stmgr_->HandleDownStreamStatefulCheckpoint(_message);
@@ -695,6 +733,41 @@ void StMgrServer::HandleCheckpointMarker(sp_int32 _src_task_id, sp_int32 _destin
                                          const sp_string& _checkpoint_id) {
   // So received a checkpoint marker from an upstream task
   stateful_gateway_->HandleUpstreamMarker(_src_task_id, _destination_task_id, _checkpoint_id);
+}
+
+void StMgrServer::SendRestoreInstanceStateRequest(sp_int32 _task_id,
+            const proto::ckptmgr::InstanceStateCheckpoint& _state) {
+  CHECK(instance_info_.find(_task_id) != instance_info_.end());
+  Connection* conn = instance_info_[_task_id]->conn_;
+  if (conn) {
+    proto::ckptmgr::RestoreInstanceStateRequest message;
+    message.mutable_state()->CopyFrom(_state);
+    SendMessage(conn, message);
+  } else {
+    LOG(WARNING) << "Cannot send RestoreInstanceState Request to task "
+                 << _task_id << " because it is not connected to us";
+  }
+}
+
+void StMgrServer::SendStartInstanceStatefulProcessing(const std::string& _ckpt_id) {
+  for (auto kv : instance_info_) {
+    Connection* conn = kv.second->conn_;
+    if (conn) {
+      proto::ckptmgr::StartInstanceStatefulProcessing message;
+      message.set_checkpoint_id(_ckpt_id);
+      SendMessage(conn, message);
+    } else {
+      LOG(WARNING) << "Cannot send StartInstanceStatefulProcessing to task "
+                   << kv.first << " because it is not connected to us";
+    }
+  }
+}
+
+void StMgrServer::CloseConnectionsAndReset() {
+  for (auto kv : stmgrs_) {
+    kv.second->closeConnection();  // automatically clears stmgrs_ and rstmgrs_
+  }
+  stateful_gateway_->Clear();
 }
 }  // namespace stmgr
 }  // namespace heron

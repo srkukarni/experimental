@@ -19,6 +19,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 #include "network/network_error.h"
 #include "proto/messages.h"
@@ -40,6 +41,7 @@ namespace stmgr {
 
 class StMgr;
 class StatefulHelper;
+class StatefulRestorer;
 class CheckpointGateway;
 
 class StMgrServer : public Server {
@@ -48,7 +50,8 @@ class StMgrServer : public Server {
               const sp_string& _topology_id, const sp_string& _stmgr_id,
               const std::vector<sp_string>& _expected_instances, StMgr* _stmgr,
               heron::common::MetricsMgrSt* _metrics_manager_client,
-              StatefulHelper* _stateful_helper);
+              StatefulHelper* _stateful_helper,
+              StatefulRestorer* _stateful_restorer);
   virtual ~StMgrServer();
 
   // We own the _message
@@ -71,10 +74,16 @@ class StMgrServer : public Server {
 
   // Gets all the Instance information
   void GetInstanceInfo(std::vector<proto::system::Instance*>& _return);
+  // Get instance info for this task_id
+  proto::system::Instance* GetInstanceInfo(sp_int32 _task_id);
 
   bool DidAnnounceBackPressure() { return !remote_ends_who_caused_back_pressure_.empty(); }
 
   void InitiateStatefulCheckpoint(const sp_string& _checkpoint_tag);
+  void SendRestoreInstanceStateRequest(sp_int32 _task_id,
+                                       const proto::ckptmgr::InstanceStateCheckpoint& _state);
+  void SendStartInstanceStatefulProcessing(const std::string& _ckpt_id);
+  void CloseConnectionsAndReset();
 
  protected:
   virtual void HandleNewConnection(Connection* newConnection);
@@ -103,6 +112,8 @@ class StMgrServer : public Server {
   void HandleTupleSetMessage(Connection* _conn, proto::system::HeronTupleSet* _message);
   void HandleInstanceStateCheckpointMessage(Connection* _conn,
                                             proto::ckptmgr::InstanceStateCheckpoint* _message);
+  void HandleRestoreInstanceStateResponse(Connection* _conn,
+                                            proto::ckptmgr::RestoreInstanceStateResponse* _message);
   // Backpressure message from and to other stream managers
   void HandleStartBackPressureMessage(Connection* _conn,
                                       proto::stmgr::StartBackPressureMessage* _message);
@@ -184,8 +195,9 @@ class StMgrServer : public Server {
   heron::common::TimeSpentMetric* back_pressure_metric_aggr_;
   heron::common::TimeSpentMetric* back_pressure_metric_initiated_;
 
-  // Stateful helper
+  // Stateful helpers
   StatefulHelper* stateful_helper_;
+  StatefulRestorer* stateful_restorer_;
 
   // Checkpoint Gateway
   CheckpointGateway* stateful_gateway_;
