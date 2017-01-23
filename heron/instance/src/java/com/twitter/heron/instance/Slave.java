@@ -125,12 +125,16 @@ public class Slave implements Runnable, AutoCloseable {
 
             // Reset the state
             instanceState.clear();
-            // TODO(mfu): Add interface to allow customized serialization instead of java default
-            @SuppressWarnings("unchecked")
-            Map<Serializable, Serializable> stateToRestore =
-                (Map<Serializable, Serializable>) Utils.deserialize(
-                    request.getState().getState().toByteArray());
-            instanceState.putAll(stateToRestore);
+            if (request.getState().hasState() && !request.getState().getState().isEmpty()) {
+              // TODO(mfu): Add interface to allow customized serialization instead of java default
+              @SuppressWarnings("unchecked")
+              Map<Serializable, Serializable> stateToRestore =
+                  (Map<Serializable, Serializable>) Utils.deserialize(
+                      request.getState().getState().toByteArray());
+              instanceState.putAll(stateToRestore);
+            } else {
+              LOG.info("The restore request does not have an actual state.");
+            }
 
             // 1. If during the startup time. Nothing need to be done here:
             // - We would create new instance when new "PhysicalPlan" comes
