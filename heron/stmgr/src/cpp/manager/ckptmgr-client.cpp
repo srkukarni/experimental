@@ -190,7 +190,11 @@ void CkptMgrClient::HandleGetInstanceStateResponse(void*,
   }
   if (_response->status().status() != proto::system::OK ||
       !_response->has_checkpoint()) {
-    LOG(ERROR) << "CkptMgr could not get " << _response->status().status();
+    LOG(ERROR) << "CkptMgr could not get checkpoint for "
+               << _response->instance().info().task_id()
+               << " and checkpoint_id " << _response->checkpoint_id()
+               << " because of reason: " << _response->status().status();
+    GetInstanceState(_response->instance(), _response->checkpoint_id());
     delete _response;
     return;
   }
