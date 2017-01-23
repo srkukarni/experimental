@@ -41,7 +41,7 @@ message ResetTopologyState {
 // Message sent by stmgr to tmaster informing it about
 // the fact that we stored a checkpoint belonging
 // to the instance
-message TopologyStateStored {
+message InstanceStateStored {
   required string checkpoint_id = 1;
   required heron.proto.system.Instance instance = 2;
 }

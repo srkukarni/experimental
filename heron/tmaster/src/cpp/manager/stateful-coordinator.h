@@ -47,8 +47,8 @@ class StatefulCoordinator {
 
   void DoCheckpoint(const StMgrMap& _stmgrs);
 
-  // Called when we receive a TopologyStateStored message
-  void HandleTopologyStateStored(const std::string& _checkpoint_id,
+  // Called when we receive a InstanceStateStored message
+  void HandleInstanceStateStored(const std::string& _checkpoint_id,
                                  const proto::system::Instance& _instance);
 
   const std::string& GetLatestConsistentCheckpoint() const {

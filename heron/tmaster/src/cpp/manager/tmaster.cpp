@@ -332,10 +332,12 @@ void TMaster::SendCheckpointMarker() {
   stateful_coordinator_->DoCheckpoint(stmgrs_);
 }
 
-void TMaster::HandleTopologyStateStored(const std::string& _checkpoint_id,
+void TMaster::HandleInstanceStateStored(const std::string& _checkpoint_id,
                                         const proto::system::Instance& _instance) {
+  LOG(INFO) << "Got notification from stmgr that we saved checkpoint for task "
+            << _instance.info().task_id() << " for checkpoint " << _checkpoint_id;
   if (stateful_coordinator_) {
-    stateful_coordinator_->HandleTopologyStateStored(_checkpoint_id, _instance);
+    stateful_coordinator_->HandleInstanceStateStored(_checkpoint_id, _instance);
   }
 }
 

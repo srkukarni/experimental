@@ -79,8 +79,8 @@ class TMaster {
   // Timer function to start the stateful checkpoint process
   void SendCheckpointMarker();
 
-  // Called by tmaster server when it gets TopologyStateStored message
-  void HandleTopologyStateStored(const std::string& _checkpoint_id,
+  // Called by tmaster server when it gets InstanceStateStored message
+  void HandleInstanceStateStored(const std::string& _checkpoint_id,
                                  const proto::system::Instance& _instance);
 
   // Called by tmaster server when it gets RestoreTopologyStateResponse message

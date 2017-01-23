@@ -71,9 +71,9 @@ void StatefulCoordinator::RegisterNewPplan(const proto::system::PhysicalPlan& _p
   config::PhysicalPlanHelper::GetAllTasks(_pplan, all_tasks_);
 }
 
-void StatefulCoordinator::HandleTopologyStateStored(const std::string& _checkpoint_id,
-                                           const proto::system::Instance& _instance) {
-  LOG(INFO) << "Handling TopologyStateStored for checkpoint:- " << _checkpoint_id
+void StatefulCoordinator::HandleInstanceStateStored(const std::string& _checkpoint_id,
+                                          const proto::system::Instance& _instance) {
+  LOG(INFO) << "Handling InstanceStateStored for checkpoint:- " << _checkpoint_id
             << " and instance " << _instance.info().task_id();
   if (current_partial_checkpoint_.empty()) {
     LOG(INFO) << "Seeing the checkpoint id for the first time";
@@ -85,6 +85,8 @@ void StatefulCoordinator::HandleTopologyStateStored(const std::string& _checkpoi
               << current_partial_checkpoint_;
     partial_checkpoint_remaining_tasks_ = all_tasks_;
     current_partial_checkpoint_ = _checkpoint_id;
+    partial_checkpoint_remaining_tasks_.erase(_instance.info().task_id());
+  } else if (_checkpoint_id == current_partial_checkpoint_) {
     partial_checkpoint_remaining_tasks_.erase(_instance.info().task_id());
   } else {
     LOG(INFO) << "This checkpoint id is older than partial one "

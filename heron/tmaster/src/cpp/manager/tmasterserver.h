@@ -26,7 +26,7 @@
 namespace heron {
 namespace proto {
 namespace ckptmgr {
-class TopologyStateStored;
+class InstanceStateStored;
 }
 }
 }
@@ -54,7 +54,7 @@ class TMasterServer : public Server {
   void HandleStMgrHeartbeatRequest(REQID _id, Connection* _conn,
                                    proto::tmaster::StMgrHeartbeatRequest* _request);
   void HandleMetricsMgrStats(Connection*, proto::tmaster::PublishMetrics* _request);
-  void HandleTopologyStateStored(Connection*, proto::ckptmgr::TopologyStateStored* _message);
+  void HandleInstanceStateStored(Connection*, proto::ckptmgr::InstanceStateStored* _message);
   void HandleRestoreTopologyStateResponse(Connection*,
                                      proto::ckptmgr::RestoreTopologyStateResponse* _message);
   void HandleResetTopologyStateMessage(Connection*,
