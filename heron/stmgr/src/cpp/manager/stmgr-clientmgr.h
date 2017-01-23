@@ -60,6 +60,9 @@ class StMgrClientMgr {
   void SendDownstreamStatefulCheckpoint(const sp_string& _stmgr_id,
                                         proto::ckptmgr::DownstreamStatefulCheckpoint* _message);
 
+  // Interface to close all connections
+  void CloseConnectionsAndClear();
+
  private:
   StMgrClient* CreateClient(const sp_string& _other_stmgr_id, const sp_string& _host_name,
                             sp_int32 _port);

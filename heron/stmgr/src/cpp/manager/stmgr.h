@@ -95,6 +95,9 @@ class StMgr {
   bool DidAnnounceBackPressure();
   void HandleDeadInstanceConnection(sp_int32 _task_id);
   void HandleDeadStMgrConnection(const sp_string& _stmgr);
+  void HandleNewStMgr(const std::string& _stmgr_id);
+  void HandleNewInstance(sp_int32 _task_id);
+  void HandleCkptMgrRegistration();
 
   // Send InitiateStatefulCheckpoint to local spouts
   void InitiateStatefulCheckpoint(sp_string checkpoint_tag);
@@ -113,6 +116,8 @@ class StMgr {
   // Called when ckpt mgr saves a state
   void HandleSavedInstanceState(const proto::system::Instance& _instance,
                                 const std::string& _checkpoint_id);
+  void HandleGetInstanceState(sp_int32 _task_id,
+                              const proto::ckptmgr::InstanceStateCheckpoint& _msg);
 
   void CleanupStreamConsumers();
   void PopulateStreamConsumers(

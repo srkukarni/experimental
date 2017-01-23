@@ -239,11 +239,15 @@ void StMgr::CreateCheckpointMgrClient() {
   client_options.set_port(checkpoint_manager_port_);
   client_options.set_socket_family(PF_INET);
   client_options.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);
-  auto watcher = std::bind(&StMgr::HandleSavedInstanceState, this,
+  auto save_watcher = std::bind(&StMgr::HandleSavedInstanceState, this,
                            std::placeholders::_1, std::placeholders::_2);
+  auto get_watcher = std::bind(&StMgr::HandleGetInstanceState, this,
+                           std::placeholders::_1, std::placeholders::_2);
+  auto ckpt_watcher = std::bind(&StMgr::HandleCkptMgrRegistration, this);
   checkpoint_manager_client_ = new ckptmgr::CkptMgrClient(eventLoop_, client_options,
                                                           topology_name_, topology_id_,
-                                                          ckptmgr_id_, stmgr_id_, watcher);
+                                                          ckptmgr_id_, stmgr_id_,
+                                                          save_watcher, get_watcher, ckpt_watcher);
   checkpoint_manager_client_->Start();
 }
 
@@ -732,6 +736,20 @@ void StMgr::HandleDeadStMgrConnection(const sp_string& _stmgr_id) {
   }
 }
 
+void StMgr::HandleNewInstance(sp_int32 _task_id) {
+  // Have all the instances connected to us?
+  if (server_->HaveAllInstancesConnectedToUs()) {
+    // Now we can connect to the tmaster
+    StartTMasterClient();
+  }
+}
+
+void StMgr::HandleCkptMgrRegistration() {
+  if (stateful_restorer_) {
+    stateful_restorer_->HandleCkptMgrRestart();
+  }
+}
+
 // Initiate the process of stateful checkpointing
 void StMgr::InitiateStatefulCheckpoint(sp_string _checkpoint_tag) {
   server_->InitiateStatefulCheckpoint(_checkpoint_tag);
@@ -771,6 +789,14 @@ void StMgr::HandleSavedInstanceState(const proto::system::Instance& _instance,
   tmaster_client_->SavedInstanceState(_instance, _checkpoint_id);
 }
 
+void StMgr::HandleGetInstanceState(sp_int32 _task_id,
+                                   const proto::ckptmgr::InstanceStateCheckpoint& _msg) {
+  if (stateful_restorer_) {
+    stateful_restorer_->HandleCheckpointState(_task_id, _msg);
+  }
+}
+
+// Send checkpoint message to this task_id
 // Send checkpoint message to this task_id
 void StMgr::DrainDownstreamCheckpoint(sp_int32 _task_id,
                                       proto::ckptmgr::DownstreamStatefulCheckpoint* _message) {

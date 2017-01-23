@@ -170,5 +170,12 @@ void StMgrClientMgr::HandleDeadStMgrConnection(const sp_string& _dead_stmgr) {
   stream_manager_->HandleDeadStMgrConnection(_dead_stmgr);
 }
 
+void StMgrClientMgr::CloseConnectionsAndClear() {
+  for (auto kv : clients_) {
+    kv->second->Quit(); // It will delete itself
+  }
+  clients_.clear();
+}
+
 }  // namespace stmgr
 }  // namespace heron

@@ -71,10 +71,15 @@ class StMgrServer : public Server {
 
   // Gets all the Instance information
   void GetInstanceInfo(std::vector<proto::system::Instance*>& _return);
+  // Get instance info for this task_id
+  proto::system::Instance* GetInstanceInfo(sp_int32 _task_id);
 
   bool DidAnnounceBackPressure() { return !remote_ends_who_caused_back_pressure_.empty(); }
 
   void InitiateStatefulCheckpoint(const sp_string& _checkpoint_tag);
+  void SendRestoreInstanceStateRequest(sp_int32 _task_id,
+                                       const proto::ckptmgr::InstanceStateCheckpoint& _state);
+  void SendStartInstanceStatefulProcessing(const std::string& _ckpt_id);
 
  protected:
   virtual void HandleNewConnection(Connection* newConnection);
@@ -103,6 +108,8 @@ class StMgrServer : public Server {
   void HandleTupleSetMessage(Connection* _conn, proto::system::HeronTupleSet* _message);
   void HandleInstanceStateCheckpointMessage(Connection* _conn,
                                             proto::ckptmgr::InstanceStateCheckpoint* _message);
+  void HandleRestoreInstanceStateResponse(Connection* _conn,
+                                            proto::ckptmgr::RestoreInstanceStateResponse* _message);
   // Backpressure message from and to other stream managers
   void HandleStartBackPressureMessage(Connection* _conn,
                                       proto::stmgr::StartBackPressureMessage* _message);

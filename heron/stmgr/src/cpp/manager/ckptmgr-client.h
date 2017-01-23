@@ -32,17 +32,25 @@ class CkptMgrClient : public Client {
                 const sp_string& _topology_name, const sp_string& _topology_id,
                 const sp_string& _our_ckptmgr_id, const sp_string& _our_stmgr_id,
                 std::function<void(const proto::system::Instance&,
-                                   const std::string&)> _ckpt_saved_watcher);
+                                   const std::string&)> _ckpt_saved_watcher,
+                std::function<void(sp_int32,
+                                   const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
+                std::function<void()> _register_watcher);
   virtual ~CkptMgrClient();
 
   void Quit();
 
   // TODO(nlu): add requests methods
   void SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request);
+  void GetInstanceState(const proto::ckptmgr::Instance& _instance,
+                        const std::string& _checkpoint_id);
 
  protected:
   virtual void HandleSaveInstanceStateResponse(void*,
                              proto::ckptmgr::SaveInstanceStateResponse* _response,
+                             NetworkErrorCode status);
+  virtual void HandleGetInstanceStateResponse(void*,
+                             proto::ckptmgr::GetInstanceStateResponse* _response,
                              NetworkErrorCode status);
   virtual void HandleConnect(NetworkErrorCode status);
   virtual void HandleClose(NetworkErrorCode status);
@@ -63,6 +71,9 @@ class CkptMgrClient : public Client {
   bool quit_;
   std::function<void(const proto::system::Instance&,
                      const std::string&)> ckpt_saved_watcher_;
+  std::function<void(sp_int32,
+                     const proto::ckptmgr::InstanceStateCheckpoint&)> ckpt_get_watcher_;
+  std::function<void()> register_watcher_;
 
   // Config
   sp_int32 reconnect_cpktmgr_interval_sec_;

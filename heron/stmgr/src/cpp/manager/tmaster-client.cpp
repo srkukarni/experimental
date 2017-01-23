@@ -34,7 +34,9 @@ namespace stmgr {
 TMasterClient::TMasterClient(EventLoop* eventLoop, const NetworkOptions& _options,
                              const sp_string& _stmgr_id, sp_int32 _stmgr_port, sp_int32 _shell_port,
                              VCallback<proto::system::PhysicalPlan*> _pplan_watch,
-                             VCallback<sp_string> _stateful_checkpoint_watch)
+                             VCallback<sp_string> _stateful_checkpoint_watch,
+                             VCallback<sp_string, sp_int64> _restore_topology_watch,
+                             VCallback<sp_string> _start_stateful_watch)
     : Client(eventLoop, _options),
       stmgr_id_(_stmgr_id),
       stmgr_port_(_stmgr_port),
@@ -42,6 +44,8 @@ TMasterClient::TMasterClient(EventLoop* eventLoop, const NetworkOptions& _option
       to_die_(false),
       pplan_watch_(std::move(_pplan_watch)),
       stateful_checkpoint_watch_(std::move(_stateful_checkpoint_watch)),
+      restore_topology_watch_(std::move(_restore_topology_watch)),
+      start_stateful_watch_(std::move(_start_stateful_watch)),
       reconnect_timer_id(0),
       heartbeat_timer_id(0) {
   reconnect_tmaster_interval_sec_ = config::HeronInternalsConfigReader::Instance()
@@ -61,6 +65,8 @@ TMasterClient::TMasterClient(EventLoop* eventLoop, const NetworkOptions& _option
                          &TMasterClient::HandleHeartbeatResponse);
   InstallMessageHandler(&TMasterClient::HandleNewAssignmentMessage);
   InstallMessageHandler(&TMasterClient::HandleStatefulCheckpointMessage);
+  InstallMessageHandler(&TMasterClient::HandleRestoreTopologyStateRequest);
+  InstallMessageHandler(&TMasterClient::HandleStartStmgrStatefulProcessing);
 }
 
 TMasterClient::~TMasterClient() {}
@@ -235,6 +241,26 @@ void TMasterClient::SavedInstanceState(const proto::system::Instance& _instance,
   message.set_checkpoint_id(_checkpoint_id);
   message.mutable_instance()->CopyFrom(_instance);
   SendMessage(message);
+}
+
+void TMasterClient::SendRestoreTopologyStateResponse(const std::string& _ckpt_id,
+                                                     sp_int64 _txid) {
+  proto::ckptmgr::RestoreTopologyStateResponse message;
+  message.set_checkpoint_id(_ckpt_id);
+  message.set_restore_txid(_txid);
+  SendMessage(message);
+}
+
+void TMasterClient::HandleRestoreTopologyStateRequest(
+              proto::ckptmgr::RestoreTopologyStateRequest* _message) {
+  restore_topology_watch_(_message->checkpoint_id(), _message->restore_txid());
+  delete _message;
+}
+
+void TMasterClient::HandleStartStmgrStatefulProcessing(
+              proto::ckptmgr::StartStmgrStatefulProcessing* _message) {
+  start_stateful_watch_(_message->checkpoint_id());
+  delete _message;
 }
 
 }  // namespace stmgr
