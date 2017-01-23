@@ -38,16 +38,17 @@ class StatefulConfigReader : public YamlFileReader {
   virtual void OnConfigFileLoad();
 
   sp_string GetDefaultCheckpointStorageType();
-  Config GetStorageConfig(std::string storage_type);
+  Config GetStorageConfig(const std::string& storage_type);
 
  protected:
   StatefulConfigReader(EventLoop* eventLoop, const sp_string& _defaults_file);
   virtual ~StatefulConfigReader();
 
-  Config BuildStorageConfig(YAML::Node map_node);
+  Config BuildStorageConfig(const YAML::Node& map_node);
+
+  std::unordered_map<std::string, Config> storage_configs_;
 
   static StatefulConfigReader* stateful_config_reader_;
-  static std::unordered_map<std::string, Config>* storage_configs_;
 };
 
 }  // namespace config

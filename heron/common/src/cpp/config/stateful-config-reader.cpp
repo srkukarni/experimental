@@ -23,9 +23,7 @@ namespace heron {
 namespace config {
 
 // Global initialization to facilitate singleton design pattern
-StatefulConfigReader* StatefulConfigReader::stateful_config_reader_ = 0;
-
-std::unordered_map<std::string, Config>* StatefulConfigReader::storage_configs_ = 0;
+StatefulConfigReader* StatefulConfigReader::stateful_config_reader_ = nullptr;
 
 StatefulConfigReader::StatefulConfigReader(EventLoop* eventLoop,
                                            const sp_string& _defaults_file)
@@ -35,50 +33,19 @@ StatefulConfigReader::StatefulConfigReader(EventLoop* eventLoop,
   for (auto it = config_.begin(); it != config_.end(); ++it) {
     if (it->second.IsMap()) {
       std::string storage_type = it->first.as<std::string>();
-      Config conf = BuildStorageConfig(it->second);
       auto pair = std::make_pair(storage_type, BuildStorageConfig(it->second));
-      LOG(INFO) << "trying to insert pair: " << pair.first << std::endl;
-
-//      storage_configs_->emplace(storage_type, conf);
-
-      storage_configs_->insert(pair);
-// 33 PC: @        0x10a1bbc85 std::__1::__hash_table<>::__node_insert_unique()
-// 34 *** SIGSEGV (@0x8) received by PID 26982 (TID 0x7fff73e9b300) stack trace: ***
-// 35     @     0x7fff87849f1a _sigtramp
-// 36     @     0x7f9161403250 (unknown)
-// 37     @        0x10a1bad2b std::__1::__hash_table<>::__insert_unique<>()
-// 38     @        0x10a1abfb1 heron::config::StatefulConfigReader::StatefulConfigReader()
-// 39     @        0x10a1ac785 heron::config::StatefulConfigReader::StatefulConfigReader()
-// 40     @        0x10a1aca05 heron::config::StatefulConfigReader::Create()
-// 41     @        0x10a18aa73 main
-// 42     @     0x7fff8d9545c9 start
-// 43     @                0x6 (unknown)
-
-      // (*storage_configs_)[storage_type] = conf;
-//     64 PC: @        0x106be6ccd std::__1::__hash_table<>::find<>()
-//     65 *** SIGSEGV (@0x8) received by PID 26774 (TID 0x7fff73e9b300) stack trace: ***
-//     66     @     0x7fff87849f1a _sigtramp
-//     67     @     0x7fdae1d02440 (unknown)
-//     68     @        0x106bd6eb2 std::__1::unordered_map<>::operator[]()
-//     69     @        0x106bd5a79 heron::config::StatefulConfigReader::StatefulConfigReader()
-//     70     @        0x106bd61a5 heron::config::StatefulConfigReader::StatefulConfigReader()
-//     71     @        0x106bd6425 heron::config::StatefulConfigReader::Create()
-//     72     @        0x106bb45b3 main
-//     73     @     0x7fff8d9545c9 start
-
-
-      // storage_configs_->insert(std::make_pair(storage_type, BuildStorageConfig(it->second)));
+      storage_configs_.insert(pair);
     }
   }
 }
 
 StatefulConfigReader::~StatefulConfigReader() {
-  delete storage_configs_;
+  storage_configs_.clear();
   delete stateful_config_reader_;
 }
 
 StatefulConfigReader* StatefulConfigReader::Instance() {
-  if (stateful_config_reader_ == 0) {
+  if (stateful_config_reader_ == nullptr) {
     LOG(FATAL) << "Singleton StatefulConfigReader has not been created";
   }
 
@@ -94,7 +61,6 @@ void StatefulConfigReader::Create(EventLoop* eventLoop, const sp_string& _defaul
     LOG(FATAL) << "Singleton StatefulConfigReader has already been created";
   } else {
     stateful_config_reader_ = new StatefulConfigReader(eventLoop, _defaults_file);
-    storage_configs_ = new std::unordered_map<std::string, Config>();
   }
 }
 
@@ -110,11 +76,16 @@ sp_string StatefulConfigReader::GetDefaultCheckpointStorageType() {
   return config_[StatefulConfigVars::STORAGE_TYPE].as<std::string>();
 }
 
-Config StatefulConfigReader::GetStorageConfig(std::string storage_type) {
-  return storage_configs_->at(storage_type);
+Config StatefulConfigReader::GetStorageConfig(const std::string& storage_type) {
+  if (storage_configs_.find(storage_type) == storage_configs_.end()) {
+    LOG(ERROR) << "Couldn't find config for storage type: " << storage_type << std::endl;
+    exit(1);
+  } else {
+    return storage_configs_.at(storage_type);
+  }
 }
 
-Config StatefulConfigReader::BuildStorageConfig(YAML::Node map_node) {
+Config StatefulConfigReader::BuildStorageConfig(const YAML::Node& map_node) {
   if (!map_node.IsMap()) {
     LOG(ERROR) << "configs for each storage type must be grouped into a map" << std::endl;
     exit(1);
