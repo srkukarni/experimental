@@ -70,10 +70,10 @@ int main(int argc, char* argv[]) {
 
   // construct a full config that includes environment and expand, if necessary
   auto full_config = heron::config::Config::Builder()
-    .putstr(heron::config::CommonConfigVars::CLUSTER, cluster)
-    .putstr(heron::config::CommonConfigVars::ROLE, role)
-    .putstr(heron::config::CommonConfigVars::ENVIRON, environ)
-    .putstr(heron::config::CommonConfigVars::TOPOLOGY_NAME, topology_name)
+    .putstr(heron::config::EnvironVars::CLUSTER, cluster)
+    .putstr(heron::config::EnvironVars::ROLE, role)
+    .putstr(heron::config::EnvironVars::ENVIRON, environ)
+    .putstr(heron::config::EnvironVars::TOPOLOGY_NAME, topology_name)
     .putall(state_config)
     .build()
     .expand();

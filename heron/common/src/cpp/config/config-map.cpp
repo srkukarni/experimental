@@ -70,19 +70,19 @@ Config::substitute(const std::string& _value) {
       *elem = java_path;
 
     } else if (*elem == "${CLUSTER}") {
-      *elem = params_.getstr(CommonConfigVars::CLUSTER);
+      *elem = params_.getstr(EnvironVars::CLUSTER);
       LOG_IF(FATAL, elem->empty()) << "CLUSTER not set";
 
     } else if (*elem == "${ROLE}") {
-      *elem = params_.getstr(CommonConfigVars::ROLE);
+      *elem = params_.getstr(EnvironVars::ROLE);
       LOG_IF(FATAL, elem->empty()) << "ROLE not set";
 
     } else if (*elem == "${ENVIRON}") {
-      *elem = params_.getstr(CommonConfigVars::ENVIRON);
+      *elem = params_.getstr(EnvironVars::ENVIRON);
       LOG_IF(FATAL, elem->empty()) << "ENVIRON not set";
 
     } else if (*elem == "${TOPOLOGY}") {
-      *elem = params_.getstr(CommonConfigVars::TOPOLOGY_NAME);
+      *elem = params_.getstr(EnvironVars::TOPOLOGY_NAME);
       LOG_IF(FATAL, elem->empty()) << "TOPOLOGY NAME not set";
     }
   }

@@ -59,10 +59,10 @@ TEST(ConfigTest, doublevalue) {
 
 TEST(ConfigTest, expand) {
   heron::config::Config::Builder builder;
-  builder.putstr(heron::config::CommonConfigVars::CLUSTER, "cluster1");
-  builder.putstr(heron::config::CommonConfigVars::ROLE, "role1");
-  builder.putstr(heron::config::CommonConfigVars::ENVIRON, "environ1");
-  builder.putstr(heron::config::CommonConfigVars::TOPOLOGY_NAME, "topology1");
+  builder.putstr(heron::config::EnvironVars::CLUSTER, "cluster1");
+  builder.putstr(heron::config::EnvironVars::ROLE, "role1");
+  builder.putstr(heron::config::EnvironVars::ENVIRON, "environ1");
+  builder.putstr(heron::config::EnvironVars::TOPOLOGY_NAME, "topology1");
   builder.putstr("base_dir", ".herondata/${CLUSTER}/${ROLE}/${TOPOLOGY}");
   builder.putstr("another_dir", "/${CLUSTER}/${ROLE}/${TOPOLOGY}");
   builder.putstr("common_dir", "${CLUSTER}");

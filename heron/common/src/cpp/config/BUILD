@@ -5,7 +5,7 @@ cc_library(
     srcs = [
         "cluster-config-reader.cpp",
         "cluster-config-vars.cpp",
-        "common-config-vars.cpp",
+        "environ-vars.cpp",
         "heron-internals-config-reader.cpp",
         "heron-internals-config-vars.cpp",
         "metrics-sinks-reader.cpp",
@@ -23,7 +23,7 @@ cc_library(
 
         "cluster-config-reader.h",
         "cluster-config-vars.h",
-        "common-config-vars.h",
+        "environ-vars.h",
         "config.h",
         "helper.h",
         "heron-internals-config-reader.h",

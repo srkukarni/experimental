@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "basics/basics.h"
-#include "config/common-config-vars.h"
+#include "config/environ-vars.h"
 
 namespace heron {
 namespace config {
