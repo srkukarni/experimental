@@ -78,8 +78,19 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
   checkpoint_id_ = _checkpoint_id;
   restore_txid_ = _restore_txid;
 
-  // Send messages to ckpt
-  GetCheckpoints();
+  if (checkpoint_id_.empty()) {
+    LOG(INFO) << "Checkpoint id is empty meaning we are starting from scratch";
+    get_ckpt_pending_.clear();
+    for (auto task_id : restore_pending_) {
+      proto::ckptmgr::InstanceStateCheckpoint dummy;
+      dummy.set_checkpoint_id(checkpoint_id_);
+      dummy.mutable_state();
+      server_->SendRestoreInstanceStateRequest(task_id, dummy);
+    }
+  } else {
+    // Send messages to ckpt
+    GetCheckpoints();
+  }
 }
 
 void StatefulRestorer::GetCheckpoints() {
