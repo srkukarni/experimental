@@ -829,6 +829,8 @@ void StMgr::HandleDownStreamStatefulCheckpoint(
 }
 
 void StMgr::RestoreTopologyState(sp_string _checkpoint_id, sp_int64 _restore_txid) {
+  LOG(INFO) << "Got a Restore Topology State message from Tmaster for checkpoint "
+            << _checkpoint_id << " and txid " << _restore_txid;
   CHECK(is_stateful_);
   // Clear all our state
   tuple_cache_->clear();

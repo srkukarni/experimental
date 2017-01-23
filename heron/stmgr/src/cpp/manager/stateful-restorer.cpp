@@ -62,6 +62,9 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
       restore_txid_ = _restore_txid;
       return;
     }
+  } else {
+    LOG(INFO) << "Starting Restore for checkpoint_id " << _checkpoint_id
+              << " and txid " << _restore_txid;
   }
   // This is a new one for this checkpoint
   in_progress_ = true;
@@ -87,7 +90,8 @@ void StatefulRestorer::GetCheckpoints() {
 
 void StatefulRestorer::HandleCheckpointState(sp_int32 _task_id,
                                        const proto::ckptmgr::InstanceStateCheckpoint& _state) {
-  LOG(INFO) << "Got State from checkpoint mgr for " << _task_id << " " << _state.checkpoint_id();
+  LOG(INFO) << "Got InstanceState from checkpoint mgr for task " << _task_id
+            << " and checkpoint " << _state.checkpoint_id();
   if (_state.checkpoint_id() != checkpoint_id_) {
     LOG(WARNING) << "Discarding state retrieved from checkpoint mgr because the checkpoint"
                  << " id in the response does not match ours " << checkpoint_id_;
