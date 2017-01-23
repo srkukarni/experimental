@@ -75,24 +75,15 @@ int LocalFS::store(const Checkpoint& _ckpt) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
-  LOG(INFO) << "Created checkpoint directory " << ckptDirectory(_ckpt);
 
-  // write the contents to temporary file
+  // write the contents atomically to file
   size_t len = _ckpt.nbytes();
   char* buf = reinterpret_cast<char*>(_ckpt.checkpoint());
 
-  if (!FileUtils::writeSyncAll(tempCkptFile(_ckpt).c_str(), buf, len)) {
+  if (!FileUtils::writeAtomicAll(ckptFile(_ckpt), buf, len)) {
     LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
-  LOG(INFO) << "Wrote temp checkpoint file " << tempCkptFile(_ckpt);
-
-  // move the temporary checkpoint file to final destination
-  if (!FileUtils::rename(tempCkptFile(_ckpt).c_str(), ckptFile(_ckpt).c_str())) {
-    LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
-    return SP_NOTOK;
-  }
-  LOG(INFO) << "Checkpoint successful for " << logMessageFragment(_ckpt);
 
   return SP_OK;
 }

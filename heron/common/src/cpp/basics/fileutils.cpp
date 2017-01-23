@@ -241,28 +241,28 @@ bool FileUtils::writeSyncAll(const std::string& filename, const char* data, size
   return true;
 }
 
-bool FileUtils::close(int fd) {
-  auto code = ::close(fd);
-  if (code < 0) {
-    PLOG(ERROR) << "Unable to close file " << fd;
-    return false;
-  }
-  return true;
-}
-
-bool FileUtils::closeSync(int fd) {
-  // force flush the file contents to persistent store
-  if (::fsync(fd) < 0) {
-    PLOG(ERROR) << "Unable to sync file " << fd;
+bool FileUtils::writeAtomicAll(const std::string& filename, const char* data, size_t len) {
+  // form a temporary file name
+  size_t pos = filename.find_last_of("/");
+  if (pos == filename.size() - 1) {
+    LOG(ERROR) << "Specified filename " << filename << " is a directory" << std::endl;
     return false;
   }
 
-  // close the file descriptor
-  if (::close(fd) < 0) {
-    PLOG(ERROR) << "Unable to close file " << fd;
-    return false;
+  std::string newfile;
+  if (pos == std::string::npos) {
+    newfile.append(".").append(filename);
+  } else {
+     newfile.append(filename.substr(0, pos + 1));
+     newfile.append(".").append(filename.substr(pos+1));
   }
-  return true;
+
+  // Write and flush the contents of the file
+  if (!FileUtils::writeSyncAll(newfile, data, len))
+    return false;
+
+  // rename the file for atomic write
+  return FileUtils::rename(newfile, filename);
 }
 
 bool FileUtils::rename(const std::string& from, const std::string& to) {
