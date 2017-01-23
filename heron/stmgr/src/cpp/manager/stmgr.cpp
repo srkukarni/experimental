@@ -745,7 +745,7 @@ void StMgr::HandleDeadStMgrConnection(const sp_string& _stmgr_id) {
 void StMgr::HandleNewInstance(sp_int32 _task_id) {
   // Have all the instances connected to us?
   if (server_->HaveAllInstancesConnectedToUs()) {
-    if (is_stateful_ && tmaster_client_->IsConnected()) {
+    if (is_stateful_ && tmaster_client_ && tmaster_client_->IsConnected()) {
       LOG(INFO) << "All instances have connected to us and we are already "
                 << "connected to tmaster. Sending ResetMessage to tmaster";
       tmaster_client_->SendResetTopologyState("Dead Instances");
