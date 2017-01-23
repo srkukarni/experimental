@@ -20,8 +20,6 @@ cc_library(
         "stateful-config-reader.cpp",
         "stateful-config-vars.cpp",
         "config-map.cpp",
-        "stateful-config-reader.cpp",
-        "stateful-config-vars.cpp",
 
         "cluster-config-reader.h",
         "cluster-config-vars.h",

@@ -59,22 +59,12 @@ int main(int argc, char* argv[]) {
   // initialize glog and other chores
   heron::common::Initialize(argv[0], ckptmgr_id.c_str());
 
-  // Read stateful config from local file
-  heron::config::StatefulConfigReader::Create(&ss, stateful_config_filename);
-
-//  std::string home_dir(::getenv("HOME"));
-//  home_dir.append("/").append(".herondata");
-//  home_dir.append("/").append("topologies");
-//  home_dir.append("/").append("local");
-//  home_dir.append("/").append(::getenv("USER"));
-//  home_dir.append("/").append(topology_name);
-//  home_dir.append("/").append("state");
-
   // declare the event loop
   EventLoopImpl ss;
 
   // Read stateful config from local file
   heron::config::StatefulConfigReader::Create(&ss, stateful_config_filename);
+
   std::string storage_type =
     heron::config::StatefulConfigReader::Instance()->GetDefaultCheckpointStorageType();
   auto state_config =
@@ -83,7 +73,7 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "Successfully read config " << std::endl;
 
   // construct a full config that includes environment and expand, if necessary
-  auto full_config = state_config
+  auto full_config = heron::config::Config::Builder()
     .putstr(heron::config::EnvironVars::CLUSTER, cluster)
     .putstr(heron::config::EnvironVars::ROLE, role)
     .putstr(heron::config::EnvironVars::ENVIRON, environ)

@@ -302,10 +302,6 @@ public class Context {
     return cfg.getStringValue(Keys.systemSandboxFile());
   }
 
-  public static String statefulConfigSandboxFile(Config cfg) {
-    return cfg.getStringValue(Keys.statefulConfigSandboxFile());
-  }
-
   public static String uploaderSandboxFile(Config cfg) {
     return cfg.getStringValue(Keys.uploaderSandboxFile());
   }
