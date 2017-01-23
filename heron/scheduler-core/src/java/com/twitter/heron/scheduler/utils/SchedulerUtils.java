@@ -239,6 +239,7 @@ public final class SchedulerUtils {
     commands.add(Boolean.toString(Context.isStateful(config)));
     commands.add(Context.ckptmgrSandboxBinary(config));
     commands.add(ckptmgrPort);
+    commands.add(Context.statefulConfigSandboxFile(config));
 
     return commands.toArray(new String[commands.size()]);
   }

@@ -137,6 +137,10 @@ public class Keys {
     return ConfigKeys.get("CLIENT_YAML");
   }
 
+  public static String statefulFile() {
+    return ConfigKeys.get("STATEFUL_YAML");
+  }
+
   public static String defaultsFile() {
     return ConfigKeys.get("DEFAULTS_YAML");
   }
@@ -343,6 +347,10 @@ public class Keys {
 
   public static String executorSandboxBinary() {
     return ConfigKeys.get("SANDBOX_EXECUTOR_BINARY");
+  }
+
+  public static String statefulConfigSandboxFile() {
+    return ConfigKeys.get("SANDBOX_STATEFUL_YAML");
   }
 
   public static String stmgrSandboxBinary() {

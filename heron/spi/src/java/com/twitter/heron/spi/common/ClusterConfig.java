@@ -92,7 +92,9 @@ public final class ClusterConfig {
         .put(Keys.uploaderSandboxFile(),
             Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.uploaderSandboxFile()))
         .put(Keys.overrideSandboxFile(),
-            Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.overrideSandboxFile()));
+            Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.overrideSandboxFile()))
+        .put(Keys.statefulConfigSandboxFile(),
+            Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.statefulSandboxFile()));
     return cb.build();
   }
 

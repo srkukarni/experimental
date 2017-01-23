@@ -24,6 +24,7 @@
 #if !defined(__SP_SVCS_CONFIG_CONFIG_H)
 #define __SP_SVCS_CONFIG_CONFIG_H
 
+#include "config/config-map.h"
 #include "config/yaml-file-reader.h"
 #include "config/topology-config-vars.h"
 #include "config/topology-config-reader.h"
@@ -36,6 +37,7 @@
 #include "config/operational-config-reader.h"
 #include "config/heron-internals-config-vars.h"
 #include "config/heron-internals-config-reader.h"
-#include "config/config-map.h"
+#include "config/stateful-config-vars.h"
+#include "config/stateful-config-reader.h"
 
 #endif

@@ -1,1 +1,7 @@
-heron.is.stateful: True
+# indicate the type of storage for checkpoint used in cluster
+heron.stateful.checkpoint.storage: LocalFS
+
+# configs for the localFS storage
+LocalFS:
+  # the root path in the local file system where checkpoints needs to be stored
+  heron.stateful.localfs.root.path: ${HOME}/.herondata/topologies/${CLUSTER}/${ROLE}/${TOPOLOGY}/checkpoints

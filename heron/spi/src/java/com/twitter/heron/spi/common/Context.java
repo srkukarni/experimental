@@ -306,6 +306,10 @@ public class Context {
     return cfg.getStringValue(ConfigKeys.get("SANDBOX_EXECUTOR_BINARY"));
   }
 
+  public static String statefulConfigSandboxFile(Config cfg) {
+    return cfg.getStringValue(Keys.statefulConfigSandboxFile());
+  }
+
   public static String stmgrSandboxBinary(Config cfg) {
     return cfg.getStringValue(ConfigKeys.get("SANDBOX_STMGR_BINARY"));
   }

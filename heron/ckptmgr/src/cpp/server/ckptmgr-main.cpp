@@ -20,15 +20,16 @@
 #include <string>
 
 #include "basics/basics.h"
+#include "config/config.h"
 #include "network/network.h"
 #include "proto/messages.h"
 #include "lfs/lfs.h"
 #include "manager/ckptmgr.h"
 
 int main(int argc, char* argv[]) {
-  if (argc != 5) {
+  if (argc != 6) {
     std::cout << "Usage: " << argv[0] << " "
-              << "<topname> <topid> <ckptmgr_id> <myport>"
+              << "<topname> <topid> <ckptmgr_id> <myport> <stateful_config_filename>"
               << std::endl;
     ::exit(1);
   }
@@ -37,9 +38,13 @@ int main(int argc, char* argv[]) {
   std::string topology_id = argv[2];
   std::string ckptmgr_id = argv[3];
   sp_int32 my_port = atoi(argv[4]);
+  std::string stateful_config_filename = argv[5];
   EventLoopImpl ss;
 
   heron::common::Initialize(argv[0], ckptmgr_id.c_str());
+
+  // Read stateful config from local file
+  heron::config::StatefulConfigReader::Create(&ss, stateful_config_filename);
 
   std::string home_dir(::getenv("HOME"));
   home_dir.append("/").append(".herondata");
