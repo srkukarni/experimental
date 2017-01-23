@@ -93,14 +93,9 @@ class StMgr {
   void SendStopBackPressureToOtherStMgrs();
   void StartTMasterClient();
   bool DidAnnounceBackPressure();
-  void HandleDeadInstanceConnection(sp_int32 _task_id);
   void HandleDeadStMgrConnection(const sp_string& _stmgr);
-  void HandleNewStMgr(const std::string& _stmgr_id);
   void HandleNewInstance(sp_int32 _task_id);
   void HandleCkptMgrRegistration();
-
-  // Send InitiateStatefulCheckpoint to local spouts
-  void InitiateStatefulCheckpoint(sp_string checkpoint_tag);
 
   // Handle checkpoint message coming from upstream to _task_id
   void HandleDownStreamStatefulCheckpoint(
@@ -146,6 +141,16 @@ class StMgr {
   void HandleNewTmaster(proto::tmaster::TMasterLocation* newTmasterLocation);
   // Broadcast the tmaster location changes to other components. (MM for now)
   void BroadcastTmasterLocation(proto::tmaster::TMasterLocation* tmasterLocation);
+
+  // Send InitiateStatefulCheckpoint to local spouts
+  void InitiateStatefulCheckpoint(sp_string checkpoint_tag);
+
+  // Start the Restore process
+  void RestoreTopologyState(sp_string _checkpoint_id, sp_int64 _restore_txid);
+
+  // Start Stateful processing
+  void StartStatefulProcessing(sp_string _checkpoint_id);
+
 
   heron::common::HeronStateMgr* state_mgr_;
   proto::system::PhysicalPlan* pplan_;

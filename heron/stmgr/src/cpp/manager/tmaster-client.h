@@ -56,6 +56,9 @@ class TMasterClient : public Client {
   void SendRestoreTopologyStateResponse(const std::string& _checkpoint_id,
                                         sp_int64 _txid);
 
+  // Send ResetTopologyState message to tmaster
+  void SendResetTopologyState(const std::string& _reason);
+
  protected:
   virtual void HandleConnect(NetworkErrorCode status);
   virtual void HandleClose(NetworkErrorCode status);

@@ -56,6 +56,8 @@ class TupleCache {
 
   // Clear all data wrt a particular task_id
   void clear(sp_int32 _task_id);
+  // Clear all data of all task_ids
+  void clear();
 
  private:
   void drain(EventLoop::Status);

@@ -263,5 +263,10 @@ void TMasterClient::HandleStartStmgrStatefulProcessing(
   delete _message;
 }
 
+void TMasterClient::SendResetTopologyState(const std::string& _reason) {
+  proto::ckptmgr::ResetTopologyState message;
+  message.set_reason(_reason);
+  SendMessage(message);
+}
 }  // namespace stmgr
 }  // namespace heron

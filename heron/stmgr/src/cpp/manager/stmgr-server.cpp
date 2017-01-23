@@ -19,6 +19,7 @@
 #include <set>
 #include <vector>
 #include "manager/stateful-helper.h"
+#include "manager/stateful-restorer.h"
 #include "manager/checkpoint-gateway.h"
 #include "manager/stmgr.h"
 #include "proto/messages.h"
@@ -84,7 +85,8 @@ StMgrServer::StMgrServer(EventLoop* eventLoop, const NetworkOptions& _options,
                          const sp_string& _stmgr_id,
                          const std::vector<sp_string>& _expected_instances, StMgr* _stmgr,
                          heron::common::MetricsMgrSt* _metrics_manager_client,
-                         StatefulHelper* _stateful_helper)
+                         StatefulHelper* _stateful_helper,
+                         StatefulRestorer* _stateful_restorer)
     : Server(eventLoop, _options),
       topology_name_(_topology_name),
       topology_id_(_topology_id),
@@ -92,7 +94,8 @@ StMgrServer::StMgrServer(EventLoop* eventLoop, const NetworkOptions& _options,
       expected_instances_(_expected_instances),
       stmgr_(_stmgr),
       metrics_manager_client_(_metrics_manager_client),
-      stateful_helper_(_stateful_helper) {
+      stateful_helper_(_stateful_helper),
+      stateful_restorer_(_stateful_restorer) {
   // stmgr related handlers
   InstallRequestHandler(&StMgrServer::HandleStMgrHelloRequest);
   InstallMessageHandler(&StMgrServer::HandleTupleStreamMessage);
@@ -243,7 +246,6 @@ void StMgrServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) {
               << " closed connection";
     instance_info_[task_id]->set_connection(NULL);
     active_instances_.erase(_conn);
-    stmgr_->HandleDeadInstanceConnection(task_id);
   }
 }
 
@@ -260,6 +262,9 @@ void StMgrServer::HandleStMgrHelloRequest(REQID _id, Connection* _conn,
     LOG(ERROR) << "The hello message was from a different topology id " << _request->topology_id()
                << std::endl;
     response.mutable_status()->set_status(proto::system::NOTOK);
+  } else if (stateful_restorer_ && stateful_restorer_->InProgress()) {
+    LOG(ERROR) << "The hello message was came when we are in 2pc";
+    response.mutable_status()->set_status(proto::system::NOTOK);
   } else if (stmgrs_.find(_request->stmgr()) != stmgrs_.end()) {
     LOG(WARNING) << "We already had an active connection from the stmgr " << _request->stmgr()
                  << ". Closing existing connection...";
@@ -273,7 +278,6 @@ void StMgrServer::HandleStMgrHelloRequest(REQID _id, Connection* _conn,
     stmgrs_[_request->stmgr()] = _conn;
     rstmgrs_[_conn] = _request->stmgr();
     response.mutable_status()->set_status(proto::system::OK);
-    stmgr_->HandleNewStMgr(_request->stmgr());
   }
   SendResponse(_id, _conn, response);
   delete _request;
@@ -381,7 +385,11 @@ void StMgrServer::HandleTupleSetMessage(Connection* _conn,
     stmgr_server_metrics_->scope(METRIC_FAIL_TUPLES_FROM_INSTANCES)
         ->incr_by(_message->control().fails_size());
   }
-  stmgr_->HandleInstanceData(iter->second, instance_info_[iter->second]->local_spout_, _message);
+  if (stateful_restorer_ && stateful_restorer_->InProgress()) {
+    LOG(INFO) << "Dropping data received from instance because we are in 2PC";
+  } else {
+    stmgr_->HandleInstanceData(iter->second, instance_info_[iter->second]->local_spout_, _message);
+  }
   __global_protobuf_pool_release__(_message);
 }
 
@@ -752,6 +760,13 @@ void StMgrServer::SendStartInstanceStatefulProcessing(const std::string& _ckpt_i
                    << kv.first << " because it is not connected to us";
     }
   }
+}
+
+void StMgr::CloseConnectionsAndReset() {
+  for (auto kv : stmgrs_) {
+    kv.second->Close(); // automatically clears stmgrs_ and rstmgrs_
+  }
+  stateful_gateway_->Clear();
 }
 }  // namespace stmgr
 }  // namespace heron

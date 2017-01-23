@@ -31,16 +31,16 @@ namespace heron {
 namespace stmgr {
 
 StatefulRestorer::StatefulRestorer(StMgrServer* _server, CkptMgrClient* _ckptmgr,
-                                   std::function<void(std::string, sp_int64)> _2pc_done_watcher) {
+                                   std::function<void(std::string, sp_int64)> _restore_done_watcher) {
   in_progress_ = false;
-  2pc_done_watcher_ = _2pc_done_watcher;
+  restore_done_watcher_ = _restore_done_watcher;
   server_ = _server;
   ckptmgr_ = _ckptmgr;
 }
 
 StatefulRestorer::~StatefulRestorer() { }
 
-void StatefulRestorer::Start2PC(const std::string& _checkpoint_id, sp_int64 _restore_txid) {
+void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 _restore_txid) {
   if (in_progress_) {
     LOG(WARNING) << "Got a RestoreTopologyState request for " << _checkpoint_id
                  << " " << _restore_txid << " while we were still in old one "
@@ -101,20 +101,9 @@ void StatefulRestorer::HandleInstanceRestoredState(sp_int32 _task_id,
   if (restore_pending_.empty()) {
     LOG(INFO) << "All instances restored state for " << checkpoint_id_
               << " " << restore_txid_;
-    2pc_done_watcher_(checkpoint_id_, restore_txid_);
+    in_progress_ = false;
+    restore_done_watcher_(checkpoint_id_, restore_txid_);
   }
-}
-
-void StatefulRestorer::End2PC(const std::string& _checkpoint_id) {
-  if (!in_progress_ || _checkpoint_id != checkpoint_id_) {
-    LOG(FATAL) << "StartProcessing received from Tmaster for "
-               << _checkpoint_id << " when our in_progress "
-               << in_progress_ << " and checkpoint " << checkpoint_id_;
-  }
-  LOG(INFO) << "Received StartProcessing message from tmaster for "
-            << _checkpoint_id;
-  server_->SendStartInstanceStatefulProcessing(_checkpoint_id);
-  in_progress_ = false;
 }
 
 void StatefulRestorer::HandleCkptMgrRestart() {

@@ -715,32 +715,28 @@ void StMgr::SendStartBackPressureToOtherStMgrs() {
 
 void StMgr::SendStopBackPressureToOtherStMgrs() { clientmgr_->SendStopBackPressureToOtherStMgrs(); }
 
-// Do any actions if a local instance dies
-void StMgr::HandleDeadInstanceConnection(sp_int32 _task_id) {
-  // If we are stateful topology, we need to clear any tuple cache wrt this task_id
-  if (is_stateful_) {
-    tuple_cache_->clear(_task_id);
-  }
-}
-
 // Do any actions if a stmgr client connection dies
 void StMgr::HandleDeadStMgrConnection(const sp_string& _stmgr_id) {
-  // If we are stateful topology, we need to clear any tuple cache wrt all
-  // task_ids this stmgr processes
-  if (is_stateful_) {
-    std::set<sp_int32> task_ids;
-    config::PhysicalPlanHelper::GetTasks(*pplan_, _stmgr_id, task_ids);
-    for (std::set<sp_int32>::iterator iter = task_ids.begin(); iter != task_ids.end(); ++iter) {
-      tuple_cache_->clear(*iter);
-    }
+  // If we are stateful topology, we need to send a resetTopology message
+  // in case we are not in 2pc
+  if (is_stateful_ && !stateful_restorer_->InProgress()) {
+    LOG(INFO) << "We lost connection withi stmgr " << _stmgr_id
+              << " and hence sending ResetTopology message to tmaster";
+    tmaster_client_->SendResetTopologyState("Dead Stmgr");
   }
 }
 
 void StMgr::HandleNewInstance(sp_int32 _task_id) {
   // Have all the instances connected to us?
   if (server_->HaveAllInstancesConnectedToUs()) {
-    // Now we can connect to the tmaster
-    StartTMasterClient();
+    if (is_stateful_ && tmaster_client_->IsConnected()) {
+      LOG(INFO) << "All instances have connected to us and we are already "
+                << "connected to tmaster. Sending ResetMessage to tmaster";
+      tmaster_client_->SendResetTopologyState("Dead Instances");
+    } else {
+      // Now we can connect to the tmaster
+      StartTMasterClient();
+    }
   }
 }
 
@@ -814,6 +810,27 @@ void StMgr::HandleDownStreamStatefulCheckpoint(
   server_->HandleCheckpointMarker(_message->origin_task_id(),
                                   _message->destination_task_id(),
                                   _message->checkpoint_id());
+}
+
+void StMgr::RestoreTopologyState(sp_string _checkpoint_id, sp_int64 _restore_txid) {
+  CHECK(is_stateful_);
+  // Clear all our state
+  tuple_cache_->clear();
+  clientmgr_->CloseConnectionsAndClear();
+  server_->CloseConnectionsAndReset();
+
+  // Now start the restore process
+  stateful_restorer_->StartRestore(_checkpoint_id, _restore_txid);
+}
+
+void StMgr::StartStatefulProcessing(sp_string _checkpoint_id) {
+  LOG(INFO) << "Received StartProcessing message from tmaster for "
+            << _checkpoint_id;
+  if (stateful_restorer_->InProgress()) {
+    LOG(FATAL) << "StartProcessing received from Tmaster for "
+               << _checkpoint_id << " when we are still in Restore";
+  }
+  server_->SendStartInstanceStatefulProcessing(_checkpoint_id);
 }
 
 }  // namespace stmgr

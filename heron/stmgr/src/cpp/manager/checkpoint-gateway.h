@@ -45,6 +45,9 @@ class CheckpointGateway {
   void HandleUpstreamMarker(sp_int32 _src_task_id, sp_int32 _destination_task_id,
                             const sp_string& _checkpoint_id);
 
+  // Clears all tuples
+  void Clear();
+
  private:
   typedef std::tuple<proto::system::HeronTupleSet2*,
                      proto::stmgr::TupleStreamMessage2*,
@@ -62,6 +65,7 @@ class CheckpointGateway {
     std::deque<Tuple> HandleUpstreamMarker(sp_int32 _src_task_id,
                                              const sp_string& _checkpoint_id, sp_uint64* _size);
     std::deque<Tuple> ForceDrain();
+    void Clear();
    private:
     void add(Tuple _tuple, sp_uint64 _size);
     sp_string checkpoint_id_;

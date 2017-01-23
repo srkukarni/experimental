@@ -40,6 +40,7 @@ namespace stmgr {
 
 class StMgr;
 class StatefulHelper;
+class StatefulRestorer;
 class CheckpointGateway;
 
 class StMgrServer : public Server {
@@ -48,7 +49,8 @@ class StMgrServer : public Server {
               const sp_string& _topology_id, const sp_string& _stmgr_id,
               const std::vector<sp_string>& _expected_instances, StMgr* _stmgr,
               heron::common::MetricsMgrSt* _metrics_manager_client,
-              StatefulHelper* _stateful_helper);
+              StatefulHelper* _stateful_helper,
+              StatefulRestorer* _stateful_restorer);
   virtual ~StMgrServer();
 
   // We own the _message
@@ -80,6 +82,7 @@ class StMgrServer : public Server {
   void SendRestoreInstanceStateRequest(sp_int32 _task_id,
                                        const proto::ckptmgr::InstanceStateCheckpoint& _state);
   void SendStartInstanceStatefulProcessing(const std::string& _ckpt_id);
+  void CloseConnectionsAndReset();
 
  protected:
   virtual void HandleNewConnection(Connection* newConnection);
@@ -191,8 +194,9 @@ class StMgrServer : public Server {
   heron::common::TimeSpentMetric* back_pressure_metric_aggr_;
   heron::common::TimeSpentMetric* back_pressure_metric_initiated_;
 
-  // Stateful helper
+  // Stateful helpers
   StatefulHelper* stateful_helper_;
+  StatefulRestorer* stateful_restorer_;
 
   // Checkpoint Gateway
   CheckpointGateway* stateful_gateway_;
