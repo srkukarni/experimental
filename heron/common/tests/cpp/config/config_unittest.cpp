@@ -78,6 +78,28 @@ TEST(ConfigTest, expand) {
   EXPECT_EQ(config.getint64("b"), 123456);
 }
 
+TEST(ConfigTest, copy) {
+  heron::config::Config::Builder builder;
+  builder.putstr(heron::config::EnvironVars::CLUSTER, "cluster1");
+  builder.putstr(heron::config::EnvironVars::ROLE, "role1");
+  builder.putstr(heron::config::EnvironVars::ENVIRON, "environ1");
+  builder.putstr(heron::config::EnvironVars::TOPOLOGY_NAME, "topology1");
+  builder.putstr("base_dir", ".herondata/${CLUSTER}/${ROLE}/${TOPOLOGY}");
+  builder.putstr("another_dir", "/${CLUSTER}/${ROLE}/${TOPOLOGY}");
+  builder.putstr("common_dir", "${CLUSTER}");
+  builder.putstr("a", "a");
+  builder.putint64("b", 123456);
+
+  heron::config::Config config = builder.build().expand();
+  heron::config::Config copy_config = config;
+
+  EXPECT_EQ(copy_config.getstr("base_dir"), ".herondata/cluster1/role1/topology1");
+  EXPECT_EQ(copy_config.getstr("another_dir"), "/cluster1/role1/topology1");
+  EXPECT_EQ(copy_config.getstr("common_dir"), "cluster1");
+  EXPECT_EQ(copy_config.getstr("a"), "a");
+  EXPECT_EQ(copy_config.getint64("b"), 123456);
+}
+
 int main(int argc, char **argv) {
   heron::common::Initialize(argv[0]);
   testing::InitGoogleTest(&argc, argv);
