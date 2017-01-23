@@ -133,6 +133,11 @@ public final class ClusterConfig {
     return Config.newBuilder().putAll(readConfig).build();
   }
 
+  public static Config loadStatefulConfig(String statefulFile) {
+    Map<String, Object> readConfig = ConfigReader.loadFile(statefulFile);
+    return Config.newBuilder().putAll(readConfig).build();
+  }
+
   public static Config loadOverrideConfig(String overrideConfigFile) {
     Map<String, Object> readConfig = ConfigReader.loadFile(overrideConfigFile);
     return Config.newBuilder().putAll(readConfig).build();
@@ -170,7 +175,8 @@ public final class ClusterConfig {
         .putAll(loadSchedulerConfig(Context.schedulerFile(homeConfig)))
         .putAll(loadStateManagerConfig(Context.stateManagerFile(homeConfig)))
         .putAll(loadUploaderConfig(Context.uploaderFile(homeConfig)))
-        .putAll(loadReleaseConfig(releaseFile));
+        .putAll(loadReleaseConfig(releaseFile))
+        .putAll(loadStatefulConfig(Context.statefulFile(homeConfig)));
     return cb.build();
   }
 

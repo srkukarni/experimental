@@ -29,6 +29,7 @@
 #include "manager/stmgr-server.h"
 #include "manager/stream-consumers.h"
 #include "manager/stateful-helper.h"
+#include "manager/stateful-restorer.h"
 #include "proto/messages.h"
 #include "basics/basics.h"
 #include "errors/errors.h"
@@ -111,6 +112,9 @@ void StMgr::Init() {
 
   // Start the stateful helper.
   stateful_helper_ = new StatefulHelper();
+  stateful_restorer_ = new StatefulRestorer(checkpoint_manager_client_,
+                             std::bind(&StMgr::HandleStatefulRestoreDone, this,
+                                       std::placeholders::_1, std::placeholders::_2));
 
   // Create and start StmgrServer
   StartStmgrServer();
@@ -157,6 +161,7 @@ StMgr::~StMgr() {
   delete checkpoint_manager_client_;
 
   delete stateful_helper_;
+  delete stateful_restorer_;
 }
 
 bool StMgr::DidAnnounceBackPressure() { return server_->DidAnnounceBackPressure(); }
@@ -205,7 +210,8 @@ void StMgr::StartStmgrServer() {
   sops.set_socket_family(PF_INET);
   sops.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);
   server_ = new StMgrServer(eventLoop_, sops, topology_name_, topology_id_, stmgr_id_, instances_,
-                            this, metrics_manager_client_, stateful_helper_);
+                            this, metrics_manager_client_, stateful_helper_, stateful_restorer_);
+  stateful_restorer_->SetStMgrServer(server_);
 
   // start the server
   CHECK_EQ(server_->Start(), 0);
@@ -225,10 +231,20 @@ void StMgr::CreateTMasterClient(proto::tmaster::TMasterLocation* tmasterLocation
        [this](sp_string checkpoint_tag) {
     this->InitiateStatefulCheckpoint(checkpoint_tag);
   };
+  auto restore_topology_watch =
+       [this](sp_string checkpoint_tag, sp_int64 restore_txid) {
+    this->RestoreTopologyState(checkpoint_tag, restore_txid);
+  };
+  auto start_stateful_watch =
+       [this](sp_string checkpoint_tag) {
+    this->StartStatefulProcessing(checkpoint_tag);
+  };
 
   tmaster_client_ = new TMasterClient(eventLoop_, master_options, stmgr_id_, stmgr_port_,
                                       shell_port_, std::move(pplan_watch),
-                                      std::move(stateful_checkpoint_watch));
+                                      std::move(stateful_checkpoint_watch),
+                                      std::move(restore_topology_watch),
+                                      std::move(start_stateful_watch));
 }
 
 void StMgr::CreateCheckpointMgrClient() {
@@ -239,11 +255,15 @@ void StMgr::CreateCheckpointMgrClient() {
   client_options.set_port(checkpoint_manager_port_);
   client_options.set_socket_family(PF_INET);
   client_options.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);
-  auto watcher = std::bind(&StMgr::HandleSavedInstanceState, this,
+  auto save_watcher = std::bind(&StMgr::HandleSavedInstanceState, this,
                            std::placeholders::_1, std::placeholders::_2);
+  auto get_watcher = std::bind(&StMgr::HandleGetInstanceState, this,
+                           std::placeholders::_1, std::placeholders::_2);
+  auto ckpt_watcher = std::bind(&StMgr::HandleCkptMgrRegistration, this);
   checkpoint_manager_client_ = new ckptmgr::CkptMgrClient(eventLoop_, client_options,
                                                           topology_name_, topology_id_,
-                                                          ckptmgr_id_, stmgr_id_, watcher);
+                                                          ckptmgr_id_, stmgr_id_,
+                                                          save_watcher, get_watcher, ckpt_watcher);
   checkpoint_manager_client_->Start();
 }
 
@@ -711,24 +731,34 @@ void StMgr::SendStartBackPressureToOtherStMgrs() {
 
 void StMgr::SendStopBackPressureToOtherStMgrs() { clientmgr_->SendStopBackPressureToOtherStMgrs(); }
 
-// Do any actions if a local instance dies
-void StMgr::HandleDeadInstanceConnection(sp_int32 _task_id) {
-  // If we are stateful topology, we need to clear any tuple cache wrt this task_id
-  if (is_stateful_) {
-    tuple_cache_->clear(_task_id);
+// Do any actions if a stmgr client connection dies
+void StMgr::HandleDeadStMgrConnection(const sp_string& _stmgr_id) {
+  // If we are stateful topology, we need to send a resetTopology message
+  // in case we are not in 2pc
+  if (is_stateful_ && !stateful_restorer_->InProgress()) {
+    LOG(INFO) << "We lost connection withi stmgr " << _stmgr_id
+              << " and hence sending ResetTopology message to tmaster";
+    tmaster_client_->SendResetTopologyState("Dead Stmgr");
   }
 }
 
-// Do any actions if a stmgr client connection dies
-void StMgr::HandleDeadStMgrConnection(const sp_string& _stmgr_id) {
-  // If we are stateful topology, we need to clear any tuple cache wrt all
-  // task_ids this stmgr processes
-  if (is_stateful_) {
-    std::set<sp_int32> task_ids;
-    config::PhysicalPlanHelper::GetTasks(*pplan_, _stmgr_id, task_ids);
-    for (std::set<sp_int32>::iterator iter = task_ids.begin(); iter != task_ids.end(); ++iter) {
-      tuple_cache_->clear(*iter);
+void StMgr::HandleNewInstance(sp_int32 _task_id) {
+  // Have all the instances connected to us?
+  if (server_->HaveAllInstancesConnectedToUs()) {
+    if (is_stateful_ && tmaster_client_ && tmaster_client_->IsConnected()) {
+      LOG(INFO) << "All instances have connected to us and we are already "
+                << "connected to tmaster. Sending ResetMessage to tmaster";
+      tmaster_client_->SendResetTopologyState("Dead Instances");
+    } else {
+      // Now we can connect to the tmaster
+      StartTMasterClient();
     }
+  }
+}
+
+void StMgr::HandleCkptMgrRegistration() {
+  if (stateful_restorer_) {
+    stateful_restorer_->HandleCkptMgrRestart();
   }
 }
 
@@ -771,6 +801,14 @@ void StMgr::HandleSavedInstanceState(const proto::system::Instance& _instance,
   tmaster_client_->SavedInstanceState(_instance, _checkpoint_id);
 }
 
+void StMgr::HandleGetInstanceState(sp_int32 _task_id,
+                                   const proto::ckptmgr::InstanceStateCheckpoint& _msg) {
+  if (stateful_restorer_) {
+    stateful_restorer_->HandleCheckpointState(_task_id, _msg);
+  }
+}
+
+// Send checkpoint message to this task_id
 // Send checkpoint message to this task_id
 void StMgr::DrainDownstreamCheckpoint(sp_int32 _task_id,
                                       proto::ckptmgr::DownstreamStatefulCheckpoint* _message) {
@@ -788,6 +826,38 @@ void StMgr::HandleDownStreamStatefulCheckpoint(
   server_->HandleCheckpointMarker(_message->origin_task_id(),
                                   _message->destination_task_id(),
                                   _message->checkpoint_id());
+}
+
+void StMgr::RestoreTopologyState(sp_string _checkpoint_id, sp_int64 _restore_txid) {
+  LOG(INFO) << "Got a Restore Topology State message from Tmaster for checkpoint "
+            << _checkpoint_id << " and txid " << _restore_txid;
+  CHECK(is_stateful_);
+  // Clear all our state
+  tuple_cache_->clear();
+  clientmgr_->CloseConnectionsAndClear();
+  server_->CloseConnectionsAndReset();
+
+  // Now start the restore process
+  stateful_restorer_->StartRestore(_checkpoint_id, _restore_txid);
+}
+
+void StMgr::StartStatefulProcessing(sp_string _checkpoint_id) {
+  LOG(INFO) << "Received StartProcessing message from tmaster for "
+            << _checkpoint_id;
+  if (stateful_restorer_->InProgress()) {
+    LOG(FATAL) << "StartProcessing received from Tmaster for "
+               << _checkpoint_id << " when we are still in Restore";
+  }
+  server_->SendStartInstanceStatefulProcessing(_checkpoint_id);
+}
+
+void StMgr::HandleRestoreInstanceStateResponse(sp_int32 _task_id,
+                                               const std::string& _checkpoint_id) {
+  stateful_restorer_->HandleInstanceRestoredState(_task_id, _checkpoint_id);
+}
+
+void StMgr::HandleStatefulRestoreDone(std::string _checkpoint_id, sp_int64 _restore_txid) {
+  tmaster_client_->SendRestoreTopologyStateResponse(_checkpoint_id, _restore_txid);
 }
 
 }  // namespace stmgr

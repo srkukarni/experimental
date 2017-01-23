@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "basics/basics.h"
-#include "config/common-config-vars.h"
+#include "config/environ-vars.h"
 
 namespace heron {
 namespace config {
@@ -142,8 +142,8 @@ class Config {
       return *this;
     }
 
-    Builder& putall(const Builder& _builder) {
-      builder_.putall(_builder.builder_);
+    Builder& putall(const Config& _config) {
+      builder_.putall(_config.params_);
       return *this;
     }
 

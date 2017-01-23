@@ -28,7 +28,7 @@ namespace tmaster {
 
 class StatefulRestorer {
  public:
-  StatefulRestorer();
+  explicit StatefulRestorer(std::function<void()> _after_2pc_cb);
   virtual ~StatefulRestorer();
   // Start a new 2PC with this checkpoint_id
   void Start(const std::string& _checkpoint_id, const StMgrMap& _stmgrs);
@@ -43,6 +43,7 @@ class StatefulRestorer {
   int64_t restore_txid_;
   std::string checkpoint_id_in_progress_;
   std::set<std::string> unreplied_stmgrs_;
+  std::function<void()> after_2pc_cb_;
 };
 }  // namespace tmaster
 }  // namespace heron

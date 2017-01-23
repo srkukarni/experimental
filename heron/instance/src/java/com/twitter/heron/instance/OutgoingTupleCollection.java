@@ -14,10 +14,6 @@
 
 package com.twitter.heron.instance;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.protobuf.ByteString;
@@ -25,6 +21,7 @@ import com.google.protobuf.Message;
 
 import com.twitter.heron.api.generated.TopologyAPI;
 import com.twitter.heron.api.state.State;
+import com.twitter.heron.api.utils.Utils;
 import com.twitter.heron.common.basics.Communicator;
 import com.twitter.heron.common.basics.SingletonRegistry;
 import com.twitter.heron.common.config.SystemConfig;
@@ -91,26 +88,19 @@ public class OutgoingTupleCollection {
    * @param checkpointId the checkpointId
    */
   public void sendOutState(State state, String checkpointId) {
-    try {
-      // Serialize the state
-      // TODO(mfu): Convert Map to byte array efficiently or using kyro
-      ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-      ObjectOutputStream out = new ObjectOutputStream(byteOut);
-      out.writeObject(state);
+    // Serialize the state
+    // TODO(mfu): Add interface to allow customized serialization instead of java default
+    byte[] serialized = Utils.serialize(state);
 
-      // Construct the protobuf
-      CheckpointManager.InstanceStateCheckpoint.Builder checkpoint =
-          CheckpointManager.InstanceStateCheckpoint.newBuilder();
-      checkpoint.setCheckpointId(checkpointId);
-      ByteString bstr = ByteString.copyFrom(byteOut.toByteArray());
-      checkpoint.setState(bstr);
+    // Construct the protobuf
+    CheckpointManager.InstanceStateCheckpoint.Builder checkpoint =
+        CheckpointManager.InstanceStateCheckpoint.newBuilder();
+    checkpoint.setCheckpointId(checkpointId);
+    ByteString bstr = ByteString.copyFrom(serialized);
+    checkpoint.setState(bstr);
 
-      // Put it to the out stream queue
-      outQueue.offer(checkpoint.build());
-    } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to convert the state into bytes", e);
-    }
-
+    // Put it to the out stream queue
+    outQueue.offer(checkpoint.build());
   }
 
   public void addDataTuple(

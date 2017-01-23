@@ -29,10 +29,12 @@
 #include "config/topology-config-reader.h"
 #include "config/cluster-config-vars.h"
 #include "config/cluster-config-reader.h"
-#include "config/common-config-vars.h"
+#include "config/environ-vars.h"
 #include "config/operational-config-vars.h"
 #include "config/operational-config-reader.h"
 #include "config/heron-internals-config-vars.h"
 #include "config/heron-internals-config-reader.h"
+#include "config/stateful-config-vars.h"
+#include "config/stateful-config-reader.h"
 
 #endif

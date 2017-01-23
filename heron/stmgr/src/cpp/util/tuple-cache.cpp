@@ -94,6 +94,13 @@ TupleCache::TupleList* TupleCache::get(sp_int32 _task_id) {
   return l;
 }
 
+void TupleCache::clear() {
+  for (auto kv : cache_) {
+    delete kv.second;
+  }
+  cache_.clear();
+}
+
 void TupleCache::clear(sp_int32 _task_id) {
   std::map<sp_int32, TupleList*>::iterator iter = cache_.find(_task_id);
   if (iter != cache_.end()) {

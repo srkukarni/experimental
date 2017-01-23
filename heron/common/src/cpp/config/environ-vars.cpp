@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-#if !defined(CHECKPOINT_STORAGE_H)
-#define CHECKPOINT_STORAGE_H
+#include "proto/messages.h"
+#include "basics/basics.h"
+#include "errors/errors.h"
+#include "threads/threads.h"
+#include "network/network.h"
 
-#include <string>
+#include "config/environ-vars.h"
 
 namespace heron {
-namespace ckptmgr {
+namespace config {
 
-class Storage {
- public:
-  Storage() {}
+const sp_string EnvironVars::CLUSTER = "heron.config.cluster";
+const sp_string EnvironVars::ROLE = "heron.config.role";
+const sp_string EnvironVars::ENVIRON = "heron.config.environ";
+const sp_string EnvironVars::TOPOLOGY_NAME = "heron.topology.name";
 
-  virtual ~Storage() {}
-
-  // store the checkpoint
-  virtual int store(const Checkpoint& _ckpt) = 0;
-
-  // retrieve the checkpoint
-  virtual int restore(Checkpoint& _ckpt) = 0;
-};
-
-}  // namespace ckptmgr
+}  // namespace config
 }  // namespace heron
-
-#endif  // storage.h

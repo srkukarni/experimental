@@ -22,17 +22,22 @@
 
 #include "common/checkpoint.h"
 #include "common/storage.h"
+#include "config/config.h"
 
 namespace heron {
 namespace ckptmgr {
 
-class LFS : public Storage {
+class LocalFS : public Storage {
  public:
   // constructor
-  explicit LFS(const std::string& _base_dir) : base_dir_(_base_dir) {}
+  explicit LocalFS(const heron::config::Config& _config);
 
   // destructor
-  virtual ~LFS() {}
+  virtual ~LocalFS() {}
+
+  static std::string storage_type() {
+    return "LocalFS";
+  }
 
   // store the checkpoint
   virtual int store(const Checkpoint& _ckpt);
@@ -53,18 +58,6 @@ class LFS : public Storage {
   // create the checkpoint directory
   int createCkptDirectory(const Checkpoint& _ckpt);
 
-  // create the temporary checkpoint file
-  int createTmpCkptFile(const Checkpoint& _ckpt);
-
-  // write to temporary checkpoint file
-  int writeTmpCkptFile(int fd, const Checkpoint& _ckpt);
-
-  // close the temporary checkpoint file
-  int closeTmpCkptFile(int fd, const Checkpoint& _ckpt);
-
-  // move the temporary checkpoint file
-  int moveTmpCkptFile(const Checkpoint& _ckpt);
-
  private:
   // generate the log message prefix/suffix for printing
   std::string logMessageFragment(const Checkpoint& _ckpt);
@@ -76,4 +69,4 @@ class LFS : public Storage {
 }  // namespace ckptmgr
 }  // namespace heron
 
-#endif  // lfs.h
+#endif  // localfs.h

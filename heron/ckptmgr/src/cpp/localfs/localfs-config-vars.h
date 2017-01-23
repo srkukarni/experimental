@@ -14,28 +14,19 @@
  * limitations under the License.
  */
 
-#if !defined(CHECKPOINT_STORAGE_H)
-#define CHECKPOINT_STORAGE_H
+#ifndef LOCALFS_CONFIG_VARS_H
+#define LOCALFS_CONFIG_VARS_H
 
 #include <string>
 
 namespace heron {
 namespace ckptmgr {
 
-class Storage {
+class LocalfsConfigVars {
  public:
-  Storage() {}
-
-  virtual ~Storage() {}
-
-  // store the checkpoint
-  virtual int store(const Checkpoint& _ckpt) = 0;
-
-  // retrieve the checkpoint
-  virtual int restore(Checkpoint& _ckpt) = 0;
+  static const std::string ROOT_DIR;
 };
-
 }  // namespace ckptmgr
 }  // namespace heron
 
-#endif  // storage.h
+#endif  // LOCALFS_CONFIG_VARS_H

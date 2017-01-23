@@ -300,8 +300,8 @@ void TMaster::SetupStatefulCoordinator(const std::string& _checkpoint_id) {
   if (stateful_checkpoint_interval > 0) {
     // Instantiate the stateful coordinator
     stateful_coordinator_ = new StatefulCoordinator(topology_->name(), _checkpoint_id,
-                                                    state_mgr_, start_time_);
-    stateful_restorer_ = new StatefulRestorer();
+                                state_mgr_, start_time_);
+    stateful_restorer_ = new StatefulRestorer(std::bind(&TMaster::DistributePhysicalPlan, this));
     LOG(INFO) << "Starting timer to checkpoint state every "
               << stateful_checkpoint_interval << " seconds";
     CHECK_GT(eventLoop_->registerTimer(
@@ -582,12 +582,15 @@ void TMaster::SetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan,
     delete current_pplan_;
     current_pplan_ = _pplan;
     assignment_in_progress_ = false;
-    // We need to pass that on to all streammanagers
-    DistributePhysicalPlan();
     if (stateful_coordinator_) {
       stateful_coordinator_->RegisterNewPplan(*current_pplan_);
       LOG(INFO) << "Starting Stateful 2PC now that all stmgrs have connected";
       stateful_restorer_->Start(stateful_coordinator_->GetLatestConsistentCheckpoint(), stmgrs_);
+      // The restorer will call DistributePhysicalPlan after he is done
+      // with the 2pc
+    } else {
+      // We need to pass that on to all streammanagers
+      DistributePhysicalPlan();
     }
   }
 }

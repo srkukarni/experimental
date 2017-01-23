@@ -102,6 +102,10 @@ public class Context {
     return cfg.getStringValue(Keys.clusterFile());
   }
 
+  public static String statefulFile(Config cfg) {
+    return cfg.getStringValue(Keys.statefulFile());
+  }
+
   public static String clientFile(Config cfg) {
     return cfg.getStringValue(Keys.clientFile());
   }
@@ -296,6 +300,10 @@ public class Context {
 
   public static String systemConfigSandboxFile(Config cfg) {
     return cfg.getStringValue(Keys.systemSandboxFile());
+  }
+
+  public static String statefulConfigSandboxFile(Config cfg) {
+    return cfg.getStringValue(Keys.statefulConfigSandboxFile());
   }
 
   public static String uploaderSandboxFile(Config cfg) {

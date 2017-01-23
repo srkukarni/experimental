@@ -25,18 +25,26 @@ namespace config {
 
 Config
 Config::expand() {
-  heron::config::Config::Builder builder;
+  bool any_change;
   auto config_map = params_.getmap();
-  bool any_change = false;
+
+  // keep iterating until no more variable substitutions are possible
   do {
+    any_change = false;
     for (auto kv = config_map.begin(); kv != config_map.end(); kv++) {
       const std::string value = substitute(kv->second);
-      LOG(INFO) << "Value " << kv->second << " is changed to " << value;
-      any_change = value != kv->second ? true : false;
-      builder.putstr(kv->first, value);
+      if (value != kv->second) {
+        LOG(INFO) << "Value " << kv->second << " is changed to " << value;
+        any_change = true;
+        kv->second = value;
+      }
     }
   } while (any_change);
 
+  heron::config::Config::Builder builder;
+  for (auto kv = config_map.begin(); kv != config_map.end(); kv++) {
+    builder.putstr(kv->first, kv->second);
+  }
   return builder.build();
 }
 
@@ -62,19 +70,19 @@ Config::substitute(const std::string& _value) {
       *elem = java_path;
 
     } else if (*elem == "${CLUSTER}") {
-      *elem = params_.getstr(CommonConfigVars::CLUSTER);
+      *elem = params_.getstr(EnvironVars::CLUSTER);
       LOG_IF(FATAL, elem->empty()) << "CLUSTER not set";
 
     } else if (*elem == "${ROLE}") {
-      *elem = params_.getstr(CommonConfigVars::ROLE);
+      *elem = params_.getstr(EnvironVars::ROLE);
       LOG_IF(FATAL, elem->empty()) << "ROLE not set";
 
     } else if (*elem == "${ENVIRON}") {
-      *elem = params_.getstr(CommonConfigVars::ENVIRON);
+      *elem = params_.getstr(EnvironVars::ENVIRON);
       LOG_IF(FATAL, elem->empty()) << "ENVIRON not set";
 
     } else if (*elem == "${TOPOLOGY}") {
-      *elem = params_.getstr(CommonConfigVars::TOPOLOGY_NAME);
+      *elem = params_.getstr(EnvironVars::TOPOLOGY_NAME);
       LOG_IF(FATAL, elem->empty()) << "TOPOLOGY NAME not set";
     }
   }

@@ -16,6 +16,7 @@
 
 #include "basics/fileutils.h"
 #include <dirent.h>
+#include <fcntl.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -72,24 +73,24 @@ sp_int32 FileUtils::existsDirectory(const std::string& directory) {
 }
 
 sp_int32 FileUtils::makePath(const std::string& path) {
-  mode_t mode = 0700;
-  auto retcode = makeDirectory(path, mode);
-  if (retcode == SP_OK)
+  mode_t mode = 0755;
+  auto retcode = ::mkdir(path.c_str(), mode);
+  if (retcode == 0)
     return SP_OK;
 
   switch (errno) {
     case ENOENT: {
-      // parent didn't exist, try to create it
+      // parent directory does not exist, try to create it
       auto pos = path.find_last_of('/');
       if (pos == std::string::npos)
         return SP_NOTOK;
 
-      auto retcode = makeDirectory(path.substr(0, pos), mode);
-      if (retcode == SP_OK)
-        return SP_OK;
+      auto retcode = makePath(path.substr(0, pos));
+      if (retcode == SP_NOTOK)
+        return SP_NOTOK;
 
       // now, try to create again
-      return makeDirectory(path, mode);
+      return 0 == ::mkdir(path.c_str(), mode) ? SP_OK : SP_NOTOK;
     }
     case EEXIST:
     // done!
@@ -202,6 +203,74 @@ bool FileUtils::writeAll(const std::string& filename, const char* data, size_t l
   if (!ot) return false;
   ot.write(reinterpret_cast<const char*>(data), len);
   ot.close();
+  return true;
+}
+
+bool FileUtils::writeSyncAll(const std::string& filename, const char* data, size_t len) {
+  // open the file for creation and write only mode
+  auto fd = ::open(filename.c_str(), O_CREAT | O_WRONLY, 0644);
+  if (fd < 0) {
+    PLOG(ERROR) << "Unable to open file " << filename;
+    return false;
+  }
+
+  // write the contents of the file
+  size_t count = 0;
+  while (count < len) {
+    int i = ::write(fd, data + count, len - count);
+    if (i < 0) {
+      PLOG(ERROR) << "Unable to write contents to file " << filename;
+      return false;
+    }
+    count += i;
+  }
+
+  // force flush the file contents to persistent store
+  auto code = ::fsync(fd);
+  if (code < 0) {
+    PLOG(ERROR) << "Unable to sync file " << filename;
+    return false;
+  }
+
+  // close the file descriptor
+  code = ::close(fd);
+  if (code < 0) {
+    PLOG(ERROR) << "Unable to close file " << filename;
+    return false;
+  }
+  return true;
+}
+
+bool FileUtils::writeAtomicAll(const std::string& filename, const char* data, size_t len) {
+  // form a temporary file name
+  size_t pos = filename.find_last_of("/");
+  if (pos == filename.size() - 1) {
+    LOG(ERROR) << "Specified filename " << filename << " is a directory" << std::endl;
+    return false;
+  }
+
+  std::string newfile;
+  if (pos == std::string::npos) {
+    newfile.append(".").append(filename);
+  } else {
+     newfile.append(filename.substr(0, pos + 1));
+     newfile.append(".").append(filename.substr(pos+1));
+  }
+
+  // Write and flush the contents of the file
+  if (!FileUtils::writeSyncAll(newfile, data, len))
+    return false;
+
+  // rename the file for atomic write
+  return FileUtils::rename(newfile, filename);
+}
+
+bool FileUtils::rename(const std::string& from, const std::string& to) {
+  auto code = ::rename(from.c_str(), to.c_str());
+  if (code < 0) {
+    PLOG(ERROR) << "Unable to rename file " << from << " to " << to;
+    return false;
+  }
   return true;
 }
 

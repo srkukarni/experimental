@@ -27,6 +27,7 @@ Checkpoint::Checkpoint(const std::string& _topology,
   ckptid_ = _checkpoint->checkpoint().checkpoint_id();
   component_ = _checkpoint->instance().info().component_name();
   instance_ = _checkpoint->instance().instance_id();
+  taskid_ = std::to_string(_checkpoint->instance().info().task_id());
   savebytes_ = _checkpoint;
   nbytes_ = _checkpoint->ByteSize();
 }
