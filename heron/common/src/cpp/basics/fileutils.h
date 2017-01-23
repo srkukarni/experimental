@@ -62,6 +62,15 @@ class FileUtils {
   //! write the contents of a string into the file
   static bool writeAll(const std::string& filename, const char* data, size_t len);
 
+  //! write the contents and sync them to persistent storage
+  static bool writeSyncAll(const std::string& filename, const char* data, size_t len);
+
+  //! write the contents to the file atomically
+  static bool writeAtomicAll(const std::string& filename, const char* data, size_t len);
+
+  //! rename file from one name to another name
+  static bool rename(const std::string& src, const std::string& dest);
+
   //! get the current working directory
   static sp_int32 getCwd(std::string& path);
 

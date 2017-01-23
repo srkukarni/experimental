@@ -20,9 +20,9 @@ cc_library(
 )
 
 cc_library(
-    name = "lfs-cxx",
-    srcs = glob(["lfs/*.cpp"]),
-    hdrs = glob(["lfs/*.h"]),
+    name = "localfs-cxx",
+    srcs = glob(["localfs/*.cpp"]),
+    hdrs = glob(["localfs/*.h"]),
     copts = [
         "-Iheron",
         "-I$(GENDIR)/heron",
@@ -38,14 +38,8 @@ cc_library(
 
 cc_library(
     name = "manager-cxx",
-    srcs = [
-        "manager/ckptmgr-server.cpp",
-        "manager/ckptmgr.cpp",
-    ],
-    hdrs = [
-        "manager/ckptmgr-server.h",
-        "manager/ckptmgr.h",
-    ],
+    srcs = glob(["manager/*.cpp"]),
+    hdrs = glob(["manager/*.h"]),
     copts = [
         "-Iheron",
         "-Iheron/common/src/cpp",
@@ -61,9 +55,7 @@ cc_library(
 
 cc_binary(
     name = "heron-ckptmgr",
-    srcs = [
-        "server/ckptmgr-main.cpp",
-    ],
+    srcs = glob(["server/*.cpp"]),
     copts = [
         "-Iheron",
         "-Iheron/common/src/cpp",
@@ -72,9 +64,8 @@ cc_binary(
         "-I$(GENDIR)/heron/common/src/cpp",
     ],
     deps = [
-        ":lfs-cxx",
+        ":localfs-cxx",
         ":manager-cxx",
     ],
     linkstatic = 1,
 )
-

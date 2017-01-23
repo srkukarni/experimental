@@ -133,6 +133,10 @@ public class Keys {
     return ConfigKeys.get("CLUSTER_YAML");
   }
 
+  public static String statefulFile() {
+    return ConfigKeys.get("STATEFUL_YAML");
+  }
+
   public static String clientFile() {
     return ConfigKeys.get("CLIENT_YAML");
   }
@@ -335,6 +339,10 @@ public class Keys {
 
   public static String systemSandboxFile() {
     return ConfigKeys.get("SANDBOX_SYSTEM_YAML");
+  }
+
+  public static String statefulConfigSandboxFile() {
+    return ConfigKeys.get("SANDBOX_STATEFUL_YAML");
   }
 
   public static String uploaderSandboxFile() {

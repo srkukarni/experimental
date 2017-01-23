@@ -68,6 +68,7 @@ public final class ClusterDefaults {
     cb.put(Keys.stateManagerSandboxFile(), Defaults.stateManagerSandboxFile());
     cb.put(Keys.systemSandboxFile(), Defaults.systemSandboxFile());
     cb.put(Keys.uploaderSandboxFile(), Defaults.uploaderSandboxFile());
+    cb.put(Keys.statefulConfigSandboxFile(), Defaults.statefulSandboxFile());
     return cb.build();
   }
 

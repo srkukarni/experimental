@@ -92,7 +92,9 @@ public final class ClusterConfig {
         .put(Keys.uploaderSandboxFile(),
             Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.uploaderSandboxFile()))
         .put(Keys.overrideSandboxFile(),
-            Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.overrideSandboxFile()));
+            Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.overrideSandboxFile()))
+        .put(Keys.statefulConfigSandboxFile(),
+            Misc.substituteSandbox(heronSandboxHome, configPath, Defaults.statefulSandboxFile()));
     return cb.build();
   }
 
@@ -128,6 +130,11 @@ public final class ClusterConfig {
 
   protected static Config loadUploaderConfig(String uploaderFile) {
     Map<String, Object> readConfig = ConfigReader.loadFile(uploaderFile);
+    return Config.newBuilder().putAll(readConfig).build();
+  }
+
+  public static Config loadStatefulConfig(String statefulFile) {
+    Map<String, Object> readConfig = ConfigReader.loadFile(statefulFile);
     return Config.newBuilder().putAll(readConfig).build();
   }
 
@@ -168,7 +175,8 @@ public final class ClusterConfig {
         .putAll(loadSchedulerConfig(Context.schedulerFile(homeConfig)))
         .putAll(loadStateManagerConfig(Context.stateManagerFile(homeConfig)))
         .putAll(loadUploaderConfig(Context.uploaderFile(homeConfig)))
-        .putAll(loadReleaseConfig(releaseFile));
+        .putAll(loadReleaseConfig(releaseFile))
+        .putAll(loadStatefulConfig(Context.statefulFile(homeConfig)));
     return cb.build();
   }
 

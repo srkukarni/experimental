@@ -14,27 +14,13 @@
  * limitations under the License.
  */
 
-////////////////////////////////////////////////////////////////
-//
-// common-config-vars.h
-//
-// This is the common configuration parameter names
-//
-///////////////////////////////////////////////////////////////
-#ifndef COMMON_CONFIG_VARS_H_
-#define COMMON_CONFIG_VARS_H_
+#include "localfs/localfs-config-vars.h"
+#include <string>
 
 namespace heron {
-namespace config {
+namespace ckptmgr {
 
-class CommonConfigVars {
- public:
-  static const sp_string CLUSTER;
-  static const sp_string ROLE;
-  static const sp_string ENVIRON;
-  static const sp_string TOPOLOGY_NAME;
-};
-}  // namespace config
+const std::string LocalfsConfigVars::ROOT_DIR = "heron.stateful.localfs.root.path";
+
+}  // namespace ckptmgr
 }  // namespace heron
-
-#endif

@@ -33,8 +33,6 @@ class Checkpoint {
              ::heron::proto::ckptmgr::GetInstanceStateRequest* _checkpoint);
 
   virtual ~Checkpoint() {
-    if (savebytes_ != nullptr)
-      delete savebytes_;
   }
 
   // get the topology name
@@ -48,6 +46,9 @@ class Checkpoint {
 
   // get the instance id
   std::string getInstance() const { return instance_; }
+
+  // get the task id
+  std::string getTaskId() const { return taskid_; }
 
   // get the checkpoint bytes for storing
   ::heron::proto::ckptmgr::SaveInstanceStateRequest* checkpoint() const { return savebytes_; }
@@ -67,6 +68,7 @@ class Checkpoint {
   std::string  ckptid_;      // checkpoint id
   std::string  component_;   // component id
   std::string  instance_;    // instance id
+  std::string  taskid_;      // task id
   sp_int32     nbytes_;      // number of bytes
   ::heron::proto::ckptmgr::SaveInstanceStateRequest*  savebytes_;
 };

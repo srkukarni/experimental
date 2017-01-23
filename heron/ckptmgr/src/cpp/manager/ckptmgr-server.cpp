@@ -41,7 +41,7 @@ CkptMgrServer::~CkptMgrServer() {
 
 void CkptMgrServer::HandleNewConnection(Connection* _conn) {
   // Do nothing here, wait for the hello from stmgr
-  LOG(INFO) << "Got new connection" << _conn << " from " << _conn->getIPAddress() << ":"
+  LOG(INFO) << "Got new connection " << _conn << " from " << _conn->getIPAddress() << ":"
             << _conn->getPort();
 }
 
@@ -52,8 +52,10 @@ void CkptMgrServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) {
 
 void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
                                             proto::ckptmgr::RegisterStMgrRequest* _request) {
-  LOG(INFO) << "Got a register message from " << _request->stmgr() << " on connection" << _conn;
+  LOG(INFO) << "Got a register message from " << _request->stmgr() << " on connection " << _conn;
+
   proto::ckptmgr::RegisterStMgrResponse response;
+
   // Some basic checks
   if (_request->topology_name() != topology_name_) {
     LOG(ERROR) << "The register message was from a different topology " << _request->topology_name()
@@ -82,7 +84,7 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
   Checkpoint checkpoint(topology_name_, _req);
   LOG(INFO) << "Got a save checkpoint for " << checkpoint.getCkptId() << " "
             << checkpoint.getComponent() << " " << checkpoint.getInstance() << " "
-            << " on connection" << _conn;
+            << "on connection " << _conn;
 
   auto ret = ckptmgr_->storage()->store(checkpoint);
   proto::system::StatusCode status;
@@ -99,10 +101,16 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
   response.set_checkpoint_id(_req->checkpoint().checkpoint_id());
   response.mutable_instance()->CopyFrom(_req->instance());
 
-  LOG(INFO) << "Checkpoint successful for " << checkpoint.getCkptId() << " "
-            << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  if (status == proto::system::OK) {
+    LOG(INFO) << "Checkpoint successful for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  } else {
+    LOG(INFO) << "Checkpoint not successful for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  }
 
   SendResponse(_id, _conn, response);
+  delete _req;
 }
 
 }  // namespace ckptmgr

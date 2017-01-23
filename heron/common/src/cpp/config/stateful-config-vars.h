@@ -14,28 +14,19 @@
  * limitations under the License.
  */
 
-#if !defined(CHECKPOINT_STORAGE_H)
-#define CHECKPOINT_STORAGE_H
+#ifndef STATEFUL_CONFIG_VARS_H
+#define STATEFUL_CONFIG_VARS_H
 
-#include <string>
+#include "basics/sptypes.h"
 
 namespace heron {
-namespace ckptmgr {
+namespace config {
 
-class Storage {
+class StatefulConfigVars {
  public:
-  Storage() {}
-
-  virtual ~Storage() {}
-
-  // store the checkpoint
-  virtual int store(const Checkpoint& _ckpt) = 0;
-
-  // retrieve the checkpoint
-  virtual int restore(Checkpoint& _ckpt) = 0;
+  static const sp_string STORAGE_TYPE;
 };
-
-}  // namespace ckptmgr
+}  // namespace config
 }  // namespace heron
 
-#endif  // storage.h
+#endif  // STATEFUL_CONFIG_VARS_H

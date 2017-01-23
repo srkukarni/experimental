@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-#include "proto/messages.h"
-#include "basics/basics.h"
-#include "errors/errors.h"
-#include "threads/threads.h"
-#include "network/network.h"
-
-#include "config/common-config-vars.h"
+////////////////////////////////////////////////////////////////
+//
+// environ-vars.h
+//
+// This is the environment parameter names
+//
+///////////////////////////////////////////////////////////////
+#ifndef ENVIRON_VARS_H_
+#define ENVIRON_VARS_H_
 
 namespace heron {
 namespace config {
 
-const sp_string CommonConfigVars::CLUSTER = "heron.config.cluster";
-const sp_string CommonConfigVars::ROLE = "heron.config.role";
-const sp_string CommonConfigVars::ENVIRON = "heron.config.environ";
-const sp_string CommonConfigVars::TOPOLOGY_NAME = "heron.topology.name";
-
+class EnvironVars {
+ public:
+  static const sp_string CLUSTER;
+  static const sp_string ROLE;
+  static const sp_string ENVIRON;
+  static const sp_string TOPOLOGY_NAME;
+};
 }  // namespace config
 }  // namespace heron
+
+#endif
