@@ -362,8 +362,7 @@ public class StreamManagerClient extends HeronClient {
   private boolean isStreamMgrReadyReceiveTuples() {
     // The Stream Manager is ready only when:
     // 1. We could connect to it
-    // 2. We receive the PhysicalPlan published by Stream Manager
-    return isConnected() && helper != null;
+    return isConnected();
   }
 
   // Return true if we could offer item to the inStreamQueue
