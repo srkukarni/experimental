@@ -72,6 +72,7 @@ cc_library(
         "manager/stream-consumers.cpp",
         "manager/tmaster-client.cpp",
         "manager/stateful-helper.cpp",
+        "manager/stateful-restorer.cpp",
         "manager/checkpoint-gateway.cpp",
         "manager/ckptmgr-client.cpp",
 
@@ -82,6 +83,7 @@ cc_library(
         "manager/stream-consumers.h",
         "manager/tmaster-client.h",
         "manager/stateful-helper.h",
+        "manager/stateful-restorer.h",
         "manager/checkpoint-gateway.h",
         "manager/ckptmgr-client.h"
     ],

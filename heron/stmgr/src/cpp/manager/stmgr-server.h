@@ -19,6 +19,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 #include "network/network_error.h"
 #include "proto/messages.h"

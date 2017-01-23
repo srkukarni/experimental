@@ -34,7 +34,7 @@ class CkptMgrClient : public Client {
                 std::function<void(const proto::system::Instance&,
                                    const std::string&)> _ckpt_saved_watcher,
                 std::function<void(sp_int32,
-                                   const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
+                              const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
                 std::function<void()> _register_watcher);
   virtual ~CkptMgrClient();
 
@@ -42,7 +42,7 @@ class CkptMgrClient : public Client {
 
   // TODO(nlu): add requests methods
   void SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request);
-  void GetInstanceState(const proto::ckptmgr::Instance& _instance,
+  void GetInstanceState(const proto::system::Instance& _instance,
                         const std::string& _checkpoint_id);
 
  protected:

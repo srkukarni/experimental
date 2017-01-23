@@ -54,6 +54,7 @@ class StreamConsumers;
 class XorManager;
 class TupleCache;
 class StatefulHelper;
+class StatefulRestorer;
 
 class StMgr {
  public:
@@ -100,6 +101,9 @@ class StMgr {
   // Handle checkpoint message coming from upstream to _task_id
   void HandleDownStreamStatefulCheckpoint(
                                 proto::ckptmgr::DownstreamStatefulCheckpoint* _message);
+
+  // Handle RestoreInstanceStateResponse message from local instance
+  void HandleRestoreInstanceStateResponse(sp_int32 _task_id, const std::string& _checkpoint_id);
 
  private:
   void OnTMasterLocationFetch(proto::tmaster::TMasterLocation* _tmaster, proto::system::StatusCode);
@@ -151,6 +155,8 @@ class StMgr {
   // Start Stateful processing
   void StartStatefulProcessing(sp_string _checkpoint_id);
 
+  // Called when Stateful Restorer restores the instance state
+  void HandleStatefulRestoreDone(std::string _checkpoint_id, sp_int64 _restore_txid);
 
   heron::common::HeronStateMgr* state_mgr_;
   proto::system::PhysicalPlan* pplan_;
@@ -178,6 +184,8 @@ class StMgr {
   TupleCache* tuple_cache_;
   // Stateful Helper
   StatefulHelper* stateful_helper_;
+  // Stateful Restorer
+  StatefulRestorer* stateful_restorer_;
 
   // This is the topology structure
   // that contains the full component objects

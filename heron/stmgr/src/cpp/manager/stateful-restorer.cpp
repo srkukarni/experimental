@@ -20,7 +20,10 @@
 #include <list>
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
+#include "manager/stmgr-server.h"
+#include "manager/ckptmgr-client.h"
 #include "proto/messages.h"
 #include "basics/basics.h"
 #include "errors/errors.h"
@@ -30,15 +33,19 @@
 namespace heron {
 namespace stmgr {
 
-StatefulRestorer::StatefulRestorer(StMgrServer* _server, CkptMgrClient* _ckptmgr,
-                                   std::function<void(std::string, sp_int64)> _restore_done_watcher) {
+StatefulRestorer::StatefulRestorer(ckptmgr::CkptMgrClient* _ckptmgr,
+                             std::function<void(std::string, sp_int64)> _restore_done_watcher) {
   in_progress_ = false;
   restore_done_watcher_ = _restore_done_watcher;
-  server_ = _server;
+  server_ = NULL;
   ckptmgr_ = _ckptmgr;
 }
 
 StatefulRestorer::~StatefulRestorer() { }
+
+void StatefulRestorer::SetStMgrServer(StMgrServer* _server) {
+  server_ = _server;
+}
 
 void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 _restore_txid) {
   if (in_progress_) {
@@ -61,10 +68,10 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
   std::vector<proto::system::Instance*> instances;
   server_->GetInstanceInfo(instances);
   for (auto instance : instances) {
-    local_taskids_.insert(instance->instance_info().task_id());
+    local_taskids_.insert(instance->info().task_id());
   }
   restore_pending_ = local_taskids_;
-  getckpt_pending_ = local_taskids_;
+  get_ckpt_pending_ = local_taskids_;
   checkpoint_id_ = _checkpoint_id;
   restore_txid_ = _restore_txid;
 
@@ -73,17 +80,17 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
 }
 
 void StatefulRestorer::GetCheckpoints() {
-  for (auto task_id : getckpt_pending_) {
+  for (auto task_id : get_ckpt_pending_) {
     ckptmgr_->GetInstanceState(*(server_->GetInstanceInfo(task_id)), checkpoint_id_);
   }
 }
 
-void StatefulRestorer::HandleCheckpointState(const proto::ckptmgr::InstanceStateCheckpoint& _state,
-                                             sp_int32 _task_id) {
-  LOG(INFO) << "Got State from checkpoint mgr for " << _task_id << " " << checkpoint_id_;
+void StatefulRestorer::HandleCheckpointState(sp_int32 _task_id,
+                                       const proto::ckptmgr::InstanceStateCheckpoint& _state) {
+  LOG(INFO) << "Got State from checkpoint mgr for " << _task_id << " " << _state.checkpoint_id();
   if (_state.checkpoint_id() != checkpoint_id_) {
     LOG(WARNING) << "Discarding state retrieved from checkpoint mgr because the checkpoint"
-                 << " id in the response does not match " << _state.checkpoint_id();
+                 << " id in the response does not match ours " << checkpoint_id_;
     return;
   }
   get_ckpt_pending_.erase(_task_id);
@@ -92,7 +99,7 @@ void StatefulRestorer::HandleCheckpointState(const proto::ckptmgr::InstanceState
 
 void StatefulRestorer::HandleInstanceRestoredState(sp_int32 _task_id,
                                                    const std::string& _checkpoint_id) {
-  LOG(INFO) << "Instance " << _task_id << " restored its state for " _checkpoint_id;
+  LOG(INFO) << "Instance " << _task_id << " restored its state for " << _checkpoint_id;
   if (_checkpoint_id != checkpoint_id_) {
     LOG(WARNING) << "Ignoring it because we are operating on a different one " << checkpoint_id_;
     return;

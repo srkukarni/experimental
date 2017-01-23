@@ -153,7 +153,7 @@ void CkptMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* 
   SendRequest(_request, NULL);
 }
 
-void CkptMgrClient::GetInstanceState(sp_int32 _task_id, const proto::ckptmgr::Instance& _instance,
+void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
                                      const std::string& _checkpoint_id) {
   auto request = new proto::ckptmgr::GetInstanceStateRequest();
   request->mutable_instance()->CopyFrom(_instance);

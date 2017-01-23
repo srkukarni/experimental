@@ -20,6 +20,7 @@
 #include <ostream>
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 #include <typeinfo>   // operator typeid
 #include "proto/messages.h"
@@ -28,16 +29,22 @@
 #include "grouping/shuffle-grouping.h"
 
 namespace heron {
+namespace ckptmgr {
+class CkptMgrClient;
+}
+}
+
+namespace heron {
 namespace stmgr {
 
 class StMgrServer;
-class CkptMgrClient;
 
 class StatefulRestorer {
  public:
-  explicit StatefulRestorer(StMgrServer* _server, CkptMgrClient* _ckptmgr,
+  explicit StatefulRestorer(ckptmgr::CkptMgrClient* _ckptmgr,
                             std::function<void(std::string, sp_int64)> _restore_done_watcher);
   virtual ~StatefulRestorer();
+  void SetStMgrServer(StMgrServer* _server);
   // Called when stmgr receives a RestoreTopologyStateRequest message
   void StartRestore(const std::string& _checkpoint_id, sp_int64 _restore_txid);
   // Called when ckptmgr client restarts
@@ -60,7 +67,7 @@ class StatefulRestorer {
   std::set<sp_int32> local_taskids_;
   std::function<void(std::string, sp_int64)> restore_done_watcher_;
   StMgrServer* server_;
-  CkptMgrClient* ckptmgr_;
+  ckptmgr::CkptMgrClient* ckptmgr_;
 };
 }  // namespace stmgr
 }  // namespace heron

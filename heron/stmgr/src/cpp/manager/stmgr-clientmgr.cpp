@@ -172,7 +172,7 @@ void StMgrClientMgr::HandleDeadStMgrConnection(const sp_string& _dead_stmgr) {
 
 void StMgrClientMgr::CloseConnectionsAndClear() {
   for (auto kv : clients_) {
-    kv->second->Quit(); // It will delete itself
+    kv.second->Quit();  // It will delete itself
   }
   clients_.clear();
 }

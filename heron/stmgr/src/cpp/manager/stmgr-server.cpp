@@ -17,6 +17,7 @@
 #include "manager/stmgr-server.h"
 #include <iostream>
 #include <set>
+#include <string>
 #include <vector>
 #include "manager/stateful-helper.h"
 #include "manager/stateful-restorer.h"
@@ -178,7 +179,7 @@ void StMgrServer::GetInstanceInfo(std::vector<proto::system::Instance*>& _return
 }
 
 proto::system::Instance* StMgrServer::GetInstanceInfo(sp_int32 _task_id) {
-  auto iter = instance_info_.get(_task_id);
+  auto iter = instance_info_.find(_task_id);
   if (iter == instance_info_.end()) {
     return NULL;
   } else {
@@ -363,7 +364,7 @@ void StMgrServer::HandleRegisterInstanceRequest(REQID _reqid, Connection* _conn,
     }
     SendResponse(_reqid, _conn, response);
 
-    stmgr_->HandleNewInstance(task_id_;
+    stmgr_->HandleNewInstance(task_id);
   }
   delete _request;
 }
@@ -740,7 +741,7 @@ void StMgrServer::SendRestoreInstanceStateRequest(sp_int32 _task_id,
   Connection* conn = instance_info_[_task_id]->conn_;
   if (conn) {
     proto::ckptmgr::RestoreInstanceStateRequest message;
-    message->mutable_state()->CopyFrom(_state);
+    message.mutable_state()->CopyFrom(_state);
     SendMessage(conn, message);
   } else {
     LOG(WARNING) << "Cannot send RestoreInstanceState Request to task "
@@ -753,7 +754,7 @@ void StMgrServer::SendStartInstanceStatefulProcessing(const std::string& _ckpt_i
     Connection* conn = kv.second->conn_;
     if (conn) {
       proto::ckptmgr::StartInstanceStatefulProcessing message;
-      message->set_checkpoint_id(_ckpt_id);
+      message.set_checkpoint_id(_ckpt_id);
       SendMessage(conn, message);
     } else {
       LOG(WARNING) << "Cannot send StartInstanceStatefulProcessing to task "
@@ -762,9 +763,9 @@ void StMgrServer::SendStartInstanceStatefulProcessing(const std::string& _ckpt_i
   }
 }
 
-void StMgr::CloseConnectionsAndReset() {
+void StMgrServer::CloseConnectionsAndReset() {
   for (auto kv : stmgrs_) {
-    kv.second->Close(); // automatically clears stmgrs_ and rstmgrs_
+    kv.second->closeConnection();  // automatically clears stmgrs_ and rstmgrs_
   }
   stateful_gateway_->Clear();
 }

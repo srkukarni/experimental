@@ -29,6 +29,7 @@
 #include "manager/stmgr-server.h"
 #include "manager/stream-consumers.h"
 #include "manager/stateful-helper.h"
+#include "manager/stateful-restorer.h"
 #include "proto/messages.h"
 #include "basics/basics.h"
 #include "errors/errors.h"
@@ -111,6 +112,9 @@ void StMgr::Init() {
 
   // Start the stateful helper.
   stateful_helper_ = new StatefulHelper();
+  stateful_restorer_ = new StatefulRestorer(checkpoint_manager_client_,
+                             std::bind(&StMgr::HandleStatefulRestoreDone, this,
+                                       std::placeholders::_1, std::placeholders::_2));
 
   // Create and start StmgrServer
   StartStmgrServer();
@@ -157,6 +161,7 @@ StMgr::~StMgr() {
   delete checkpoint_manager_client_;
 
   delete stateful_helper_;
+  delete stateful_restorer_;
 }
 
 bool StMgr::DidAnnounceBackPressure() { return server_->DidAnnounceBackPressure(); }
@@ -205,7 +210,8 @@ void StMgr::StartStmgrServer() {
   sops.set_socket_family(PF_INET);
   sops.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);
   server_ = new StMgrServer(eventLoop_, sops, topology_name_, topology_id_, stmgr_id_, instances_,
-                            this, metrics_manager_client_, stateful_helper_);
+                            this, metrics_manager_client_, stateful_helper_, stateful_restorer_);
+  stateful_restorer_->SetStMgrServer(server_);
 
   // start the server
   CHECK_EQ(server_->Start(), 0);
@@ -225,10 +231,20 @@ void StMgr::CreateTMasterClient(proto::tmaster::TMasterLocation* tmasterLocation
        [this](sp_string checkpoint_tag) {
     this->InitiateStatefulCheckpoint(checkpoint_tag);
   };
+  auto restore_topology_watch =
+       [this](sp_string checkpoint_tag, sp_int64 restore_txid) {
+    this->RestoreTopologyState(checkpoint_tag, restore_txid);
+  };
+  auto start_stateful_watch =
+       [this](sp_string checkpoint_tag) {
+    this->StartStatefulProcessing(checkpoint_tag);
+  };
 
   tmaster_client_ = new TMasterClient(eventLoop_, master_options, stmgr_id_, stmgr_port_,
                                       shell_port_, std::move(pplan_watch),
-                                      std::move(stateful_checkpoint_watch));
+                                      std::move(stateful_checkpoint_watch),
+                                      std::move(restore_topology_watch),
+                                      std::move(start_stateful_watch));
 }
 
 void StMgr::CreateCheckpointMgrClient() {
@@ -831,6 +847,15 @@ void StMgr::StartStatefulProcessing(sp_string _checkpoint_id) {
                << _checkpoint_id << " when we are still in Restore";
   }
   server_->SendStartInstanceStatefulProcessing(_checkpoint_id);
+}
+
+void StMgr::HandleRestoreInstanceStateResponse(sp_int32 _task_id,
+                                               const std::string& _checkpoint_id) {
+  stateful_restorer_->HandleInstanceRestoredState(_task_id, _checkpoint_id);
+}
+
+void StMgr::HandleStatefulRestoreDone(std::string _checkpoint_id, sp_int64 _restore_txid) {
+  tmaster_client_->SendRestoreTopologyStateResponse(_checkpoint_id, _restore_txid);
 }
 
 }  // namespace stmgr
