@@ -40,13 +40,17 @@ class CkptMgrServer : public Server {
   virtual void HandleConnectionClose(Connection* connection, NetworkErrorCode status);
 
  private:
-  // Handler for stmgr hello hand shake
+  // Handler for registering stmgr
   void HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
                                   proto::ckptmgr::RegisterStMgrRequest* _request);
 
-  // Handler for storing the checkpoint
+  // Handler for save checkpoint
   void HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
                                  heron::proto::ckptmgr::SaveInstanceStateRequest* _req);
+
+  // Handler for get checkpoint
+  void HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
+                                 heron::proto::ckptmgr::GetInstanceStateRequest* _req);
 
   sp_string topology_name_;
   sp_string topology_id_;
