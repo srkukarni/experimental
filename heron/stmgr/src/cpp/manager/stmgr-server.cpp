@@ -281,7 +281,7 @@ void StMgrServer::HandleStMgrHelloRequest(REQID _id, Connection* _conn,
     response.mutable_status()->set_status(proto::system::OK);
   }
   SendResponse(_id, _conn, response);
-  delete _request;
+  __global_protobuf_pool_release__(_request);
 }
 
 void StMgrServer::HandleTupleStreamMessage(Connection* _conn,
@@ -366,7 +366,7 @@ void StMgrServer::HandleRegisterInstanceRequest(REQID _reqid, Connection* _conn,
 
     stmgr_->HandleNewInstance(task_id);
   }
-  delete _request;
+  __global_protobuf_pool_release__(_request);
 }
 
 void StMgrServer::HandleTupleSetMessage(Connection* _conn,
@@ -461,7 +461,7 @@ void StMgrServer::DrainToInstance3(sp_int32 _task_id,
               << _task_id;
     SendMessage(iter->second->conn_, *_message);
   }
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void StMgrServer::BroadcastNewPhysicalPlan(const proto::system::PhysicalPlan& _pplan) {
@@ -684,7 +684,7 @@ void StMgrServer::HandleInstanceStateCheckpointMessage(Connection* _conn,
   ConnectionTaskIdMap::iterator iter = active_instances_.find(_conn);
   if (iter == active_instances_.end()) {
     LOG(ERROR) << "Hmm.. Got InstaceStateCheckpoint Message from an unknown connection";
-    delete _message;
+    __global_protobuf_pool_release__(_message);
     return;
   }
   sp_int32 task_id = iter->second;
@@ -692,13 +692,13 @@ void StMgrServer::HandleInstanceStateCheckpointMessage(Connection* _conn,
   if (it == instance_info_.end()) {
     LOG(ERROR) << "Hmm.. Got InstaceStateCheckpoint Message from unknown task_id "
                << task_id;
-    delete _message;
+    __global_protobuf_pool_release__(_message);
     return;
   }
 
   // send the checkpoint message to all downstream task ids
   stmgr_->HandleInstanceStateCheckpointMessage(task_id, _message, it->second->instance_);
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void StMgrServer::HandleRestoreInstanceStateResponse(Connection* _conn,
@@ -706,7 +706,7 @@ void StMgrServer::HandleRestoreInstanceStateResponse(Connection* _conn,
   ConnectionTaskIdMap::iterator iter = active_instances_.find(_conn);
   if (iter == active_instances_.end()) {
     LOG(ERROR) << "Hmm.. Got RestoreInstanceStateResponse Message from an unknown connection";
-    delete _message;
+    __global_protobuf_pool_release__(_message);
     return;
   }
   sp_int32 task_id = iter->second;
@@ -714,19 +714,19 @@ void StMgrServer::HandleRestoreInstanceStateResponse(Connection* _conn,
   if (it == instance_info_.end()) {
     LOG(ERROR) << "Hmm.. Got RestoreInstanceStateResponse Message from unknown task_id "
                << task_id;
-    delete _message;
+    __global_protobuf_pool_release__(_message);
     return;
   }
 
   // send the checkpoint message to all downstream task ids
   stmgr_->HandleRestoreInstanceStateResponse(task_id, _message->checkpoint_id());
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void StMgrServer::HandleDownstreamStatefulCheckpointMessage(Connection* _conn,
                                proto::ckptmgr::DownstreamStatefulCheckpoint* _message) {
   stmgr_->HandleDownStreamStatefulCheckpoint(_message);
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void StMgrServer::HandleCheckpointMarker(sp_int32 _src_task_id, sp_int32 _destination_task_id,
