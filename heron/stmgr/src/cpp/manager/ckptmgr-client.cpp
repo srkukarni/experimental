@@ -140,27 +140,32 @@ void CkptMgrClient::HandleStMgrRegisterResponse(void*,
 void CkptMgrClient::OnReconnectTimer() { Start(); }
 
 void CkptMgrClient::SendRegisterRequest() {
-  auto request = new proto::ckptmgr::RegisterStMgrRequest();
+  proto::ckptmgr::RegisterStMgrRequest* request = nullptr;
+  request = __global_protobuf_pool_acquire__(request);
   request->set_topology_name(topology_name_);
   request->set_topology_id(topology_id_);
   request->set_stmgr(stmgr_id_);
   SendRequest(request, NULL);
+  __global_protobuf_pool_release__(request);
   return;
 }
 
 
 void CkptMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request) {
   SendRequest(_request, NULL);
+  __global_protobuf_pool_release__(_request);
 }
 
 void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
                                      const std::string& _checkpoint_id) {
   LOG(INFO) << "Sending GetInstanceState to ckptmgr for task_id " << _instance.info().task_id()
             << " and checkpoint_id " << _checkpoint_id;
-  auto request = new proto::ckptmgr::GetInstanceStateRequest();
+  proto::ckptmgr::GetInstanceStateRequest* request = nullptr;
+  request = __global_protobuf_pool_acquire__(request);
   request->mutable_instance()->CopyFrom(_instance);
   request->set_checkpoint_id(_checkpoint_id);
   SendRequest(request, NULL);
+  __global_protobuf_pool_release__(request);
 }
 
 void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
