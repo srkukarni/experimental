@@ -20,6 +20,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include "tmaster/src/cpp/manager/stateful-restorer.h"
 #include "config/physical-plan-helper.h"
 #include "manager/tmaster.h"
 #include "manager/stmgrstate.h"
@@ -34,11 +35,13 @@ StatefulCoordinator::StatefulCoordinator(
   const std::string& _topology_name,
   const std::string& _latest_consistent_checkpoint,
   heron::common::HeronStateMgr* _state_mgr,
-  std::chrono::high_resolution_clock::time_point _tmaster_start_time)
+  std::chrono::high_resolution_clock::time_point _tmaster_start_time,
+  StatefulRestorer* _stateful_restorer)
   : topology_name_(_topology_name),
     tmaster_start_time_(_tmaster_start_time),
     state_mgr_(_state_mgr),
-    latest_consistent_checkpoint_(_latest_consistent_checkpoint) {
+    latest_consistent_checkpoint_(_latest_consistent_checkpoint),
+    stateful_restorer_(_stateful_restorer) {
   // nothing really
 }
 
@@ -53,6 +56,11 @@ sp_string StatefulCoordinator::GenerateCheckpointId() {
 }
 
 void StatefulCoordinator::DoCheckpoint(const StMgrMap& _stmgrs) {
+  if (stateful_restorer_->InProgress()) {
+    LOG(INFO) << "Will not send checkpoint messages to stmgr because "
+              << "we are in restore";
+    return;
+  }
   // Generate the checkpoint id
   sp_string checkpoint_id = GenerateCheckpointId();
 

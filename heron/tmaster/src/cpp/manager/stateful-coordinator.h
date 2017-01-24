@@ -36,12 +36,15 @@ class PhysicalPlan;
 namespace heron {
 namespace tmaster {
 
+class StatefulRestorer;
+
 class StatefulCoordinator {
  public:
   explicit StatefulCoordinator(const std::string& _topology_name,
                const std::string& _latest_consistent_checkpoint_,
                heron::common::HeronStateMgr* _state_mgr,
-               std::chrono::high_resolution_clock::time_point _tmaster_start_time);
+               std::chrono::high_resolution_clock::time_point _tmaster_start_time,
+               StatefulRestorer* _stateful_restorer);
   virtual ~StatefulCoordinator();
   void RegisterNewPplan(const proto::system::PhysicalPlan& _pplan);
 
@@ -73,6 +76,7 @@ class StatefulCoordinator {
   // of state storage before we can declare it a globally
   // consistent checkpoint
   std::set<sp_int32> partial_checkpoint_remaining_tasks_;
+  StatefulRestorer* stateful_restorer_;
 };
 }  // namespace tmaster
 }  // namespace heron
