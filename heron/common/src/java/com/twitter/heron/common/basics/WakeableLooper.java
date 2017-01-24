@@ -59,6 +59,20 @@ public abstract class WakeableLooper {
     exitTasks = new ArrayList<>();
   }
 
+  public void clear() {
+    tasksOnWakeup.clear();
+    timers.clear();
+    exitTasks.clear();
+  }
+
+  public void clearTasksOnWakeup() {
+    tasksOnWakeup.clear();
+  }
+
+  public void clearTimers() {
+    timers.clear();
+  }
+
   public void loop() {
     while (!exitLoop) {
       runOnce();
@@ -127,7 +141,7 @@ public abstract class WakeableLooper {
       // We need to ceil the result to avoid early wake up
       nextTimeoutIntervalMs =
           (timers.peek().getExpirationNs() - System.nanoTime()
-          + Constants.MILLISECONDS_TO_NANOSECONDS) / Constants.MILLISECONDS_TO_NANOSECONDS;
+              + Constants.MILLISECONDS_TO_NANOSECONDS) / Constants.MILLISECONDS_TO_NANOSECONDS;
     }
     return nextTimeoutIntervalMs;
   }
@@ -137,8 +151,9 @@ public abstract class WakeableLooper {
     // add some items into this list during the iteration, which may cause
     // ConcurrentModificationException
     // We pre-get the size to avoid execute the tasks added during execution
+    // We also need to consider case tasks was cleared during execution
     int s = tasksOnWakeup.size();
-    for (int i = 0; i < s; i++) {
+    for (int i = 0; i < s && i < tasksOnWakeup.size(); i++) {
       tasksOnWakeup.get(i).run();
     }
   }
