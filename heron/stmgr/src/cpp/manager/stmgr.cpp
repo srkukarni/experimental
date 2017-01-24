@@ -798,6 +798,9 @@ void StMgr::HandleInstanceStateCheckpointMessage(sp_int32 _task_id,
 
 void StMgr::HandleSavedInstanceState(const proto::system::Instance& _instance,
                                      const std::string& _checkpoint_id) {
+  LOG(INFO) << "Got notification from ckptmgr that we saved instance state for task "
+            << _instance.info().task_id() << " for checkpoint "
+            << _checkpoint_id;
   tmaster_client_->SavedInstanceState(_instance, _checkpoint_id);
 }
 

@@ -237,7 +237,7 @@ void TMasterClient::SendHeartbeatRequest() {
 
 void TMasterClient::SavedInstanceState(const proto::system::Instance& _instance,
                                        const std::string& _checkpoint_id) {
-  proto::ckptmgr::TopologyStateStored message;
+  proto::ckptmgr::InstanceStateStored message;
   message.set_checkpoint_id(_checkpoint_id);
   message.mutable_instance()->CopyFrom(_instance);
   SendMessage(message);

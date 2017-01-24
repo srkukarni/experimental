@@ -49,11 +49,12 @@ public class Slave implements Runnable, AutoCloseable {
   private static final Logger LOG = Logger.getLogger(Slave.class.getName());
 
   private final SlaveLooper slaveLooper;
-  private final MetricsCollector metricsCollector;
+  private MetricsCollector metricsCollector;
   // Communicator
   private final Communicator<Message> streamInCommunicator;
   private final Communicator<Message> streamOutCommunicator;
   private final Communicator<InstanceControlMsg> inControlQueue;
+  private final Communicator<Metrics.MetricPublisherPublishMessage> metricsOutCommunicator;
   private IInstance instance;
   private PhysicalPlanHelper helper;
   private SystemConfig systemConfig;
@@ -72,6 +73,7 @@ public class Slave implements Runnable, AutoCloseable {
     this.streamInCommunicator = streamInCommunicator;
     this.streamOutCommunicator = streamOutCommunicator;
     this.inControlQueue = inControlQueue;
+    this.metricsOutCommunicator = metricsOutCommunicator;
 
     // TODO(mfu): Create the state with corresponding type according to config
     instanceState = new HashMapState();
@@ -118,6 +120,15 @@ public class Slave implements Runnable, AutoCloseable {
             // Reset the in stream queue
             streamInCommunicator.clear();
 
+            metricsCollector.forceGatherAllMetrics();
+
+            slaveLooper.clearTasksOnWakeup();
+            slaveLooper.clearTimers();
+
+            slaveLooper.addTasksOnWakeup(this);
+            // Create a new MetricsCollector with new clean slave looper
+            metricsCollector = new MetricsCollector(slaveLooper, metricsOutCommunicator);
+
             // Stop current working instance if there is one
             if (instance != null) {
               instance.stop();
@@ -125,12 +136,18 @@ public class Slave implements Runnable, AutoCloseable {
 
             // Reset the state
             instanceState.clear();
-            // TODO(mfu): Add interface to allow customized serialization instead of java default
-            @SuppressWarnings("unchecked")
-            Map<Serializable, Serializable> stateToRestore =
-                (Map<Serializable, Serializable>) Utils.deserialize(
-                    request.getState().getState().toByteArray());
-            instanceState.putAll(stateToRestore);
+            if (request.getState().hasState() && !request.getState().getState().isEmpty()) {
+              // TODO(mfu): Add interface to allow customized serialization instead of java default
+              @SuppressWarnings("unchecked")
+              Map<Serializable, Serializable> stateToRestore =
+                  (Map<Serializable, Serializable>) Utils.deserialize(
+                      request.getState().getState().toByteArray());
+              instanceState.putAll(stateToRestore);
+            } else {
+              LOG.info("The restore request does not have an actual state.");
+            }
+
+            LOG.info("Restored state");
 
             // 1. If during the startup time. Nothing need to be done here:
             // - We would create new instance when new "PhysicalPlan" comes
@@ -138,10 +155,17 @@ public class Slave implements Runnable, AutoCloseable {
 
             // 2. If during the normal running, we need to restart the instance
             if (isInstanceStarted && helper != null) {
-              LOG.info("Restarting instance to restore state");
+              LOG.info("Restarting instance");
               resetCurrentAssignment();
             }
 
+            // Send back the response
+            LOG.info("Acknowledging back the restore instance state response");
+            CheckpointManager.RestoreInstanceStateResponse response =
+                CheckpointManager.RestoreInstanceStateResponse.newBuilder().
+                    setCheckpointId(request.getState().getCheckpointId()).
+                    build();
+            streamOutCommunicator.offer(response);
           }
 
           // Handle New Physical Plan
@@ -150,7 +174,6 @@ public class Slave implements Runnable, AutoCloseable {
 
             // Bind the MetricsCollector with topologyContext
             newHelper.setTopologyContext(metricsCollector);
-
             if (helper == null) {
               helper = newHelper;
               handleNewAssignment();
@@ -194,6 +217,7 @@ public class Slave implements Runnable, AutoCloseable {
   }
 
   private void resetCurrentAssignment() {
+    helper.setTopologyContext(metricsCollector);
     instance = helper.getMySpout() != null
         ? new SpoutInstance(helper, streamInCommunicator, streamOutCommunicator, slaveLooper)
         : new BoltInstance(helper, streamInCommunicator, streamOutCommunicator, slaveLooper);

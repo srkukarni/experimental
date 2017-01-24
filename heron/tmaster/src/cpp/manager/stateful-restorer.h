@@ -30,6 +30,7 @@ class StatefulRestorer {
  public:
   explicit StatefulRestorer(std::function<void()> _after_2pc_cb);
   virtual ~StatefulRestorer();
+  bool InProgress() const { return in_progress_; }
   // Start a new 2PC with this checkpoint_id
   void Start(const std::string& _checkpoint_id, const StMgrMap& _stmgrs);
   void HandleRestored(const std::string& _stmgr_id,

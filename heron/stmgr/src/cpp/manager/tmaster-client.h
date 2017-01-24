@@ -48,7 +48,7 @@ class TMasterClient : public Client {
   // returns the tmaster address "host:port" form.
   sp_string getTmasterHostPort();
 
-  // Send a TopologyStateStored message to tmaster
+  // Send a InstanceStateStored message to tmaster
   void SavedInstanceState(const proto::system::Instance& _instance,
                           const std::string& _checkpoint_id);
 

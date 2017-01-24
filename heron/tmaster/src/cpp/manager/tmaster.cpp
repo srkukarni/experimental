@@ -298,10 +298,10 @@ void TMaster::SetupStatefulCoordinator(const std::string& _checkpoint_id) {
   sp_int64 stateful_checkpoint_interval =
              config::TopologyConfigHelper::GetStatefulCheckpointInterval(*topology_);
   if (stateful_checkpoint_interval > 0) {
-    // Instantiate the stateful coordinator
-    stateful_coordinator_ = new StatefulCoordinator(topology_->name(), _checkpoint_id,
-                                state_mgr_, start_time_);
+    // Instantiate the stateful restorer/coordinator
     stateful_restorer_ = new StatefulRestorer(std::bind(&TMaster::DistributePhysicalPlan, this));
+    stateful_coordinator_ = new StatefulCoordinator(topology_->name(), _checkpoint_id,
+                                state_mgr_, start_time_, stateful_restorer_);
     LOG(INFO) << "Starting timer to checkpoint state every "
               << stateful_checkpoint_interval << " seconds";
     CHECK_GT(eventLoop_->registerTimer(
@@ -332,10 +332,12 @@ void TMaster::SendCheckpointMarker() {
   stateful_coordinator_->DoCheckpoint(stmgrs_);
 }
 
-void TMaster::HandleTopologyStateStored(const std::string& _checkpoint_id,
+void TMaster::HandleInstanceStateStored(const std::string& _checkpoint_id,
                                         const proto::system::Instance& _instance) {
+  LOG(INFO) << "Got notification from stmgr that we saved checkpoint for task "
+            << _instance.info().task_id() << " for checkpoint " << _checkpoint_id;
   if (stateful_coordinator_) {
-    stateful_coordinator_->HandleTopologyStateStored(_checkpoint_id, _instance);
+    stateful_coordinator_->HandleInstanceStateStored(_checkpoint_id, _instance);
   }
 }
 

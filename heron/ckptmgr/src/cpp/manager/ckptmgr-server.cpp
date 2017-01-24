@@ -33,6 +33,7 @@ CkptMgrServer::CkptMgrServer(EventLoop* eventloop, const NetworkOptions& _option
     // handlers
     InstallRequestHandler(&CkptMgrServer::HandleStMgrRegisterRequest);
     InstallRequestHandler(&CkptMgrServer::HandleSaveInstanceStateRequest);
+    InstallRequestHandler(&CkptMgrServer::HandleGetInstanceStateRequest);
 }
 
 CkptMgrServer::~CkptMgrServer() {
@@ -76,7 +77,7 @@ void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
   }
 
   SendResponse(_id, _conn, response);
-  delete _request;
+  __global_protobuf_pool_release__(_req);
 }
 
 void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
@@ -110,7 +111,44 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
   }
 
   SendResponse(_id, _conn, response);
-  delete _req;
+  __global_protobuf_pool_release__(_req);
+}
+
+void CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
+                                        heron::proto::ckptmgr::GetInstanceStateRequest* _req) {
+  Checkpoint checkpoint(topology_name_, _req);
+  LOG(INFO) << "Got a get checkpoint for " << checkpoint.getCkptId() << " "
+            << checkpoint.getComponent() << " " << checkpoint.getInstance() << " "
+            << "on connection " << _conn;
+
+  auto ret = ckptmgr_->storage()->restore(checkpoint);
+  proto::system::StatusCode status;
+  if (ret != SP_OK) {
+    LOG(ERROR) << "Get checkpoint failed for " << checkpoint.getCkptId() << " "
+               << checkpoint.getComponent() << " " << checkpoint.getInstance();
+    status = proto::system::NOTOK;
+  } else {
+    status = proto::system::OK;
+  }
+
+  heron::proto::ckptmgr::GetInstanceStateResponse response;
+  response.mutable_status()->set_status(status);
+  response.mutable_instance()->CopyFrom(_req->instance());
+  response.set_checkpoint_id(_req->checkpoint_id());
+
+  if (status == proto::system::OK) {
+    // padding the checkpoint into response
+    response.mutable_checkpoint()->CopyFrom(checkpoint.checkpoint()->checkpoint());
+
+    LOG(INFO) << "Get checkpoint success for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  } else {
+    LOG(INFO) << "Get checkpoint failed for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  }
+
+  SendResponse(_id, _conn, response);
+  __global_protobuf_pool_release__(_req);
 }
 
 }  // namespace ckptmgr

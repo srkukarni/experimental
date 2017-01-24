@@ -38,7 +38,7 @@ TMasterServer::TMasterServer(EventLoop* eventLoop, const NetworkOptions& _option
 
   // Install the metricsmgr handlers
   InstallMessageHandler(&TMasterServer::HandleMetricsMgrStats);
-  InstallMessageHandler(&TMasterServer::HandleTopologyStateStored);
+  InstallMessageHandler(&TMasterServer::HandleInstanceStateStored);
   InstallMessageHandler(&TMasterServer::HandleRestoreTopologyStateResponse);
   InstallMessageHandler(&TMasterServer::HandleResetTopologyStateMessage);
 }
@@ -79,9 +79,9 @@ void TMasterServer::HandleMetricsMgrStats(Connection*, proto::tmaster::PublishMe
   delete _request;
 }
 
-void TMasterServer::HandleTopologyStateStored(Connection*,
-                                              proto::ckptmgr::TopologyStateStored* _message) {
-  tmaster_->HandleTopologyStateStored(_message->checkpoint_id(), _message->instance());
+void TMasterServer::HandleInstanceStateStored(Connection*,
+                                              proto::ckptmgr::InstanceStateStored* _message) {
+  tmaster_->HandleInstanceStateStored(_message->checkpoint_id(), _message->instance());
   delete _message;
 }
 
