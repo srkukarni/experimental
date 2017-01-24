@@ -55,29 +55,31 @@ void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
                                             proto::ckptmgr::RegisterStMgrRequest* _request) {
   LOG(INFO) << "Got a register message from " << _request->stmgr() << " on connection " << _conn;
 
-  proto::ckptmgr::RegisterStMgrResponse response;
+  proto::ckptmgr::RegisterStMgrResponse* response = nullptr;
+  response = __global_protobuf_pool_acquire__(response);
 
   // Some basic checks
   if (_request->topology_name() != topology_name_) {
     LOG(ERROR) << "The register message was from a different topology " << _request->topology_name()
                << std::endl;
-    response.mutable_status()->set_status(proto::system::NOTOK);
+    response->mutable_status()->set_status(proto::system::NOTOK);
   } else if (_request->topology_id() != topology_id_) {
     LOG(ERROR) << "The register message was from a different topology id" << _request->topology_id()
                << std::endl;
-    response.mutable_status()->set_status(proto::system::NOTOK);
+    response->mutable_status()->set_status(proto::system::NOTOK);
   } else if (stmgr_conn_ != NULL) {
     LOG(WARNING) << "We already have an active connection from the stmgr " << _request->stmgr()
                  << ". Closing existing connection...";
     stmgr_conn_->closeConnection();
-    response.mutable_status()->set_status(proto::system::NOTOK);
+    response->mutable_status()->set_status(proto::system::NOTOK);
   } else {
     stmgr_conn_ = _conn;
-    response.mutable_status()->set_status(proto::system::OK);
+    response->mutable_status()->set_status(proto::system::OK);
   }
 
-  SendResponse(_id, _conn, response);
-  __global_protobuf_pool_release__(_req);
+  SendResponse(_id, _conn, *response);
+  __global_protobuf_pool_release__(response);
+  __global_protobuf_pool_release__(_request);
 }
 
 void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
@@ -97,10 +99,11 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
     status = proto::system::OK;
   }
 
-  heron::proto::ckptmgr::SaveInstanceStateResponse response;
-  response.mutable_status()->set_status(status);
-  response.set_checkpoint_id(_req->checkpoint().checkpoint_id());
-  response.mutable_instance()->CopyFrom(_req->instance());
+  heron::proto::ckptmgr::SaveInstanceStateResponse* response = nullptr;
+  response = __global_protobuf_pool_acquire__(response);
+  response->mutable_status()->set_status(status);
+  response->set_checkpoint_id(_req->checkpoint().checkpoint_id());
+  response->mutable_instance()->CopyFrom(_req->instance());
 
   if (status == proto::system::OK) {
     LOG(INFO) << "Checkpoint successful for " << checkpoint.getCkptId() << " "
@@ -110,8 +113,9 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
               << checkpoint.getComponent() << " " << checkpoint.getInstance();
   }
 
-  SendResponse(_id, _conn, response);
+  SendResponse(_id, _conn, *response);
   __global_protobuf_pool_release__(_req);
+  __global_protobuf_pool_release__(response);
 }
 
 void CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
@@ -131,14 +135,15 @@ void CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
     status = proto::system::OK;
   }
 
-  heron::proto::ckptmgr::GetInstanceStateResponse response;
-  response.mutable_status()->set_status(status);
-  response.mutable_instance()->CopyFrom(_req->instance());
-  response.set_checkpoint_id(_req->checkpoint_id());
+  heron::proto::ckptmgr::GetInstanceStateResponse* response = nullptr;
+  response = __global_protobuf_pool_acquire__(response);
+  response->mutable_status()->set_status(status);
+  response->mutable_instance()->CopyFrom(_req->instance());
+  response->set_checkpoint_id(_req->checkpoint_id());
 
   if (status == proto::system::OK) {
     // padding the checkpoint into response
-    response.mutable_checkpoint()->CopyFrom(checkpoint.checkpoint()->checkpoint());
+    response->mutable_checkpoint()->CopyFrom(checkpoint.checkpoint()->checkpoint());
 
     LOG(INFO) << "Get checkpoint success for " << checkpoint.getCkptId() << " "
               << checkpoint.getComponent() << " " << checkpoint.getInstance();
@@ -147,7 +152,9 @@ void CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
               << checkpoint.getComponent() << " " << checkpoint.getInstance();
   }
 
-  SendResponse(_id, _conn, response);
+  SendResponse(_id, _conn, *response);
+
+  __global_protobuf_pool_release__(response);
   __global_protobuf_pool_release__(_req);
 }
 

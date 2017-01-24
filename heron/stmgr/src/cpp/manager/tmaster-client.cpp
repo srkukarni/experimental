@@ -207,7 +207,8 @@ void TMasterClient::OnHeartbeatTimer() {
 }
 
 void TMasterClient::SendRegisterRequest() {
-  auto request = new proto::tmaster::StMgrRegisterRequest();
+  proto::tmaster::StMgrRegisterRequest* request = nullptr;
+  request = __global_protobuf_pool_acquire__(request);
 
   sp_string cwd;
   FileUtils::getCwd(cwd);
@@ -222,33 +223,48 @@ void TMasterClient::SendRegisterRequest() {
   for (auto iter = instances_.begin(); iter != instances_.end(); ++iter) {
     request->add_instances()->CopyFrom(*(*iter));
   }
+
   SendRequest(request, NULL);
+
+  __global_protobuf_pool_acquire__(request);
   return;
 }
 
 void TMasterClient::SendHeartbeatRequest() {
-  auto request = new proto::tmaster::StMgrHeartbeatRequest();
+  proto::tmaster::StMgrHeartbeatRequest* request = nullptr;
+  request = __global_protobuf_pool_acquire__(request);
   request->set_heartbeat_time(time(NULL));
   // TODO(vikasr) Send actual stats
   request->mutable_stats();
+
   SendRequest(request, NULL);
+
+  __global_protobuf_pool_release__(request);
   return;
 }
 
 void TMasterClient::SavedInstanceState(const proto::system::Instance& _instance,
                                        const std::string& _checkpoint_id) {
-  proto::ckptmgr::InstanceStateStored message;
-  message.set_checkpoint_id(_checkpoint_id);
-  message.mutable_instance()->CopyFrom(_instance);
-  SendMessage(message);
+  proto::ckptmgr::InstanceStateStored* message = nullptr;
+  message = __global_protobuf_pool_acquire__(message);
+  message->set_checkpoint_id(_checkpoint_id);
+  message->mutable_instance()->CopyFrom(_instance);
+
+  SendMessage(*message);
+
+  __global_protobuf_pool_release__(message);
 }
 
 void TMasterClient::SendRestoreTopologyStateResponse(const std::string& _ckpt_id,
                                                      sp_int64 _txid) {
-  proto::ckptmgr::RestoreTopologyStateResponse message;
-  message.set_checkpoint_id(_ckpt_id);
-  message.set_restore_txid(_txid);
-  SendMessage(message);
+  proto::ckptmgr::RestoreTopologyStateResponse* message = nullptr;
+  message = __global_protobuf_pool_acquire__(message);
+  message->set_checkpoint_id(_ckpt_id);
+  message->set_restore_txid(_txid);
+
+  SendMessage(*message);
+
+  __global_protobuf_pool_release__(message);
 }
 
 void TMasterClient::HandleRestoreTopologyStateRequest(
@@ -264,9 +280,13 @@ void TMasterClient::HandleStartStmgrStatefulProcessing(
 }
 
 void TMasterClient::SendResetTopologyState(const std::string& _reason) {
-  proto::ckptmgr::ResetTopologyState message;
-  message.set_reason(_reason);
-  SendMessage(message);
+  proto::ckptmgr::ResetTopologyState* message = nullptr;
+  message = __global_protobuf_pool_acquire__(message);
+  message->set_reason(_reason);
+
+  SendMessage(*message);
+
+  __global_protobuf_pool_release__(message);
 }
 }  // namespace stmgr
 }  // namespace heron

@@ -253,19 +253,21 @@ void StMgrServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) {
 void StMgrServer::HandleStMgrHelloRequest(REQID _id, Connection* _conn,
                                           proto::stmgr::StrMgrHelloRequest* _request) {
   LOG(INFO) << "Got a hello message from stmgr " << _request->stmgr() << " on connection " << _conn;
-  proto::stmgr::StrMgrHelloResponse response;
+  proto::stmgr::StrMgrHelloResponse* response = nullptr;
+  response = __global_protobuf_pool_acquire__(response);
+
   // Some basic checks
   if (_request->topology_name() != topology_name_) {
     LOG(ERROR) << "The hello message was from a different topology " << _request->topology_name()
                << std::endl;
-    response.mutable_status()->set_status(proto::system::NOTOK);
+    response->mutable_status()->set_status(proto::system::NOTOK);
   } else if (_request->topology_id() != topology_id_) {
     LOG(ERROR) << "The hello message was from a different topology id " << _request->topology_id()
                << std::endl;
-    response.mutable_status()->set_status(proto::system::NOTOK);
+    response->mutable_status()->set_status(proto::system::NOTOK);
   } else if (stateful_restorer_ && stateful_restorer_->InProgress()) {
     LOG(ERROR) << "The hello message was came when we are in 2pc";
-    response.mutable_status()->set_status(proto::system::NOTOK);
+    response->mutable_status()->set_status(proto::system::NOTOK);
   } else if (stmgrs_.find(_request->stmgr()) != stmgrs_.end()) {
     LOG(WARNING) << "We already had an active connection from the stmgr " << _request->stmgr()
                  << ". Closing existing connection...";
@@ -274,14 +276,15 @@ void StMgrServer::HandleStMgrHelloRequest(REQID _id, Connection* _conn,
     // We shouldn't add the new stmgr connection right now because
     // the close could be asynchronous (fired through a 0 timer)
     stmgrs_[_request->stmgr()]->closeConnection();
-    response.mutable_status()->set_status(proto::system::NOTOK);
+    response->mutable_status()->set_status(proto::system::NOTOK);
   } else {
     stmgrs_[_request->stmgr()] = _conn;
     rstmgrs_[_conn] = _request->stmgr();
-    response.mutable_status()->set_status(proto::system::OK);
+    response->mutable_status()->set_status(proto::system::OK);
   }
-  SendResponse(_id, _conn, response);
+  SendResponse(_id, _conn, *response);
   __global_protobuf_pool_release__(_request);
+  __global_protobuf_pool_release__(response);
 }
 
 void StMgrServer::HandleTupleStreamMessage(Connection* _conn,
@@ -331,10 +334,12 @@ void StMgrServer::HandleRegisterInstanceRequest(REQID _reqid, Connection* _conn,
     instance_info_[task_id]->conn_->closeConnection();
     error = true;
   }
+
+  proto::stmgr::RegisterInstanceResponse* response = nullptr;
+
   if (error) {
-    proto::stmgr::RegisterInstanceResponse response;
-    response.mutable_status()->set_status(proto::system::NOTOK);
-    SendResponse(_reqid, _conn, response);
+    response->mutable_status()->set_status(proto::system::NOTOK);
+    SendResponse(_reqid, _conn, *response);
   } else {
     LOG(INFO) << "New instance registered with us " << instance_id;
     active_instances_[_conn] = task_id;
@@ -356,17 +361,18 @@ void StMgrServer::HandleRegisterInstanceRequest(REQID _reqid, Connection* _conn,
     }
     instance_info_[task_id]->set_connection(_conn);
 
-    proto::stmgr::RegisterInstanceResponse response;
-    response.mutable_status()->set_status(proto::system::OK);
+    response->mutable_status()->set_status(proto::system::OK);
     const proto::system::PhysicalPlan* pplan = stmgr_->GetPhysicalPlan();
     if (pplan) {
-      response.mutable_pplan()->CopyFrom(*pplan);
+      response->mutable_pplan()->CopyFrom(*pplan);
     }
-    SendResponse(_reqid, _conn, response);
+    SendResponse(_reqid, _conn, *response);
 
     stmgr_->HandleNewInstance(task_id);
   }
+
   __global_protobuf_pool_release__(_request);
+  __global_protobuf_pool_release__(response);
 }
 
 void StMgrServer::HandleTupleSetMessage(Connection* _conn,
@@ -467,11 +473,13 @@ void StMgrServer::DrainToInstance3(sp_int32 _task_id,
 void StMgrServer::BroadcastNewPhysicalPlan(const proto::system::PhysicalPlan& _pplan) {
   // TODO(vikasr) We do not handle any changes to our local assignment
   ComputeLocalSpouts(_pplan);
-  proto::stmgr::NewInstanceAssignmentMessage new_assignment;
-  new_assignment.mutable_pplan()->CopyFrom(_pplan);
+  proto::stmgr::NewInstanceAssignmentMessage* new_assignment = nullptr;
+  new_assignment = __global_protobuf_pool_acquire__(new_assignment);
+  new_assignment->mutable_pplan()->CopyFrom(_pplan);
   for (auto iter = active_instances_.begin(); iter != active_instances_.end(); ++iter) {
-    SendMessage(iter->first, new_assignment);
+    SendMessage(iter->first, *new_assignment);
   }
+  __global_protobuf_pool_release__(new_assignment);
 }
 
 void StMgrServer::ComputeLocalSpouts(const proto::system::PhysicalPlan& _pplan) {
@@ -672,9 +680,11 @@ void StMgrServer::InitiateStatefulCheckpoint(const sp_string& _checkpoint_tag) {
                 << _checkpoint_tag << " to local spout "
                 << iter->second->instance_->info().component_name()
                 << " with task_id " << iter->second->instance_->info().task_id();
-      proto::ckptmgr::InitiateStatefulCheckpoint message;
-      message.set_checkpoint_id(_checkpoint_tag);
-      SendMessage(iter->second->conn_, message);
+      proto::ckptmgr::InitiateStatefulCheckpoint* message = nullptr;
+      message = __global_protobuf_pool_acquire__(message);
+      message->set_checkpoint_id(_checkpoint_tag);
+      SendMessage(iter->second->conn_, *message);
+      __global_protobuf_pool_release__(message);
     }
   }
 }
@@ -741,9 +751,11 @@ void StMgrServer::SendRestoreInstanceStateRequest(sp_int32 _task_id,
   CHECK(instance_info_.find(_task_id) != instance_info_.end());
   Connection* conn = instance_info_[_task_id]->conn_;
   if (conn) {
-    proto::ckptmgr::RestoreInstanceStateRequest message;
-    message.mutable_state()->CopyFrom(_state);
-    SendMessage(conn, message);
+    proto::ckptmgr::RestoreInstanceStateRequest* message = nullptr;
+    message = __global_protobuf_pool_acquire__(message);
+    message->mutable_state()->CopyFrom(_state);
+    SendMessage(conn, *message);
+    __global_protobuf_pool_release__(message);
   } else {
     LOG(WARNING) << "Cannot send RestoreInstanceState Request to task "
                  << _task_id << " because it is not connected to us";
@@ -754,9 +766,11 @@ void StMgrServer::SendStartInstanceStatefulProcessing(const std::string& _ckpt_i
   for (auto kv : instance_info_) {
     Connection* conn = kv.second->conn_;
     if (conn) {
-      proto::ckptmgr::StartInstanceStatefulProcessing message;
-      message.set_checkpoint_id(_ckpt_id);
-      SendMessage(conn, message);
+      proto::ckptmgr::StartInstanceStatefulProcessing* message = nullptr;
+      message = __global_protobuf_pool_acquire__(message);
+      message->set_checkpoint_id(_ckpt_id);
+      SendMessage(conn, *message);
+      __global_protobuf_pool_release__(message);
     } else {
       LOG(WARNING) << "Cannot send StartInstanceStatefulProcessing to task "
                    << kv.first << " because it is not connected to us";
