@@ -42,7 +42,7 @@ class CkptMgrServer : public Server {
  private:
   // Handler for registering stmgr
   void HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
-                                  proto::ckptmgr::RegisterStMgrRequest* _request);
+                                  proto::ckptmgr::RegisterStMgrRequest* _req);
 
   // Handler for save checkpoint
   void HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
