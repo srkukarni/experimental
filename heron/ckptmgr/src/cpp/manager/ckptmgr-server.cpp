@@ -79,8 +79,9 @@ void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
   delete _request;
 }
 
-void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
-                                        heron::proto::ckptmgr::SaveInstanceStateRequest* _req) {
+void
+CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
+                                      heron::proto::ckptmgr::SaveInstanceStateRequest* _req) {
   Checkpoint checkpoint(topology_name_, _req);
   LOG(INFO) << "Got a save checkpoint for " << checkpoint.getCkptId() << " "
             << checkpoint.getComponent() << " " << checkpoint.getInstance() << " "
@@ -110,6 +111,34 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
   }
 
   SendResponse(_id, _conn, response);
+  delete _req;
+}
+
+void
+CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
+                                      heron::proto::ckptmgr::GetInstanceStateRequest* _req) {
+  Checkpoint checkpoint(topology_name_, _req);
+
+  // restore the checkpoint file
+  auto ret = ckptmgr_->storage()->restore(checkpoint);
+
+  // construct the response
+  heron::proto::ckptmgr::GetInstanceStateResponse response;
+  response.set_checkpoint_id(_req->checkpoint_id());
+  response.mutable_instance()->CopyFrom(_req->instance());
+  response.mutable_status()->set_status(ret == SP_OK ? proto::system::OK : proto::system::NOTOK);
+
+  if (ret == SP_OK) {
+    response.mutable_checkpoint()->CopyFrom(checkpoint.checkpoint()->checkpoint());
+    LOG(INFO) << "Restore checkpoint successful for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  } else {
+    LOG(INFO) << "Restore checkpoint not successful for " << checkpoint.getCkptId() << " "
+              << checkpoint.getComponent() << " " << checkpoint.getInstance();
+  }
+
+  SendResponse(_id, _conn, response);
+  delete checkpoint.checkpoint();
   delete _req;
 }
 

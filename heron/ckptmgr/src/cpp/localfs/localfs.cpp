@@ -100,14 +100,14 @@ int LocalFS::restore(Checkpoint& _ckpt) {
   }
 
   // read the protobuf from checkpoint file
-  auto savedbytes = new ::heron::proto::ckptmgr::SaveInstanceStateRequest;
-  if (!savedbytes->ParseFromIstream(&ifile)) {
+  auto bytes = new ::heron::proto::ckptmgr::SaveInstanceStateRequest();
+  if (!bytes->ParseFromIstream(&ifile)) {
     LOG(ERROR) << "Restore checkpoint failed for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
 
   // pass the retrieved bytes to checkpoint
-  _ckpt.set_checkpoint(savedbytes);
+  _ckpt.set_checkpoint(bytes);
 
   // close the checkpoint file
   ifile.close();

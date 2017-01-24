@@ -42,11 +42,15 @@ class CkptMgrServer : public Server {
  private:
   // Handler for stmgr hello hand shake
   void HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
-                                  proto::ckptmgr::RegisterStMgrRequest* _request);
+      proto::ckptmgr::RegisterStMgrRequest* _request);
 
   // Handler for storing the checkpoint
   void HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
-                                 heron::proto::ckptmgr::SaveInstanceStateRequest* _req);
+      heron::proto::ckptmgr::SaveInstanceStateRequest* _req);
+
+  // Handler for restoring the checkpoint
+  void HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
+      heron::proto::ckptmgr::GetInstanceStateRequest* _req);
 
   sp_string topology_name_;
   sp_string topology_id_;
