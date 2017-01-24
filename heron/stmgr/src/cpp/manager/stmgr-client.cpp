@@ -137,7 +137,7 @@ void StMgrClient::HandleHelloResponse(void*, proto::stmgr::StrMgrHelloResponse* 
     LOG(ERROR) << "NonOK network code " << _status << " for register response from stmgr "
                << other_stmgr_id_ << " running at " << get_clientoptions().get_host() << ":"
                << get_clientoptions().get_port();
-    delete _response;
+    __global_protobuf_pool_release__(_response);
     Stop();
     return;
   }
@@ -148,7 +148,7 @@ void StMgrClient::HandleHelloResponse(void*, proto::stmgr::StrMgrHelloResponse* 
                << get_clientoptions().get_port();
     Stop();
   }
-  delete _response;
+  __global_protobuf_pool_release__(_response);
   if (client_manager_->DidAnnounceBackPressure()) {
     SendStartBackPressureMessage();
   }
@@ -229,7 +229,7 @@ void StMgrClient::SendStopBackPressureMessage() {
 void StMgrClient::SendDownstreamStatefulCheckpoint(
                   proto::ckptmgr::DownstreamStatefulCheckpoint* _message) {
   SendMessage(*_message);
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 }  // namespace stmgr
