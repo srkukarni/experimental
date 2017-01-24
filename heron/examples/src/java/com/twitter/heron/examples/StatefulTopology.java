@@ -47,9 +47,8 @@ import com.twitter.heron.api.utils.Utils;
  * with expected result for correctness verification.
  * During nextTuple(), the spout would randomly throw exceptions,
  * when # of emitted tuples is a multiple of EXCEPTION_THROWING_INTERVAL_COUNT
- * - 1. 100% throw exception when emitted tuples equal to EXCEPTION_THROWING_INTERVAL_COUNT
- * so it is guaranteed the instance would restart at least once.
- * - 2. EXCEPTION_PROBABILITY to throw exception otherwise
+ * <p>
+ * The probability to throw exception will increase, and it will throw at least once
  * The state in CountBolt should be deterministic if exactly once failure recovery is guaranteed.
  * <p>
  * The DAG looks like this:
@@ -88,6 +87,8 @@ public final class StatefulTopology {
     private static final String KEY_EMITTED = "tuples_emitted";
     // This value will be restored from the spoutState
     private long emitted;
+    // This value is not persistent
+    private long emittedThisSession;
 
     private State spoutState;
 
@@ -115,16 +116,17 @@ public final class StatefulTopology {
 
       // Randomly throw exceptions when # of emitted tuples is a multiple of
       // EXCEPTION_THROWING_INTERVAL_COUNT
-      // 1. 100% throw exception when emitted tuples equal to EXCEPTION_THROWING_INTERVAL_COUNT
-      // so it is guaranteed to have at least one exception
-      // 2. EXCEPTION_PROBABILITY to throw exception otherwise
+      // The probability to throw exception will increase,
+      // and it will throw at least once
       if (emitted % EXCEPTION_THROWING_INTERVAL_COUNT == 0) {
-        if (emitted == EXCEPTION_THROWING_INTERVAL_COUNT
-            || new Random().nextDouble() < EXCEPTION_PROBABILITY) {
-          throw new RuntimeException("Intentional exception for failure recovery testing.");
+        double p = EXCEPTION_PROBABILITY + (double) emittedThisSession / TOTAL_COUNT_TO_EMIT;
+        System.out.println("Probability to throw exception: " + p);
+        if (new Random().nextDouble() < p) {
+          throw new RuntimeException("Intentional exception for failure recovery testing. "
+              + "Emitted: " + emitted);
         }
       }
-
+      emittedThisSession++;
       int index = (int) (emitted++ % this.sentences.length);
       final String sentence = this.sentences[index];
       collector.emit(new Values(sentence));
