@@ -32,7 +32,7 @@ CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _option
                              const sp_string& _ckptmgr_id, const sp_string& _stmgr_id,
                              std::function<void(const proto::system::Instance&,
                                                 const std::string&)> _ckpt_saved_watcher,
-                             std::function<void(sp_int32,
+                             std::function<void(proto::system::StatusCode, sp_int32,
                                const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
                              std::function<void()> _register_watcher)
     : Client(eventloop, _options),
@@ -157,10 +157,18 @@ void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
                                      const std::string& _checkpoint_id) {
   LOG(INFO) << "Sending GetInstanceState to ckptmgr for task_id " << _instance.info().task_id()
             << " and checkpoint_id " << _checkpoint_id;
+  int32_t* nattempts = new int32_t;
+  *nattempts = 0;
+  return GetInstanceState(_instance, _checkpoint_id, nattempts);
+}
+
+void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
+                                     const std::string& _checkpoint_id,
+                                     int32_t* _nattempts) {
   auto request = new proto::ckptmgr::GetInstanceStateRequest();
   request->mutable_instance()->CopyFrom(_instance);
   request->set_checkpoint_id(_checkpoint_id);
-  SendRequest(request, NULL);
+  SendRequest(request, _nattempts);
 }
 
 void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
@@ -181,26 +189,36 @@ void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
   delete _response;
 }
 
-void CkptMgrClient::HandleGetInstanceStateResponse(void*,
+void CkptMgrClient::HandleGetInstanceStateResponse(void* _ctx,
                              proto::ckptmgr::GetInstanceStateResponse* _response,
                              NetworkErrorCode _status) {
+  int32_t* nattempts = static_cast<int32_t*>(_ctx);
   if (_status != OK) {
     LOG(ERROR) << "NonOK response message for GetInstanceStateResponse";
     delete _response;
+    delete nattempts;
     Stop();
     return;
   }
-  if (_response->status().status() != proto::system::OK ||
-      !_response->has_checkpoint()) {
+  if (_response->status().status() != proto::system::OK) {
     LOG(ERROR) << "CkptMgr could not get checkpoint for "
                << _response->instance().info().task_id()
                << " and checkpoint_id " << _response->checkpoint_id()
                << " because of reason: " << _response->status().status();
-    GetInstanceState(_response->instance(), _response->checkpoint_id());
-    delete _response;
-    return;
+    *nattempts = *nattempts + 1;
+    if (*nattempts >= 5) {
+      LOG(ERROR) << "Not Retrying because already tried too many times";
+      delete nattempts;
+      ckpt_get_watcher_(_response->status().status(),
+                        _response->instance().info().task_id(), _response->checkpoint());
+    } else {
+      LOG(INFO) << "Retrying...";
+      GetInstanceState(_response->instance(), _response->checkpoint_id(), nattempts);
+    }
+  } else {
+    ckpt_get_watcher_(_response->status().status(),
+                      _response->instance().info().task_id(), _response->checkpoint());
   }
-  ckpt_get_watcher_(_response->instance().info().task_id(), _response->checkpoint());
   delete _response;
 }
 }  // namespace ckptmgr

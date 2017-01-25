@@ -53,7 +53,8 @@ class TMasterClient : public Client {
                           const std::string& _checkpoint_id);
 
   // Send RestoreTopologyStateResponse to tmaster
-  void SendRestoreTopologyStateResponse(const std::string& _checkpoint_id,
+  void SendRestoreTopologyStateResponse(proto::system::StatusCode _status,
+                                        const std::string& _checkpoint_id,
                                         sp_int64 _txid);
 
   // Send ResetTopologyState message to tmaster

@@ -115,7 +115,7 @@ class StMgr {
   // Called when ckpt mgr saves a state
   void HandleSavedInstanceState(const proto::system::Instance& _instance,
                                 const std::string& _checkpoint_id);
-  void HandleGetInstanceState(sp_int32 _task_id,
+  void HandleGetInstanceState(proto::system::StatusCode _status, sp_int32 _task_id,
                               const proto::ckptmgr::InstanceStateCheckpoint& _msg);
 
   void CleanupStreamConsumers();
@@ -156,7 +156,8 @@ class StMgr {
   void StartStatefulProcessing(sp_string _checkpoint_id);
 
   // Called when Stateful Restorer restores the instance state
-  void HandleStatefulRestoreDone(std::string _checkpoint_id, sp_int64 _restore_txid);
+  void HandleStatefulRestoreDone(proto::system::StatusCode _status,
+                                 std::string _checkpoint_id, sp_int64 _restore_txid);
 
   heron::common::HeronStateMgr* state_mgr_;
   proto::system::PhysicalPlan* pplan_;

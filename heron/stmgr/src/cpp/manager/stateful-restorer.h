@@ -42,7 +42,8 @@ class StMgrServer;
 class StatefulRestorer {
  public:
   explicit StatefulRestorer(ckptmgr::CkptMgrClient* _ckptmgr,
-                            std::function<void(std::string, sp_int64)> _restore_done_watcher);
+                            std::function<void(proto::system::StatusCode,
+                                               std::string, sp_int64)> _restore_done_watcher);
   virtual ~StatefulRestorer();
   void SetStMgrServer(StMgrServer* _server);
   // Called when stmgr receives a RestoreTopologyStateRequest message
@@ -52,7 +53,7 @@ class StatefulRestorer {
   // Called when instance responds back with RestoredInstanceStateResponse
   void HandleInstanceRestoredState(sp_int32 _task_id, const std::string& _checkpoint_id);
   // called when ckptmgr returns with instance state
-  void HandleCheckpointState(sp_int32 _task_id,
+  void HandleCheckpointState(proto::system::StatusCode _status, sp_int32 _task_id,
                              const proto::ckptmgr::InstanceStateCheckpoint& _state);
   bool InProgress() const { return in_progress_; }
 
@@ -65,7 +66,7 @@ class StatefulRestorer {
   std::string checkpoint_id_;
   sp_int64 restore_txid_;
   std::set<sp_int32> local_taskids_;
-  std::function<void(std::string, sp_int64)> restore_done_watcher_;
+  std::function<void(proto::system::StatusCode, std::string, sp_int64)> restore_done_watcher_;
   StMgrServer* server_;
   ckptmgr::CkptMgrClient* ckptmgr_;
 };

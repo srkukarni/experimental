@@ -34,7 +34,8 @@ namespace heron {
 namespace stmgr {
 
 StatefulRestorer::StatefulRestorer(ckptmgr::CkptMgrClient* _ckptmgr,
-                             std::function<void(std::string, sp_int64)> _restore_done_watcher) {
+                             std::function<void(proto::system::StatusCode,
+                                                std::string, sp_int64)> _restore_done_watcher) {
   in_progress_ = false;
   restore_done_watcher_ = _restore_done_watcher;
   server_ = NULL;
@@ -99,7 +100,7 @@ void StatefulRestorer::GetCheckpoints() {
   }
 }
 
-void StatefulRestorer::HandleCheckpointState(sp_int32 _task_id,
+void StatefulRestorer::HandleCheckpointState(proto::system::StatusCode _status, sp_int32 _task_id,
                                        const proto::ckptmgr::InstanceStateCheckpoint& _state) {
   LOG(INFO) << "Got InstanceState from checkpoint mgr for task " << _task_id
             << " and checkpoint " << _state.checkpoint_id();
@@ -108,8 +109,14 @@ void StatefulRestorer::HandleCheckpointState(sp_int32 _task_id,
                  << " id in the response does not match ours " << checkpoint_id_;
     return;
   }
-  get_ckpt_pending_.erase(_task_id);
-  server_->SendRestoreInstanceStateRequest(_task_id, _state);
+  if (_status == proto::system::OK) {
+    get_ckpt_pending_.erase(_task_id);
+    server_->SendRestoreInstanceStateRequest(_task_id, _state);
+  } else {
+    LOG(INFO) << "InstanceState from checkpont mgr contained non ok status " << _status;
+    in_progress_ = false;
+    restore_done_watcher_(_status, checkpoint_id_, restore_txid_);
+  }
 }
 
 void StatefulRestorer::HandleInstanceRestoredState(sp_int32 _task_id,
@@ -124,7 +131,7 @@ void StatefulRestorer::HandleInstanceRestoredState(sp_int32 _task_id,
     LOG(INFO) << "All instances restored state for " << checkpoint_id_
               << " " << restore_txid_;
     in_progress_ = false;
-    restore_done_watcher_(checkpoint_id_, restore_txid_);
+    restore_done_watcher_(proto::system::OK, checkpoint_id_, restore_txid_);
   }
 }
 

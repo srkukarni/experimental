@@ -251,10 +251,12 @@ void TMasterClient::SavedInstanceState(const proto::system::Instance& _instance,
   __global_protobuf_pool_release__(message);
 }
 
-void TMasterClient::SendRestoreTopologyStateResponse(const std::string& _ckpt_id,
+void TMasterClient::SendRestoreTopologyStateResponse(proto::system::StatusCode _status,
+                                                     const std::string& _ckpt_id,
                                                      sp_int64 _txid) {
   proto::ckptmgr::RestoreTopologyStateResponse* message = nullptr;
   message = __global_protobuf_pool_acquire__(message);
+  message->mutable_status()->set_status(_status);
   message->set_checkpoint_id(_ckpt_id);
   message->set_restore_txid(_txid);
 

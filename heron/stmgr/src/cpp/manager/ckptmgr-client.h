@@ -33,7 +33,7 @@ class CkptMgrClient : public Client {
                 const sp_string& _our_ckptmgr_id, const sp_string& _our_stmgr_id,
                 std::function<void(const proto::system::Instance&,
                                    const std::string&)> _ckpt_saved_watcher,
-                std::function<void(sp_int32,
+                std::function<void(proto::system::StatusCode, sp_int32,
                               const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
                 std::function<void()> _register_watcher);
   virtual ~CkptMgrClient();
@@ -46,6 +46,8 @@ class CkptMgrClient : public Client {
                         const std::string& _checkpoint_id);
 
  protected:
+  void GetInstanceState(const proto::system::Instance& _instance,
+                        const std::string& _checkpoint_id, int32_t* _nattempts);
   virtual void HandleSaveInstanceStateResponse(void*,
                              proto::ckptmgr::SaveInstanceStateResponse* _response,
                              NetworkErrorCode status);
@@ -71,7 +73,7 @@ class CkptMgrClient : public Client {
   bool quit_;
   std::function<void(const proto::system::Instance&,
                      const std::string&)> ckpt_saved_watcher_;
-  std::function<void(sp_int32,
+  std::function<void(proto::system::StatusCode, sp_int32,
                      const proto::ckptmgr::InstanceStateCheckpoint&)> ckpt_get_watcher_;
   std::function<void()> register_watcher_;
 

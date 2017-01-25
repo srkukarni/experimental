@@ -114,7 +114,8 @@ void StMgr::Init() {
   stateful_helper_ = new StatefulHelper();
   stateful_restorer_ = new StatefulRestorer(checkpoint_manager_client_,
                              std::bind(&StMgr::HandleStatefulRestoreDone, this,
-                                       std::placeholders::_1, std::placeholders::_2));
+                                       std::placeholders::_1, std::placeholders::_2,
+                                       std::placeholders::_3));
 
   // Create and start StmgrServer
   StartStmgrServer();
@@ -258,7 +259,8 @@ void StMgr::CreateCheckpointMgrClient() {
   auto save_watcher = std::bind(&StMgr::HandleSavedInstanceState, this,
                            std::placeholders::_1, std::placeholders::_2);
   auto get_watcher = std::bind(&StMgr::HandleGetInstanceState, this,
-                           std::placeholders::_1, std::placeholders::_2);
+                           std::placeholders::_1, std::placeholders::_2,
+                           std::placeholders::_3);
   auto ckpt_watcher = std::bind(&StMgr::HandleCkptMgrRegistration, this);
   checkpoint_manager_client_ = new ckptmgr::CkptMgrClient(eventLoop_, client_options,
                                                           topology_name_, topology_id_,
@@ -804,10 +806,10 @@ void StMgr::HandleSavedInstanceState(const proto::system::Instance& _instance,
   tmaster_client_->SavedInstanceState(_instance, _checkpoint_id);
 }
 
-void StMgr::HandleGetInstanceState(sp_int32 _task_id,
+void StMgr::HandleGetInstanceState(proto::system::StatusCode _status, sp_int32 _task_id,
                                    const proto::ckptmgr::InstanceStateCheckpoint& _msg) {
   if (stateful_restorer_) {
-    stateful_restorer_->HandleCheckpointState(_task_id, _msg);
+    stateful_restorer_->HandleCheckpointState(_status, _task_id, _msg);
   }
 }
 
@@ -859,8 +861,9 @@ void StMgr::HandleRestoreInstanceStateResponse(sp_int32 _task_id,
   stateful_restorer_->HandleInstanceRestoredState(_task_id, _checkpoint_id);
 }
 
-void StMgr::HandleStatefulRestoreDone(std::string _checkpoint_id, sp_int64 _restore_txid) {
-  tmaster_client_->SendRestoreTopologyStateResponse(_checkpoint_id, _restore_txid);
+void StMgr::HandleStatefulRestoreDone(proto::system::StatusCode _status,
+                                      std::string _checkpoint_id, sp_int64 _restore_txid) {
+  tmaster_client_->SendRestoreTopologyStateResponse(_status, _checkpoint_id, _restore_txid);
 }
 
 }  // namespace stmgr
