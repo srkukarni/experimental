@@ -76,26 +76,26 @@ void TMasterServer::HandleStMgrHeartbeatRequest(REQID _reqid, Connection* _conn,
 
 void TMasterServer::HandleMetricsMgrStats(Connection*, proto::tmaster::PublishMetrics* _request) {
   collector_->AddMetric(*_request);
-  delete _request;
+  __global_protobuf_pool_release__(_request);
 }
 
 void TMasterServer::HandleInstanceStateStored(Connection*,
                                               proto::ckptmgr::InstanceStateStored* _message) {
   tmaster_->HandleInstanceStateStored(_message->checkpoint_id(), _message->instance());
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void TMasterServer::HandleRestoreTopologyStateResponse(Connection* _conn,
                                      proto::ckptmgr::RestoreTopologyStateResponse* _message) {
   tmaster_->HandleRestoreTopologyStateResponse(_conn, _message->checkpoint_id(),
                                                _message->restore_txid());
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void TMasterServer::HandleResetTopologyStateMessage(Connection* _conn,
                                      proto::ckptmgr::ResetTopologyState* _message) {
   tmaster_->ResetTopologyState();
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 }  // namespace tmaster
 }  // namespace heron
