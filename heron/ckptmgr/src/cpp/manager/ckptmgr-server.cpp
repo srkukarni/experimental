@@ -77,7 +77,7 @@ void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
   }
 
   SendResponse(_id, _conn, response);
-  __global_protobuf_pool_release__(_request);
+  __global_protobuf_pool_release__(_req);
 }
 
 void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
