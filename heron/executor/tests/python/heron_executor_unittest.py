@@ -125,7 +125,8 @@ class HeronExecutorTest(unittest.TestCase):
   MockPOpen.set_next_pid(37)
   expected_processes_container_1 = [
       ProcessInfo(MockPOpen(), 'ckptmgr-1',
-                  'ckptmgr_binary topname topid ckptmgr-1 ckptmgr_port %s' % STATEFUL_CONF_PATH),
+                  'ckptmgr_binary topname topid ckptmgr-1 ckptmgr_port %s cluster role environ'
+                  % STATEFUL_CONF_PATH),
       ProcessInfo(MockPOpen(), 'stmgr-1',
                   'stmgr_binary topname topid topdefnfile zknode zkroot stmgr-1 '
                   'container_1_word_3,container_1_exclaim1_2,container_1_exclaim1_1 master_port '
@@ -148,7 +149,8 @@ class HeronExecutorTest(unittest.TestCase):
                   'container_7_word_11,container_7_exclaim1_210 master_port '
                   'metricsmgr_port shell-port %s ckptmgr_port ckptmgr-7' % INTERNAL_CONF_PATH),
       ProcessInfo(MockPOpen(), 'ckptmgr-7',
-                  'ckptmgr_binary topname topid ckptmgr-7 ckptmgr_port %s' % STATEFUL_CONF_PATH),
+                  'ckptmgr_binary topname topid ckptmgr-7 ckptmgr_port %s cluster role environ'
+                  % STATEFUL_CONF_PATH),
       ProcessInfo(MockPOpen(), 'container_7_word_11', get_expected_instance_command('word', 11, 7)),
       ProcessInfo(MockPOpen(), 'metricsmgr-7', get_expected_metricsmgr_command(7)),
       ProcessInfo(MockPOpen(), 'heron-shell-7', shell_command_expected),
