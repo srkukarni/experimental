@@ -79,7 +79,7 @@ void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
 
   SendResponse(_id, _conn, *response);
   __global_protobuf_pool_release__(response);
-  delete _req;
+  __global_protobuf_pool_release__(_req);
 }
 
 void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
@@ -115,7 +115,7 @@ void CkptMgrServer::HandleSaveInstanceStateRequest(REQID _id, Connection* _conn,
 
   SendResponse(_id, _conn, *response);
   __global_protobuf_pool_release__(response);
-  delete _req;
+  __global_protobuf_pool_release__(_req);
 }
 
 void CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
@@ -155,7 +155,7 @@ void CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
   SendResponse(_id, _conn, *response);
 
   __global_protobuf_pool_release__(response);
-  delete _req;
+  __global_protobuf_pool_release__(_req);
 }
 
 }  // namespace ckptmgr
