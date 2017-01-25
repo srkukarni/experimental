@@ -70,18 +70,21 @@ int LocalFS::createCkptDirectory(const Checkpoint& _ckpt) {
 }
 
 int LocalFS::store(const Checkpoint& _ckpt) {
+  std::string path = ckptFile(_ckpt);
   // create the checkpoint directory, if not there
   if (createCkptDirectory(_ckpt) == SP_NOTOK) {
-    LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
+    LOG(ERROR) << "Failed to create dir "
+      << ckptDirectory(_ckpt) << " for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
 
   // write the contents atomically to file
   size_t len = _ckpt.nbytes();
-  char* buf = reinterpret_cast<char*>(_ckpt.checkpoint());
+  std::string buf;
+  _ckpt.checkpoint()->SerializeToString(&buf);
 
-  if (!FileUtils::writeAtomicAll(ckptFile(_ckpt), buf, len)) {
-    LOG(ERROR) << "Checkpoint failed for " << logMessageFragment(_ckpt);
+  if (!FileUtils::writeAtomicAll(path, buf.c_str(), len)) {
+    LOG(ERROR) << "Failed to checkpoint " << path << " for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
 
@@ -89,20 +92,21 @@ int LocalFS::store(const Checkpoint& _ckpt) {
 }
 
 int LocalFS::restore(Checkpoint& _ckpt) {
-  std::string file = ckptFile(_ckpt);
+  std::string path = ckptFile(_ckpt);
 
   // open the checkpoint file
-  std::ifstream ifile(ckptFile(_ckpt), std::ifstream::in | std::ifstream::binary);
+  std::ifstream ifile(path, std::ifstream::in | std::ifstream::binary);
   if (!ifile.is_open()) {
-    PLOG(ERROR) << "Unable to open checkpoint file " << tempCkptFile(_ckpt);
-    LOG(ERROR) << "Restore checkpoint failed for " << logMessageFragment(_ckpt);
+    PLOG(ERROR) << "Failed to open checkpoint file " << path;
+    LOG(ERROR) << "Failed to restore checkpoint for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
 
   // read the protobuf from checkpoint file
   auto savedbytes = new ::heron::proto::ckptmgr::SaveInstanceStateRequest;
   if (!savedbytes->ParseFromIstream(&ifile)) {
-    LOG(ERROR) << "Restore checkpoint failed for " << logMessageFragment(_ckpt);
+    LOG(ERROR) << "Failed to restore checkpoint from " << path
+      << " for "<< logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
 
