@@ -73,7 +73,8 @@ int LocalFS::store(const Checkpoint& _ckpt) {
   std::string path = ckptFile(_ckpt);
   // create the checkpoint directory, if not there
   if (createCkptDirectory(_ckpt) == SP_NOTOK) {
-    LOG(ERROR) << "Failed to create dir " << " for " << logMessageFragment(_ckpt);
+    LOG(ERROR) << "Failed to create dir "
+      << ckptDirectory(_ckpt) << " for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
 
