@@ -88,7 +88,8 @@ void TMasterServer::HandleInstanceStateStored(Connection*,
 void TMasterServer::HandleRestoreTopologyStateResponse(Connection* _conn,
                                      proto::ckptmgr::RestoreTopologyStateResponse* _message) {
   tmaster_->HandleRestoreTopologyStateResponse(_conn, _message->checkpoint_id(),
-                                               _message->restore_txid());
+                                               _message->restore_txid(),
+                                               _message->status().status());
   __global_protobuf_pool_release__(_message);
 }
 

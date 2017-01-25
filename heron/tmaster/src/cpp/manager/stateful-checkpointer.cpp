@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include "tmaster/src/cpp/manager/stateful-coordinator.h"
+#include "tmaster/src/cpp/manager/stateful-checkpointer.h"
 #include <iostream>
 #include <sstream>
 #include <chrono>
 #include <string>
 #include <vector>
-#include "tmaster/src/cpp/manager/stateful-restorer.h"
 #include "config/physical-plan-helper.h"
 #include "manager/tmaster.h"
 #include "manager/stmgrstate.h"
@@ -31,23 +30,15 @@
 namespace heron {
 namespace tmaster {
 
-StatefulCoordinator::StatefulCoordinator(
-  const std::string& _topology_name,
-  const std::string& _latest_consistent_checkpoint,
-  heron::common::HeronStateMgr* _state_mgr,
-  std::chrono::high_resolution_clock::time_point _tmaster_start_time,
-  StatefulRestorer* _stateful_restorer)
-  : topology_name_(_topology_name),
-    tmaster_start_time_(_tmaster_start_time),
-    state_mgr_(_state_mgr),
-    latest_consistent_checkpoint_(_latest_consistent_checkpoint),
-    stateful_restorer_(_stateful_restorer) {
+StatefulCheckpointer::StatefulCheckpointer(
+  std::chrono::high_resolution_clock::time_point _tmaster_start_time)
+  : tmaster_start_time_(_tmaster_start_time) {
   // nothing really
 }
 
-StatefulCoordinator::~StatefulCoordinator() { }
+StatefulCheckpointer::~StatefulCheckpointer() { }
 
-sp_string StatefulCoordinator::GenerateCheckpointId() {
+sp_string StatefulCheckpointer::GenerateCheckpointId() {
   // TODO(skukarni) Should we append any topology name/id stuff?
   std::ostringstream tag;
   tag << tmaster_start_time_.time_since_epoch().count()
@@ -55,12 +46,7 @@ sp_string StatefulCoordinator::GenerateCheckpointId() {
   return tag.str();
 }
 
-void StatefulCoordinator::DoCheckpoint(const StMgrMap& _stmgrs) {
-  if (stateful_restorer_->InProgress()) {
-    LOG(INFO) << "Will not send checkpoint messages to stmgr because "
-              << "we are in restore";
-    return;
-  }
+void StatefulCheckpointer::StartCheckpoint(const StMgrMap& _stmgrs) {
   // Generate the checkpoint id
   sp_string checkpoint_id = GenerateCheckpointId();
 
@@ -75,11 +61,11 @@ void StatefulCoordinator::DoCheckpoint(const StMgrMap& _stmgrs) {
   }
 }
 
-void StatefulCoordinator::RegisterNewPplan(const proto::system::PhysicalPlan& _pplan) {
+void StatefulCheckpointer::RegisterNewPplan(const proto::system::PhysicalPlan& _pplan) {
   config::PhysicalPlanHelper::GetAllTasks(_pplan, all_tasks_);
 }
 
-void StatefulCoordinator::HandleInstanceStateStored(const std::string& _checkpoint_id,
+bool StatefulCheckpointer::HandleInstanceStateStored(const std::string& _checkpoint_id,
                                           const proto::system::Instance& _instance) {
   LOG(INFO) << "Handling InstanceStateStored for checkpoint:- " << _checkpoint_id
             << " and instance " << _instance.info().task_id();
@@ -103,27 +89,11 @@ void StatefulCoordinator::HandleInstanceStateStored(const std::string& _checkpoi
   if (partial_checkpoint_remaining_tasks_.empty()) {
     LOG(INFO) << "All task ids have their state stored for "
               << current_partial_checkpoint_;
-    proto::ckptmgr::StatefulMostRecentCheckpoint ckpt;
-    ckpt.set_checkpoint_id(current_partial_checkpoint_);
-    state_mgr_->SetStatefulCheckpoint(topology_name_, ckpt,
-       std::bind(&StatefulCoordinator::HandleCkptSave, this,
-                 current_partial_checkpoint_, std::placeholders::_1));
     current_partial_checkpoint_ = "";
-  }
-}
-
-void StatefulCoordinator::HandleCkptSave(std::string _checkpoint_id,
-                                         proto::system::StatusCode _status) {
-  if (_status == proto::system::OK) {
-    LOG(INFO) << "Successfully saved " << _checkpoint_id
-              << " as the new globally consistent checkpoint";
-    latest_consistent_checkpoint_ = _checkpoint_id;
+    return true;
   } else {
-    LOG(ERROR) << "Error saving " << _checkpoint_id
-              << " as the new globally consistent checkpoint "
-              << _status;
+    return false;
   }
 }
-
 }  // namespace tmaster
 }  // namespace heron

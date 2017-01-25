@@ -119,15 +119,15 @@ class HeronStateMgr {
 
   // Gets/Sets Stateful Checkpoint
   virtual void CreateStatefulCheckpoint(const std::string& _topology_name,
-                           const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+                           const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                            VCallback<proto::system::StatusCode> _cb) = 0;
   virtual void DeleteStatefulCheckpoint(const std::string& _topology_name,
                                   VCallback<proto::system::StatusCode> _cb) = 0;
   virtual void SetStatefulCheckpoint(const std::string& _topology_name,
-                           const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+                           const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                             VCallback<proto::system::StatusCode> _cb) = 0;
   virtual void GetStatefulCheckpoint(const std::string& _topology_name,
-                               proto::ckptmgr::StatefulMostRecentCheckpoint* _return,
+                               proto::ckptmgr::StatefulConsistentCheckpoints* _return,
                                VCallback<proto::system::StatusCode> _cb) = 0;
 
   // Calls to list the topologies and physical plans

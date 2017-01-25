@@ -228,7 +228,7 @@ void HeronZKStateMgr::GetExecutionState(const std::string& _topology_name,
 }
 
 void HeronZKStateMgr::CreateStatefulCheckpoint(const std::string& _topology_name,
-                                  const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+                                  const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                                   VCallback<proto::system::StatusCode> cb) {
   std::string path = GetStatefulCheckpointPath(_topology_name);
   std::string contents;
@@ -247,7 +247,7 @@ void HeronZKStateMgr::DeleteStatefulCheckpoint(const std::string& _topology_name
 }
 
 void HeronZKStateMgr::SetStatefulCheckpoint(const std::string& _topology_name,
-                                  const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+                                  const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                                   VCallback<proto::system::StatusCode> cb) {
   std::string path = GetStatefulCheckpointPath(_topology_name);
   std::string contents;
@@ -258,7 +258,7 @@ void HeronZKStateMgr::SetStatefulCheckpoint(const std::string& _topology_name,
 }
 
 void HeronZKStateMgr::GetStatefulCheckpoint(const std::string& _topology_name,
-                                   proto::ckptmgr::StatefulMostRecentCheckpoint* _return,
+                                   proto::ckptmgr::StatefulConsistentCheckpoints* _return,
                                    VCallback<proto::system::StatusCode> cb) {
   std::string path = GetStatefulCheckpointPath(_topology_name);
   std::string* contents = new std::string();
@@ -566,7 +566,7 @@ void HeronZKStateMgr::SetStatefulCheckpointDone(VCallback<proto::system::StatusC
 }
 
 void HeronZKStateMgr::GetStatefulCheckpointDone(std::string* _contents,
-                                     proto::ckptmgr::StatefulMostRecentCheckpoint* _return,
+                                     proto::ckptmgr::StatefulConsistentCheckpoints* _return,
                                      VCallback<proto::system::StatusCode> cb, sp_int32 _rc) {
   proto::system::StatusCode code = proto::system::OK;
   if (_rc == ZOK) {

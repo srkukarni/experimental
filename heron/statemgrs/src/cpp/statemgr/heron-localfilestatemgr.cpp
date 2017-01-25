@@ -249,7 +249,7 @@ void HeronLocalFileStateMgr::SetExecutionState(const proto::system::ExecutionSta
 }
 
 void HeronLocalFileStateMgr::CreateStatefulCheckpoint(const std::string& _topology_name,
-                                const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+                                const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                                 VCallback<proto::system::StatusCode> cb) {
   std::string fname = GetStatefulCheckpointPath(_topology_name);
   // First check to see if location exists.
@@ -274,7 +274,7 @@ void HeronLocalFileStateMgr::DeleteStatefulCheckpoint(const std::string& _topolo
 }
 
 void HeronLocalFileStateMgr::SetStatefulCheckpoint(const std::string& _topology_name,
-                                const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+                                const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                                 VCallback<proto::system::StatusCode> cb) {
   std::string contents;
   _ckpt.SerializeToString(&contents);
@@ -285,7 +285,7 @@ void HeronLocalFileStateMgr::SetStatefulCheckpoint(const std::string& _topology_
 }
 
 void HeronLocalFileStateMgr::GetStatefulCheckpoint(const std::string& _topology_name,
-                                 proto::ckptmgr::StatefulMostRecentCheckpoint* _return,
+                                 proto::ckptmgr::StatefulConsistentCheckpoints* _return,
                                  VCallback<proto::system::StatusCode> cb) {
   std::string contents;
   proto::system::StatusCode status =

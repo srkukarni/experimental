@@ -36,8 +36,8 @@ StatefulRestorer::StatefulRestorer(std::function<void()> _fn)
 
 StatefulRestorer::~StatefulRestorer() { }
 
-void StatefulRestorer::Start(const std::string& _checkpoint_id,
-                             const StMgrMap& _stmgrs) {
+void StatefulRestorer::StartRestore(const std::string& _checkpoint_id,
+                                    const StMgrMap& _stmgrs) {
   if (in_progress_) {
     // Hmm... It seems that we were in the middle of a
     LOG(WARNING) << "Starting a 2PC Restore for checkpoint "
@@ -60,33 +60,16 @@ void StatefulRestorer::Start(const std::string& _checkpoint_id,
   }
 }
 
-void StatefulRestorer::HandleRestored(const std::string& _stmgr_id,
-                                      const std::string& _checkpoint_id,
-                                      int64_t _restore_txid,
-                                      const StMgrMap& _stmgrs) {
-  if (!in_progress_) {
-    LOG(WARNING) << "Got a Restored Topology State from stmgr "
-                 << _stmgr_id << " for checkpoint " << _checkpoint_id
-                 << " with txid " << _restore_txid << " when "
-                 << " we are not in progress";
-    return;
-  } else if (restore_txid_ != _restore_txid ||
-             checkpoint_id_in_progress_ != _checkpoint_id) {
-    LOG(WARNING) << "Got a Restored Topology State from stmgr "
-                 << _stmgr_id << " for checkpoint " << _checkpoint_id
-                 << " with txid " << _restore_txid << " when "
-                 << " we are in progress with checkpoint "
-                 << checkpoint_id_in_progress_ << " and txid "
-                 << restore_txid_;
-    return;
-  } else {
-    LOG(INFO) << "Got a Restored Topology State from stmgr "
-              << _stmgr_id << " for checkpoint " << _checkpoint_id
-              << " with txid " << _restore_txid;
-    unreplied_stmgrs_.erase(_stmgr_id);
-    if (unreplied_stmgrs_.empty()) {
-      Finish2PC(_stmgrs);
-    }
+void StatefulRestorer::HandleStMgrRestored(const std::string& _stmgr_id,
+                                           const std::string& _checkpoint_id,
+                                           int64_t _restore_txid,
+                                           const StMgrMap& _stmgrs) {
+  CHECK(in_progress_);
+  CHECK(_checkpoint_id == checkpoint_id_in_progress_);
+  CHECK(_restore_txid == restore_txid_);
+  unreplied_stmgrs_.erase(_stmgr_id);
+  if (unreplied_stmgrs_.empty()) {
+    Finish2PC(_stmgrs);
   }
 }
 

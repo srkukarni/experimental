@@ -260,14 +260,14 @@ public interface IStateManager extends AutoCloseable {
    * @return Boolean - Success or Failure
    */
   ListenableFuture<Boolean> setStatefulCheckpoint(
-      CheckpointManager.StatefulMostRecentCheckpoint checkpoint, String topologyName);
+      CheckpointManager.StatefulConsistentCheckpoints checkpoint, String topologyName);
 
   /**
    * Get the Stateful Checkpoint
    *
    * @return Boolean - Success or Failure
    */
-  ListenableFuture<CheckpointManager.StatefulMostRecentCheckpoint> getStatefulCheckpoint(
+  ListenableFuture<CheckpointManager.StatefulConsistentCheckpoints> getStatefulCheckpoint(
       WatchCallback watcher, String topologyName);
 
   /**

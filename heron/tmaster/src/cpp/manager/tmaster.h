@@ -36,8 +36,7 @@ class TController;
 class StatsInterface;
 class TMasterServer;
 class TMetricsCollector;
-class StatefulCoordinator;
-class StatefulRestorer;
+class StatefulHelper;
 
 typedef std::map<std::string, StMgrState*> StMgrMap;
 typedef StMgrMap::iterator StMgrMapIter;
@@ -86,7 +85,8 @@ class TMaster {
   // Called by tmaster server when it gets RestoreTopologyStateResponse message
   void HandleRestoreTopologyStateResponse(Connection* _conn,
                                           const std::string& _checkpoint_id,
-                                          int64_t _restore_txid);
+                                          int64_t _restore_txid,
+                                          proto::system::StatusCode _status);
 
   // Called by tmaster server when it gets ResetTopologyState message
   void ResetTopologyState();
@@ -123,13 +123,14 @@ class TMaster {
   void SetTMasterLocationDone(proto::system::StatusCode _code);
   // Function called after we get the topology
   void GetTopologyDone(proto::system::StatusCode _code);
-  // Function called after we get StatefulMostRecentCheckpoint
-  void GetStatefulCheckpointDone(proto::ckptmgr::StatefulMostRecentCheckpoint* _ckpt,
+  // Function called after we get StatefulConsistentCheckpoints
+  void GetStatefulCheckpointDone(proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt,
                                  proto::system::StatusCode _code);
-  // Function called after we set an initial StatefulMostRecentCheckpoint
-  void SetStatefulCheckpointDone(proto::system::StatusCode _code);
+  // Function called after we set an initial StatefulConsistentCheckpoints
+  void SetStatefulCheckpointDone(proto::system::StatusCode _code,
+                            proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt);
   // Helper function to setup stateful coordinator
-  void SetupStatefulCoordinator(const std::string& _checkpoint_id);
+  void SetupStatefulHelper(proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt);
 
   // Function called after we try to get assignment
   void GetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan, proto::system::StatusCode _code);
@@ -200,10 +201,8 @@ class TMaster {
   // The time at which the stmgr was started up
   std::chrono::high_resolution_clock::time_point start_time_;
 
-  // Stateful coordinator
-  StatefulCoordinator* stateful_coordinator_;
-  // Stateful restorer
-  StatefulRestorer* stateful_restorer_;
+  // Stateful helper
+  StatefulHelper* stateful_helper_;
 
   // Copy of the EventLoop
   EventLoop* eventLoop_;

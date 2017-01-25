@@ -102,15 +102,15 @@ class HeronZKStateMgr : public HeronStateMgr {
 
   // Gets/Sets the Stateful Checkpoint
   void CreateStatefulCheckpoint(const std::string& _topology_name,
-               const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+               const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                VCallback<proto::system::StatusCode> _cb);
   void DeleteStatefulCheckpoint(const std::string& _topology_name,
                VCallback<proto::system::StatusCode> _cb);
   void SetStatefulCheckpoint(const std::string& _topology_name,
-               const proto::ckptmgr::StatefulMostRecentCheckpoint& _ckpt,
+               const proto::ckptmgr::StatefulConsistentCheckpoints& _ckpt,
                VCallback<proto::system::StatusCode> _cb);
   void GetStatefulCheckpoint(const std::string& _topology_name,
-               proto::ckptmgr::StatefulMostRecentCheckpoint* _return,
+               proto::ckptmgr::StatefulConsistentCheckpoints* _return,
                VCallback<proto::system::StatusCode> _cb);
 
   void ListTopologies(std::vector<sp_string>* _return, VCallback<proto::system::StatusCode> _cb);
@@ -154,7 +154,7 @@ class HeronZKStateMgr : public HeronStateMgr {
   void DeleteStatefulCheckpointDone(VCallback<proto::system::StatusCode> _cb, sp_int32 _rc);
   void SetStatefulCheckpointDone(VCallback<proto::system::StatusCode> _cb, sp_int32 _rc);
   void GetStatefulCheckpointDone(std::string* _contents,
-                           proto::ckptmgr::StatefulMostRecentCheckpoint* _return,
+                           proto::ckptmgr::StatefulConsistentCheckpoints* _return,
                            VCallback<proto::system::StatusCode> _cb, sp_int32 _rc);
 
   void ListTopologiesDone(VCallback<proto::system::StatusCode> _cb, sp_int32 _rc);

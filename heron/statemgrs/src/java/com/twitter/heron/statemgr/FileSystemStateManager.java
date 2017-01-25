@@ -185,10 +185,10 @@ public abstract class FileSystemStateManager implements IStateManager {
   }
 
   @Override
-  public ListenableFuture<CheckpointManager.StatefulMostRecentCheckpoint> getStatefulCheckpoint(
+  public ListenableFuture<CheckpointManager.StatefulConsistentCheckpoints> getStatefulCheckpoint(
       WatchCallback watcher, String topologyName) {
     return getNodeData(watcher, StateLocation.STATEFUL_CHECKPOINT, topologyName,
-        CheckpointManager.StatefulMostRecentCheckpoint.newBuilder());
+        CheckpointManager.StatefulConsistentCheckpoints.newBuilder());
   }
 
   @Override

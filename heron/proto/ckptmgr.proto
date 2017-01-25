@@ -6,8 +6,14 @@ import "common.proto";
 import "physical_plan.proto";
 
 // message stored in zk by the tmaster
-message StatefulMostRecentCheckpoint {
-  required string checkpoint_id = 1;
+message StatefulConsistentCheckpoints {
+  // This is the most recent checkpoint that we believe exists
+  required string most_recent_checkpoint_id = 1;
+  // It might be possible that for various reasons(fs corruption, etc)
+  // the last checkpoint is not accessible. This is the set of
+  // other globally consistent checkpoints that can be recovered from.
+  // The order of preference(and recency) is from beginning to end
+  repeated string backup_checkpoint_ids = 2;
 }
 
 // tmaster -> stmgr messages
@@ -27,8 +33,9 @@ message RestoreTopologyStateRequest {
 // Message that stmgr sends to tmaster after it restores
 // all of its local instances to a checkpoint_id
 message RestoreTopologyStateResponse {
-  required string checkpoint_id = 1;
-  required int64 restore_txid = 2; 
+  required heron.proto.system.Status status = 1;
+  required string checkpoint_id = 2;
+  required int64 restore_txid = 3; 
 }
 
 // Message sent by stmgr to tmaster asking it to reset the topology
