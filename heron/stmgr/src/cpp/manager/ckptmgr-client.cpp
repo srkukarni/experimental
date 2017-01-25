@@ -118,7 +118,7 @@ void CkptMgrClient::HandleStMgrRegisterResponse(void*,
     LOG(ERROR) << "NonOk network code " << _status << " for register response from ckptmgr "
                << ckptmgr_id_ << "running at " << get_clientoptions().get_host() << ":"
                << get_clientoptions().get_port();
-    __global_protobuf_pool_release__(_response);
+    delete _response;
     Stop();
     return;
   }
@@ -134,7 +134,7 @@ void CkptMgrClient::HandleStMgrRegisterResponse(void*,
               << get_clientoptions().get_port();
     register_watcher_();
   }
-  __global_protobuf_pool_release__(_response);
+  delete _response;
 }
 
 void CkptMgrClient::OnReconnectTimer() { Start(); }
@@ -152,7 +152,6 @@ void CkptMgrClient::SendRegisterRequest() {
 
 void CkptMgrClient::SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request) {
   SendRequest(_request, NULL);
-  __global_protobuf_pool_release__(_request);
 }
 
 void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
@@ -164,7 +163,6 @@ void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
   request->mutable_instance()->CopyFrom(_instance);
   request->set_checkpoint_id(_checkpoint_id);
   SendRequest(request, NULL);
-  __global_protobuf_pool_release__(request);
 }
 
 void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
@@ -172,17 +170,17 @@ void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
                              NetworkErrorCode _status) {
   if (_status != OK) {
     LOG(ERROR) << "NonOK response message for SaveInstanceStateResponse";
-    __global_protobuf_pool_release__(_response);
+    delete _response;
     Stop();
     return;
   }
   if (_response->status().status() != proto::system::OK) {
     LOG(ERROR) << "CkptMgr could not save " << _response->status().status();
-    __global_protobuf_pool_release__(_response);
+    delete _response;
     return;
   }
   ckpt_saved_watcher_(_response->instance(), _response->checkpoint_id());
-  __global_protobuf_pool_release__(_response);
+  delete _response;
 }
 
 void CkptMgrClient::HandleGetInstanceStateResponse(void*,
@@ -190,7 +188,7 @@ void CkptMgrClient::HandleGetInstanceStateResponse(void*,
                              NetworkErrorCode _status) {
   if (_status != OK) {
     LOG(ERROR) << "NonOK response message for GetInstanceStateResponse";
-    __global_protobuf_pool_release__(_response);
+    delete _response;
     Stop();
     return;
   }
@@ -201,11 +199,11 @@ void CkptMgrClient::HandleGetInstanceStateResponse(void*,
                << " and checkpoint_id " << _response->checkpoint_id()
                << " because of reason: " << _response->status().status();
     GetInstanceState(_response->instance(), _response->checkpoint_id());
-    __global_protobuf_pool_release__(_response);
+    delete _response;
     return;
   }
   ckpt_get_watcher_(_response->instance().info().task_id(), _response->checkpoint());
-  __global_protobuf_pool_release__(_response);
+  delete _response;
 }
 }  // namespace ckptmgr
 }  // namespace heron

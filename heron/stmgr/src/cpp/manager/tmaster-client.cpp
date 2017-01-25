@@ -268,13 +268,13 @@ void TMasterClient::SendRestoreTopologyStateResponse(const std::string& _ckpt_id
 void TMasterClient::HandleRestoreTopologyStateRequest(
               proto::ckptmgr::RestoreTopologyStateRequest* _message) {
   restore_topology_watch_(_message->checkpoint_id(), _message->restore_txid());
-  __global_protobuf_pool_release__(_message);
+  delete _message;
 }
 
 void TMasterClient::HandleStartStmgrStatefulProcessing(
               proto::ckptmgr::StartStmgrStatefulProcessing* _message) {
   start_stateful_watch_(_message->checkpoint_id());
-  __global_protobuf_pool_release__(_message);
+  delete _message;
 }
 
 void TMasterClient::SendResetTopologyState(const std::string& _reason) {
