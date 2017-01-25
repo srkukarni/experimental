@@ -80,10 +80,10 @@ int LocalFS::store(const Checkpoint& _ckpt) {
 
   // write the contents atomically to file
   size_t len = _ckpt.nbytes();
-  char* buf = new char[len];
-  _ckpt.checkpoint()->SerializeToArray(buf, len);
+  std::string buf;
+  _ckpt.checkpoint()->SerializeToString(&buf);
 
-  if (!FileUtils::writeAtomicAll(path, buf, len)) {
+  if (!FileUtils::writeAtomicAll(path, buf.c_str(), len)) {
     LOG(ERROR) << "Failed to checkpoint " << path << " for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }
