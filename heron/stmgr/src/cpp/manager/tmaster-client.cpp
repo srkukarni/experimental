@@ -136,7 +136,7 @@ void TMasterClient::HandleRegisterResponse(void*, proto::tmaster::StMgrRegisterR
                                            NetworkErrorCode _status) {
   if (_status != OK) {
     LOG(ERROR) << "non ok network stack code for Register Response from Tmaster" << std::endl;
-    delete _response;
+    __global_protobuf_pool_release__(_response);
     Stop();
     return;
   }
@@ -154,7 +154,7 @@ void TMasterClient::HandleRegisterResponse(void*, proto::tmaster::StMgrRegisterR
     heartbeat_timer_id =
         AddTimer(heartbeat_timer_cb, stream_to_tmaster_heartbeat_interval_sec_ * 1000000);
   }
-  delete _response;
+  __global_protobuf_pool_release__(_response);
 }
 
 void TMasterClient::HandleHeartbeatResponse(void*,
@@ -162,7 +162,7 @@ void TMasterClient::HandleHeartbeatResponse(void*,
                                             NetworkErrorCode _status) {
   if (_status != OK) {
     LOG(ERROR) << "NonOK response message for heartbeat Response" << std::endl;
-    delete _response;
+    __global_protobuf_pool_release__(_response);
     Stop();
     return;
   }
@@ -176,13 +176,13 @@ void TMasterClient::HandleHeartbeatResponse(void*,
     heartbeat_timer_id =
         AddTimer(heartbeat_timer_cb, stream_to_tmaster_heartbeat_interval_sec_ * 1000000);
   }
-  delete _response;
+  __global_protobuf_pool_release__(_response);
 }
 
 void TMasterClient::HandleNewAssignmentMessage(proto::stmgr::NewPhysicalPlanMessage* _message) {
   LOG(INFO) << "Got a new assignment" << std::endl;
   pplan_watch_(_message->release_new_pplan());
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void TMasterClient::HandleStatefulCheckpointMessage(
@@ -190,7 +190,7 @@ void TMasterClient::HandleStatefulCheckpointMessage(
   LOG(INFO) << "Got a new checkpoint message from tmaster with id "
             << _message->checkpoint_id();
   stateful_checkpoint_watch_(_message->checkpoint_id());
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void TMasterClient::OnReConnectTimer() {
@@ -207,7 +207,8 @@ void TMasterClient::OnHeartbeatTimer() {
 }
 
 void TMasterClient::SendRegisterRequest() {
-  auto request = new proto::tmaster::StMgrRegisterRequest();
+  proto::tmaster::StMgrRegisterRequest* request = nullptr;
+  request = __global_protobuf_pool_acquire__(request);
 
   sp_string cwd;
   FileUtils::getCwd(cwd);
@@ -229,7 +230,8 @@ void TMasterClient::SendRegisterRequest() {
 }
 
 void TMasterClient::SendHeartbeatRequest() {
-  auto request = new proto::tmaster::StMgrHeartbeatRequest();
+  proto::tmaster::StMgrHeartbeatRequest* request = nullptr;
+  request = __global_protobuf_pool_acquire__(request);
   request->set_heartbeat_time(time(NULL));
   // TODO(vikasr) Send actual stats
   request->mutable_stats();
@@ -266,13 +268,13 @@ void TMasterClient::SendRestoreTopologyStateResponse(const std::string& _ckpt_id
 void TMasterClient::HandleRestoreTopologyStateRequest(
               proto::ckptmgr::RestoreTopologyStateRequest* _message) {
   restore_topology_watch_(_message->checkpoint_id(), _message->restore_txid());
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void TMasterClient::HandleStartStmgrStatefulProcessing(
               proto::ckptmgr::StartStmgrStatefulProcessing* _message) {
   start_stateful_watch_(_message->checkpoint_id());
-  delete _message;
+  __global_protobuf_pool_release__(_message);
 }
 
 void TMasterClient::SendResetTopologyState(const std::string& _reason) {
