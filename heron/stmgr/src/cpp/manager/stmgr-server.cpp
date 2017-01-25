@@ -725,7 +725,7 @@ void StMgrServer::HandleRestoreInstanceStateResponse(Connection* _conn,
   if (it == instance_info_.end()) {
     LOG(ERROR) << "Hmm.. Got RestoreInstanceStateResponse Message from unknown task_id "
                << task_id;
-    __global_protobuf_pool_release_(_message);
+    __global_protobuf_pool_release__(_message);
     return;
   }
 
