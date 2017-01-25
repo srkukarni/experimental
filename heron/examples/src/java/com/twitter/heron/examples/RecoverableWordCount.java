@@ -50,7 +50,7 @@ public final class RecoverableWordCount {
     private String[] words;
 
     private static final int EMIT_INTERVAL_MS = 1;
-    private static final long TOTAL_COUNT_TO_EMIT = 200 * 1000;
+    private static final long TOTAL_COUNT_TO_EMIT = 100 * 1000;
     private static final long EXCEPTION_THROWING_INTERVAL_COUNT = TOTAL_COUNT_TO_EMIT / 10;
     private static final double EXCEPTION_PROBABILITY = 0.3;
     private static final String KEY_EMITTED = "tuples_emitted";
@@ -71,7 +71,7 @@ public final class RecoverableWordCount {
     public void open(Map<String, Object> conf,
                      TopologyContext context, SpoutOutputCollector spoutOutputCollector) {
       collector = spoutOutputCollector;
-      words = new String[]{"sky", "blue", "cloud", "white", "jazz", "tango"};
+      words = new String[]{"sky", "blue", "white", "jazz", "tango"};
     }
 
     @Override
@@ -147,6 +147,8 @@ public final class RecoverableWordCount {
           countMap.put((String) entry.getKey(), (Integer) entry.getValue());
         }
       }
+      System.out.println("Word count recovered: ");
+      System.out.println(countMap.toString());
     }
 
     @Override
