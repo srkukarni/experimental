@@ -79,6 +79,9 @@ class TopologyConfigHelper {
   // Is the topology stateful
   static bool IsTopologyStateful(const proto::api::Topology& _topology);
 
+  // Should this stateful topology start from clean state
+  static bool StatefulTopologyStartClean(const proto::api::Topology& _topology);
+
   // Gets the checkpoint interval for stateful topologies
   static sp_int64 GetStatefulCheckpointInterval(const proto::api::Topology& _topology);
 

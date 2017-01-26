@@ -309,7 +309,7 @@ void TMaster::SetupStatefulHelper(proto::ckptmgr::StatefulConsistentCheckpoints*
 void TMaster::ResetTopologyState() {
   LOG(INFO) << "Got a message from stmgr to reset our topology state";
   if (stateful_helper_ && absent_stmgrs_.empty()) {
-    stateful_helper_->StartRestore(stmgrs_);
+    stateful_helper_->StartRestore(stmgrs_, false);
   }
 }
 
@@ -583,7 +583,8 @@ void TMaster::SetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan,
     if (stateful_helper_) {
       stateful_helper_->RegisterNewPplan(*current_pplan_);
       LOG(INFO) << "Starting Stateful 2PC now that all stmgrs have connected";
-      stateful_helper_->StartRestore(stmgrs_);
+      stateful_helper_->StartRestore(stmgrs_,
+        config::TopologyConfigHelper::StatefulTopologyStartClean(current_pplan_->topology()));
       // The restorer will call DistributePhysicalPlan after he is done
       // with the 2pc
     } else {

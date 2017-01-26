@@ -46,9 +46,13 @@ StatefulHelper::~StatefulHelper() {
   delete restorer_;
 }
 
-void StatefulHelper::StartRestore(const StMgrMap& _stmgrs) {
+void StatefulHelper::StartRestore(const StMgrMap& _stmgrs, bool _ignore_prev_state) {
   // TODO(sanjeev): Do we really need to start from most_recent_checkpoint?
-  restorer_->StartRestore(ckpt_record_->most_recent_checkpoint_id(), _stmgrs);
+  if (_ignore_prev_state) {
+    restorer_->StartRestore("", _stmgrs);
+  } else {
+    restorer_->StartRestore(ckpt_record_->most_recent_checkpoint_id(), _stmgrs);
+  }
 }
 
 void StatefulHelper::HandleStMgrRestored(const std::string& _stmgr_id,
@@ -129,6 +133,10 @@ void StatefulHelper::HandleCkptSave(proto::ckptmgr::StatefulConsistentCheckpoint
 }
 
 const std::string& StatefulHelper::GetNextInLineCheckpointId(const std::string& _ckpt_id) {
+  if (_ckpt_id.empty()) {
+    // There cannot be any checkpoints that are older than empty checkpoint
+    LOG(FATAL) << "Could not recover even from the empty state";
+  }
   if (ckpt_record_->most_recent_checkpoint_id() == _ckpt_id) {
     // The first backup will be the next in line
     if (ckpt_record_->backup_checkpoint_ids_size() > 0) {

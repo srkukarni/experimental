@@ -214,6 +214,18 @@ bool TopologyConfigHelper::IsTopologyStateful(const proto::api::Topology& _topol
   return false;
 }
 
+bool TopologyConfigHelper::StatefulTopologyStartClean(const proto::api::Topology& _topology) {
+  sp_string value_true_ = "true";
+  const proto::api::Config& cfg = _topology.topology_config();
+  for (sp_int32 i = 0; i < cfg.kvs_size(); ++i) {
+    if (cfg.kvs(i).key() == TopologyConfigVars::TOPOLOGY_STATEFUL_START_CLEAN) {
+      return value_true_.compare(cfg.kvs(i).value().c_str()) == 0;
+    }
+  }
+  // There was no value specified. The default is false.
+  return false;
+}
+
 sp_int64 TopologyConfigHelper::GetStatefulCheckpointInterval(
                                const proto::api::Topology& _topology) {
   const proto::api::Config& cfg = _topology.topology_config();

@@ -46,6 +46,8 @@ const sp_string TopologyConfigVars::TOPOLOGY_STATEFUL_PROVIDER_TYPE =
                                     "topology.stateful.provider.type";
 const sp_string TopologyConfigVars::TOPOLOGY_STATEFUL_PROVIDER_CONFIG =
                                     "topology.stateful.provider.config";
+const sp_string TopologyConfigVars::TOPOLOGY_STATEFUL_START_CLEAN =
+                                    "topology.stateful.start.clean";
 const sp_string TopologyConfigVars::TOPOLOGY_NAME = "topology.name";
 const sp_string TopologyConfigVars::TOPOLOGY_TEAM_NAME = "topology.team.name";
 const sp_string TopologyConfigVars::TOPOLOGY_TEAM_EMAIL = "topology.team.email";

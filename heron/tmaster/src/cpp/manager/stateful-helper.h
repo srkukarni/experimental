@@ -38,7 +38,7 @@ class StatefulHelper {
                std::function<void()> _after_2pc_cb);
   virtual ~StatefulHelper();
   // Start a new restore process
-  void StartRestore(const StMgrMap& _stmgrs);
+  void StartRestore(const StMgrMap& _stmgrs, bool _ignore_prev_checkpoints);
   // When a Stmgr responds back with a RestoreTopologyStateResponse
   void HandleStMgrRestored(const std::string& _stmgr_id,
                            const std::string& _checkpoint_id,

@@ -165,6 +165,13 @@ public class Config extends HashMap<String, Object> {
    */
   public static final String TOPOLOGY_STATEFUL_PROVIDER_CONFIG =
                              "topology.stateful.provider.config";
+
+  /**
+   * Boolean flag that says that the stateful topology should start from
+   * clean state, i.e. ignore any checkpoint state
+   */
+  public static final String TOPOLOGY_STATEFUL_START_CLEAN =
+                             "topology.stateful.start.clean";
   /**
    * Name of the topology. This config is automatically set by Heron when the topology is submitted.
    */
@@ -228,6 +235,7 @@ public class Config extends HashMap<String, Object> {
     apiVars.add(TOPOLOGY_CONTAINER_MAX_RAM_HINT);
     apiVars.add(TOPOLOGY_CONTAINER_PADDING_PERCENTAGE);
     apiVars.add(TOPOLOGY_COMPONENT_RAMMAP);
+    apiVars.add(TOPOLOGY_STATEFUL_START_CLEAN);
     apiVars.add(TOPOLOGY_STATEFUL_CHECKPOINT_INTERVAL);
     apiVars.add(TOPOLOGY_STATEFUL_PROVIDER_TYPE);
     apiVars.add(TOPOLOGY_STATEFUL_PROVIDER_CONFIG);
