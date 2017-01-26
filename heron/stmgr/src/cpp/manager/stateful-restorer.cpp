@@ -56,13 +56,6 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
     if (_restore_txid <= restore_txid_) {
       LOG(FATAL) << "New restore txid is <= old!!! Dying!!!";
     }
-    // This is a valid restore_txid
-    if (_checkpoint_id == checkpoint_id_) {
-      LOG(WARNING) << "New RestoreTopologyState has the same checkpoint id as previous "
-                   << "continuing with the old one";
-      restore_txid_ = _restore_txid;
-      return;
-    }
   } else {
     LOG(INFO) << "Starting Restore for checkpoint_id " << _checkpoint_id
               << " and txid " << _restore_txid;
