@@ -780,8 +780,8 @@ void StMgrServer::SendStartInstanceStatefulProcessing(const std::string& _ckpt_i
 }
 
 void StMgrServer::CloseConnectionsAndReset() {
-  for (auto kv : stmgrs_) {
-    kv.second->closeConnection();  // automatically clears stmgrs_ and rstmgrs_
+  while (!stmgrs_.empty()) {
+    stmgrs_.begin()->second->closeConnection();
   }
   stateful_gateway_->Clear();
 }
