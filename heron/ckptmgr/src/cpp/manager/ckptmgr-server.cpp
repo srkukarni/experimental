@@ -71,6 +71,7 @@ void CkptMgrServer::HandleStMgrRegisterRequest(REQID _id, Connection* _conn,
     LOG(WARNING) << "We already have an active connection from the stmgr " << _req->stmgr()
                  << ". Closing existing connection...";
     stmgr_conn_->closeConnection();
+    stmgr_conn_ = NULL;
     response->mutable_status()->set_status(proto::system::NOTOK);
   } else {
     stmgr_conn_ = _conn;
