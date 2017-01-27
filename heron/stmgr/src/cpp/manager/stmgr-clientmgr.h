@@ -42,7 +42,7 @@ class StMgrClientMgr {
   virtual ~StMgrClientMgr();
 
   void NewPhysicalPlan(const proto::system::PhysicalPlan* _pplan);
-  void SendTupleStreamMessage(sp_int32 _task_id,
+  bool SendTupleStreamMessage(sp_int32 _task_id,
                               const sp_string& _stmgr_id,
                               const proto::system::HeronTupleSet2& _msg);
 

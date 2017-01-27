@@ -667,7 +667,13 @@ void StMgr::DrainInstanceData(sp_int32 _task_id, proto::system::HeronTupleSet2* 
     // Our own loopback
     SendInBound(_task_id, _tuple);
   } else {
-    clientmgr_->SendTupleStreamMessage(_task_id, dest_stmgr_id, *_tuple);
+    bool dropped = clientmgr_->SendTupleStreamMessage(_task_id, dest_stmgr_id, *_tuple);
+    if (dropped && is_stateful_ && !stateful_restorer_->InProgress()) {
+      LOG(INFO) << "We dropped some messages because we are not yet connected with stmgr "
+                << dest_stmgr_id << " and we are not in restore. Hence sending Reset "
+                << "message to TMaster";
+      tmaster_client_->SendResetTopologyState("Dead Stmgr");
+    }
     __global_protobuf_pool_release__(_tuple);
   }
 }
@@ -750,7 +756,7 @@ void StMgr::HandleNewInstance(sp_int32 _task_id) {
     if (is_stateful_ && tmaster_client_ && tmaster_client_->IsConnected()) {
       LOG(INFO) << "All instances have connected to us and we are already "
                 << "connected to tmaster. Sending ResetMessage to tmaster";
-      tmaster_client_->SendResetTopologyState("Dead Instances");
+      tmaster_client_->SendResetTopologyState("Stmgr not connected");
     } else {
       // Now we can connect to the tmaster
       StartTMasterClient();

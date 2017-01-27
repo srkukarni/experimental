@@ -43,7 +43,7 @@ class StMgrClient : public Client {
 
   void Quit();
 
-  void SendTupleStreamMessage(proto::stmgr::TupleStreamMessage2& _msg);
+  bool SendTupleStreamMessage(proto::stmgr::TupleStreamMessage2& _msg);
   void SendStartBackPressureMessage();
   void SendStopBackPressureMessage();
   void SendDownstreamStatefulCheckpoint(proto::ckptmgr::DownstreamStatefulCheckpoint* _message);

@@ -166,15 +166,18 @@ void StMgrClient::SendHelloRequest() {
   return;
 }
 
-void StMgrClient::SendTupleStreamMessage(proto::stmgr::TupleStreamMessage2& _msg) {
+bool StMgrClient::SendTupleStreamMessage(proto::stmgr::TupleStreamMessage2& _msg) {
+  bool dropped = false;
   if (IsConnected()) {
     SendMessage(_msg);
   } else {
+    dropped = true;
     if (++ndropped_messages_ % 100 == 0) {
       LOG(INFO) << "Dropping " << ndropped_messages_ << "th tuple message to stmgr "
                 << other_stmgr_id_ << " because it is not connected";
     }
   }
+  return dropped;
 }
 
 void StMgrClient::HandleTupleStreamMessage(proto::stmgr::TupleStreamMessage2* _message) {

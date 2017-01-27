@@ -121,7 +121,7 @@ StMgrClient* StMgrClientMgr::CreateClient(const sp_string& _other_stmgr_id,
   return client;
 }
 
-void StMgrClientMgr::SendTupleStreamMessage(sp_int32 _task_id, const sp_string& _stmgr_id,
+bool StMgrClientMgr::SendTupleStreamMessage(sp_int32 _task_id, const sp_string& _stmgr_id,
                                             const proto::system::HeronTupleSet2& _msg) {
   auto iter = clients_.find(_stmgr_id);
   CHECK(iter != clients_.end());
@@ -132,10 +132,12 @@ void StMgrClientMgr::SendTupleStreamMessage(sp_int32 _task_id, const sp_string& 
   out->set_task_id(_task_id);
   _msg.SerializePartialToString(out->mutable_set());
 
-  clients_[_stmgr_id]->SendTupleStreamMessage(*out);
+  bool dropped = clients_[_stmgr_id]->SendTupleStreamMessage(*out);
 
   // Release the message
   __global_protobuf_pool_release__(out);
+
+  return dropped;
 }
 
 void StMgrClientMgr::SendDownstreamStatefulCheckpoint(const sp_string& _stmgr_id,
