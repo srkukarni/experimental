@@ -95,7 +95,7 @@ void TMasterServer::HandleRestoreTopologyStateResponse(Connection* _conn,
 
 void TMasterServer::HandleResetTopologyStateMessage(Connection* _conn,
                                      proto::ckptmgr::ResetTopologyState* _message) {
-  tmaster_->ResetTopologyState();
+  tmaster_->ResetTopologyState(_conn);
   __global_protobuf_pool_release__(_message);
 }
 }  // namespace tmaster

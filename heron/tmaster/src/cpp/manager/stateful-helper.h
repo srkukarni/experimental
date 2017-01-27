@@ -34,8 +34,7 @@ class StatefulHelper {
   explicit StatefulHelper(const std::string& _topology_name,
                proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt,
                heron::common::HeronStateMgr* _state_mgr,
-               std::chrono::high_resolution_clock::time_point _tmaster_start_time,
-               std::function<void()> _after_2pc_cb);
+               std::chrono::high_resolution_clock::time_point _tmaster_start_time);
   virtual ~StatefulHelper();
   // Start a new restore process
   void StartRestore(const StMgrMap& _stmgrs, bool _ignore_prev_checkpoints);
@@ -54,6 +53,11 @@ class StatefulHelper {
   // Called when we receive a InstanceStateStored message
   void HandleInstanceStateStored(const std::string& _checkpoint_id,
                                  const proto::system::Instance& _instance);
+
+  // During in Progress have you gotten response from this stmgr
+  bool GotRestoreResponse(const std::string& _stmgr) const;
+
+  bool RestoreInProgress() const;
 
  private:
   // Calculates the next in line checkpoint that must be used

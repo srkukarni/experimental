@@ -277,10 +277,10 @@ void TMasterClient::HandleStartStmgrStatefulProcessing(
   __global_protobuf_pool_release__(_message);
 }
 
-void TMasterClient::SendResetTopologyState(const std::string& _reason) {
+void TMasterClient::SendResetTopologyState(const std::string& _stmgr) {
   proto::ckptmgr::ResetTopologyState* message = nullptr;
   message = __global_protobuf_pool_acquire__(message);
-  message->set_reason(_reason);
+  message->set_dead_stmgr(_stmgr);
 
   SendMessage(*message);
 

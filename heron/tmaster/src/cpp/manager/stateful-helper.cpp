@@ -33,11 +33,10 @@ namespace tmaster {
 StatefulHelper::StatefulHelper(const std::string& _topology_name,
                proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt,
                heron::common::HeronStateMgr* _state_mgr,
-               std::chrono::high_resolution_clock::time_point _tmaster_start_time,
-               std::function<void()> _after_2pc_cb)
+               std::chrono::high_resolution_clock::time_point _tmaster_start_time)
   : topology_name_(_topology_name), ckpt_record_(_ckpt), state_mgr_(_state_mgr) {
   checkpointer_ = new StatefulCheckpointer(_tmaster_start_time);
-  restorer_ = new StatefulRestorer(_after_2pc_cb);
+  restorer_ = new StatefulRestorer();
 }
 
 StatefulHelper::~StatefulHelper() {
@@ -171,6 +170,15 @@ StatefulHelper::AddNewConsistentCheckpoint(const std::string& _new_checkpoint) {
     }
   }
   return new_record;
+}
+
+bool StatefulHelper::GotRestoreResponse(const std::string& _stmgr) const {
+  CHECK(restorer_->InProgress());
+  return restorer_->GotResponse(_stmgr);
+}
+
+bool StatefulHelper::RestoreInProgress() const {
+  return restorer_->InProgress();
 }
 }  // namespace tmaster
 }  // namespace heron

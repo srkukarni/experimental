@@ -28,7 +28,7 @@ namespace tmaster {
 
 class StatefulRestorer {
  public:
-  explicit StatefulRestorer(std::function<void()> _after_2pc_cb);
+  StatefulRestorer();
   virtual ~StatefulRestorer();
   // Start a new 2PC with this checkpoint_id
   void StartRestore(const std::string& _checkpoint_id,
@@ -37,6 +37,8 @@ class StatefulRestorer {
                       const std::string& _checkpoint_id,
                       int64_t _restore_txid,
                       const StMgrMap& _stmgrs);
+
+  bool GotResponse(const std::string& _stmgr) const;
 
   // Simple accessor style functions
   bool InProgress() const { return in_progress_; }

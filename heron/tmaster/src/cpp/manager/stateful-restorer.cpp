@@ -28,10 +28,9 @@
 namespace heron {
 namespace tmaster {
 
-StatefulRestorer::StatefulRestorer(std::function<void()> _fn)
+StatefulRestorer::StatefulRestorer()
   : in_progress_(false),
-    restore_txid_(0),
-    after_2pc_cb_(_fn) {
+    restore_txid_(0) {
 }
 
 StatefulRestorer::~StatefulRestorer() { }
@@ -40,9 +39,9 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id,
                                     const StMgrMap& _stmgrs) {
   if (in_progress_) {
     // Hmm... It seems that we were in the middle of a
-    LOG(WARNING) << "Starting a 2PC Restore for checkpoint "
+    LOG(WARNING) << "Starting a Restore for checkpoint "
                  << _checkpoint_id << " when we are already busy "
-                 << " within 2PC of " << checkpoint_id_in_progress_;
+                 << " within Restore of " << checkpoint_id_in_progress_;
   }
   in_progress_ = true;
   checkpoint_id_in_progress_ = _checkpoint_id;
@@ -58,6 +57,10 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id,
     kv.second->SendRestoreTopologyStateMessage(request);
     unreplied_stmgrs_.insert(kv.first);
   }
+}
+
+bool StatefulRestorer::GotResponse(const std::string& _stmgr) const {
+  return unreplied_stmgrs_.find(_stmgr) == unreplied_stmgrs_.end();
 }
 
 void StatefulRestorer::HandleStMgrRestored(const std::string& _stmgr_id,
@@ -81,7 +84,6 @@ void StatefulRestorer::Finish2PC(const StMgrMap& _stmgrs) {
   }
   in_progress_ = false;
   checkpoint_id_in_progress_ = "";
-  after_2pc_cb_();
 }
 }  // namespace tmaster
 }  // namespace heron

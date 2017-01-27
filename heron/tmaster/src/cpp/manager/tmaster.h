@@ -89,7 +89,7 @@ class TMaster {
                                           proto::system::StatusCode _status);
 
   // Called by tmaster server when it gets ResetTopologyState message
-  void ResetTopologyState();
+  void ResetTopologyState(Connection* _conn);
 
  private:
   // Helper function to fetch physical plan

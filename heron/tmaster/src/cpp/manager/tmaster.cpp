@@ -241,7 +241,6 @@ void TMaster::GetTopologyDone(proto::system::StatusCode _code) {
 
   // In case we are a stateful topology we need load latest checkpoint state
   if (config::TopologyConfigHelper::IsTopologyStateful(*topology_)) {
-    // Now see if there is already a pplan
     auto ckpt = new proto::ckptmgr::StatefulConsistentCheckpoints();
     auto cb = [ckpt, this](proto::system::StatusCode code) {
       this->GetStatefulCheckpointDone(ckpt, code);
@@ -249,6 +248,7 @@ void TMaster::GetTopologyDone(proto::system::StatusCode _code) {
 
     state_mgr_->GetStatefulCheckpoint(tmaster_location_->topology_name(), ckpt, std::move(cb));
   } else {
+    // Now see if there is already a pplan
     FetchPhysicalPlan();
   }
 }
@@ -296,8 +296,7 @@ void TMaster::SetupStatefulHelper(proto::ckptmgr::StatefulConsistentCheckpoints*
              config::TopologyConfigHelper::GetStatefulCheckpointInterval(*topology_);
   CHECK_GT(stateful_checkpoint_interval, 0);
   // Instantiate the stateful restorer/coordinator
-  stateful_helper_ = new StatefulHelper(topology_->name(), _ckpt, state_mgr_, start_time_,
-                                        std::bind(&TMaster::DistributePhysicalPlan, this));
+  stateful_helper_ = new StatefulHelper(topology_->name(), _ckpt, state_mgr_, start_time_);
   LOG(INFO) << "Starting timer to checkpoint state every "
             << stateful_checkpoint_interval << " seconds";
   CHECK_GT(eventLoop_->registerTimer(
@@ -306,10 +305,26 @@ void TMaster::SetupStatefulHelper(proto::ckptmgr::StatefulConsistentCheckpoints*
            0);
 }
 
-void TMaster::ResetTopologyState() {
-  LOG(INFO) << "Got a message from stmgr to reset our topology state";
+void TMaster::ResetTopologyState(Connection* _conn) {
+  if (connection_to_stmgr_id_.find(_conn) == connection_to_stmgr_id_.end()) {
+    LOG(ERROR) << "Got ResetTopology from an unknown connection";
+    return;
+  }
+  const std::string& stmgr = connection_to_stmgr_id_[_conn];
+  LOG(INFO) << "Got a message from stmgr " << stmgr << " to reset our topology state";
   if (stateful_helper_ && absent_stmgrs_.empty()) {
-    stateful_helper_->StartRestore(stmgrs_, false);
+    if (!stateful_helper_->RestoreInProgress()) {
+      LOG(INFO) << "We are not in restore, hence we are starting Restore";
+      stateful_helper_->StartRestore(stmgrs_, false);
+    } else if (stateful_helper_->GotRestoreResponse(stmgr)) {
+      // We are in Restore but we have already gotten response from this
+      // stmgr. So we can safely ignore this because the stmgr will later
+      // send us a RestoreResponse when things get better
+      LOG(INFO) << "We are in restore and have not yet received response from this stmgr";
+    } else {
+      LOG(INFO) << "We are in restore and have already received response from this stmgr";
+      stateful_helper_->StartRestore(stmgrs_, false);
+    }
   }
 }
 
@@ -577,19 +592,18 @@ void TMaster::SetPhysicalPlanDone(proto::system::PhysicalPlan* _pplan,
     auto cb = [this](EventLoop::Status status) { this->DoPhysicalPlan(status); };
     CHECK_GE(eventLoop_->registerTimer(std::move(cb), false, 0), 0);
   } else {
+    bool first_time_pplan = current_pplan_ == NULL;
     delete current_pplan_;
     current_pplan_ = _pplan;
     assignment_in_progress_ = false;
+    // We need to pass that on to all streammanagers
+    DistributePhysicalPlan();
     if (stateful_helper_) {
       stateful_helper_->RegisterNewPplan(*current_pplan_);
-      LOG(INFO) << "Starting Stateful 2PC now that all stmgrs have connected";
+      LOG(INFO) << "Starting Stateful Restore now that all stmgrs have connected";
       stateful_helper_->StartRestore(stmgrs_,
+        first_time_pplan &&
         config::TopologyConfigHelper::StatefulTopologyStartClean(current_pplan_->topology()));
-      // The restorer will call DistributePhysicalPlan after he is done
-      // with the 2pc
-    } else {
-      // We need to pass that on to all streammanagers
-      DistributePhysicalPlan();
     }
   }
 }

@@ -42,7 +42,8 @@ message RestoreTopologyStateResponse {
 // to some valid checkpoint. This is sent either if stmgr dies
 // and comes back up or if an instance dies.
 message ResetTopologyState {
-  required string reason = 1;
+  optional string dead_stmgr = 1;
+  optional int32 dead_taskid = 2;
 }
 
 // Message sent by stmgr to tmaster informing it about
