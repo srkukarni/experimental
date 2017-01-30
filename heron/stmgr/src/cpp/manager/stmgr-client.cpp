@@ -146,12 +146,15 @@ void StMgrClient::HandleHelloResponse(void*, proto::stmgr::StrMgrHelloResponse* 
     LOG(ERROR) << "NonOK register response " << status << " from stmgr " << other_stmgr_id_
                << " running at " << get_clientoptions().get_host() << ":"
                << get_clientoptions().get_port();
+    __global_protobuf_pool_release__(_response);
     Stop();
+    return;
   }
   __global_protobuf_pool_release__(_response);
   if (client_manager_->DidAnnounceBackPressure()) {
     SendStartBackPressureMessage();
   }
+  client_manager_->HandleStMgrClientRegistered();
 }
 
 void StMgrClient::OnReConnectTimer() { Start(); }

@@ -24,7 +24,7 @@
 #include "proto/messages.h"
 
 namespace heron {
-namespace ckptmgr {
+namespace stmgr {
 
 class CkptMgrClient : public Client {
  public:
@@ -81,7 +81,7 @@ class CkptMgrClient : public Client {
   sp_int32 reconnect_cpktmgr_interval_sec_;
 };
 
-}  // namespace ckptmgr
+}  // namespace stmgr
 }  // namespace heron
 
 #endif  // SRC_CPP_SVCS_CKPTMGR_SRC_CKPTCLIENT_CLIENT_H_

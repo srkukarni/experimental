@@ -38,9 +38,6 @@ class MultiAssignableMetric;
 }
 
 namespace heron {
-namespace ckptmgr {
-class CkptMgrClient;
-}
 }
 
 
@@ -55,6 +52,7 @@ class XorManager;
 class TupleCache;
 class StatefulHelper;
 class StatefulRestorer;
+class CkptMgrClient;
 
 class StMgr {
  public:
@@ -95,7 +93,9 @@ class StMgr {
   void StartTMasterClient();
   bool DidAnnounceBackPressure();
   void HandleDeadStMgrConnection(const sp_string& _stmgr);
-  void HandleNewInstance(sp_int32 _task_id);
+  void HandleAllStMgrClientsConnected();
+  void HandleDeadInstance(sp_int32 _task_id);
+  void HandleAllInstancesConnected();
   void HandleCkptMgrRegistration();
 
   // Handle checkpoint message coming from upstream to _task_id
@@ -196,7 +196,7 @@ class StMgr {
   heron::common::MetricsMgrSt* metrics_manager_client_;
 
   // Checkpoint Manager
-  heron::ckptmgr::CkptMgrClient* checkpoint_manager_client_;
+  CkptMgrClient* checkpoint_manager_client_;
 
   // Process related metrics
   heron::common::MultiAssignableMetric* stmgr_process_metrics_;

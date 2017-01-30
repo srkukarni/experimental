@@ -29,8 +29,10 @@
 #include "grouping/shuffle-grouping.h"
 
 namespace heron {
-namespace ckptmgr {
-class CkptMgrClient;
+namespace proto {
+namespace system {
+class PhysicalPlan;
+}
 }
 }
 
@@ -38,16 +40,21 @@ namespace heron {
 namespace stmgr {
 
 class StMgrServer;
+class TupleCache;
+class StMgrClientMgr;
+class CkptMgrClient;
 
 class StatefulRestorer {
  public:
-  explicit StatefulRestorer(ckptmgr::CkptMgrClient* _ckptmgr,
+  explicit StatefulRestorer(CkptMgrClient* _ckptmgr,
+                            StMgrClientMgr* _clientmgr, TupleCache* _tuple_cache,
+                            StMgrServer* _server,
                             std::function<void(proto::system::StatusCode,
                                                std::string, sp_int64)> _restore_done_watcher);
   virtual ~StatefulRestorer();
-  void SetStMgrServer(StMgrServer* _server);
   // Called when stmgr receives a RestoreTopologyStateRequest message
-  void StartRestore(const std::string& _checkpoint_id, sp_int64 _restore_txid);
+  void StartRestore(const std::string& _checkpoint_id, sp_int64 _restore_txid,
+                    proto::system::PhysicalPlan* _pplan);
   // Called when ckptmgr client restarts
   void HandleCkptMgrRestart();
   // Called when instance responds back with RestoredInstanceStateResponse
@@ -55,20 +62,35 @@ class StatefulRestorer {
   // called when ckptmgr returns with instance state
   void HandleCheckpointState(proto::system::StatusCode _status, sp_int32 _task_id,
                              const proto::ckptmgr::InstanceStateCheckpoint& _state);
+  // called when a stmgr connection closes
+  void HandleDeadStMgrConnection();
+  // called when all clients get connected
+  void HandleAllStMgrClientsConnected();
+  // called when an instance is dead
+  void HandleDeadInstanceConnection();
+  // called when all instances are connected
+  void HandleAllInstancesConnected();
   bool InProgress() const { return in_progress_; }
 
  private:
   void GetCheckpoints();
+  void CheckAndFinishRestore();
 
-  bool in_progress_;
   std::set<sp_int32> get_ckpt_pending_;
   std::set<sp_int32> restore_pending_;
+  bool clients_connections_pending_;
+  bool instance_connections_pending_;
   std::string checkpoint_id_;
   sp_int64 restore_txid_;
   std::set<sp_int32> local_taskids_;
-  std::function<void(proto::system::StatusCode, std::string, sp_int64)> restore_done_watcher_;
+
+  CkptMgrClient* ckptmgr_;
+  StMgrClientMgr* clientmgr_;
+  TupleCache* tuple_cache_;
   StMgrServer* server_;
-  ckptmgr::CkptMgrClient* ckptmgr_;
+
+  bool in_progress_;
+  std::function<void(proto::system::StatusCode, std::string, sp_int64)> restore_done_watcher_;
 };
 }  // namespace stmgr
 }  // namespace heron

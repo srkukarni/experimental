@@ -41,7 +41,7 @@ class StMgrClientMgr {
                  heron::common::MetricsMgrSt* _metrics_manager_client);
   virtual ~StMgrClientMgr();
 
-  void NewPhysicalPlan(const proto::system::PhysicalPlan* _pplan);
+  void StartConnections(const proto::system::PhysicalPlan* _pplan);
   bool SendTupleStreamMessage(sp_int32 _task_id,
                               const sp_string& _stmgr_id,
                               const proto::system::HeronTupleSet2& _msg);
@@ -57,11 +57,16 @@ class StMgrClientMgr {
   bool DidAnnounceBackPressure();
   // Called by StMgrClient when its connection closes
   void HandleDeadStMgrConnection(const sp_string& _stmgr_id);
+  // Called by StMgrClient when it successfully registers
+  void HandleStMgrClientRegistered();
   void SendDownstreamStatefulCheckpoint(const sp_string& _stmgr_id,
                                         proto::ckptmgr::DownstreamStatefulCheckpoint* _message);
 
   // Interface to close all connections
   void CloseConnectionsAndClear();
+
+  // Check if all clients are connected
+  bool AllStMgrClientsConnected();
 
  private:
   StMgrClient* CreateClient(const sp_string& _other_stmgr_id, const sp_string& _host_name,

@@ -25,7 +25,7 @@
 #include "config/heron-internals-config-reader.h"
 
 namespace heron {
-namespace ckptmgr {
+namespace stmgr {
 
 CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _options,
                              const sp_string& _topology_name, const sp_string& _topology_id,
@@ -221,6 +221,6 @@ void CkptMgrClient::HandleGetInstanceStateResponse(void* _ctx,
   }
   delete _response;
 }
-}  // namespace ckptmgr
+}  // namespace stmgr
 }  // namespace heron
 

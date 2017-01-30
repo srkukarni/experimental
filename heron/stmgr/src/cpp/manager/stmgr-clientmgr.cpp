@@ -54,7 +54,7 @@ StMgrClientMgr::~StMgrClientMgr() {
   delete stmgr_clientmgr_metrics_;
 }
 
-void StMgrClientMgr::NewPhysicalPlan(const proto::system::PhysicalPlan* _pplan) {
+void StMgrClientMgr::StartConnections(const proto::system::PhysicalPlan* _pplan) {
   // TODO(vikasr) : Currently we establish connections with all streammanagers
   // In the next iteration we might want to make it better
   std::set<sp_string> all_stmgrs;
@@ -172,11 +172,26 @@ void StMgrClientMgr::HandleDeadStMgrConnection(const sp_string& _dead_stmgr) {
   stream_manager_->HandleDeadStMgrConnection(_dead_stmgr);
 }
 
+void StMgrClientMgr::HandleStMgrClientRegistered() {
+  if (AllStMgrClientsConnected()) {
+    stream_manager_->HandleAllStMgrClientsConnected();
+  }
+}
+
 void StMgrClientMgr::CloseConnectionsAndClear() {
   for (auto kv : clients_) {
     kv.second->Quit();  // It will delete itself
   }
   clients_.clear();
+}
+
+bool StMgrClientMgr::AllStMgrClientsConnected() {
+  for (auto kv : clients_) {
+    if (!kv.second->IsConnected()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace stmgr
