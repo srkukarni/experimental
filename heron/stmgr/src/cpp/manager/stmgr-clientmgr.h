@@ -65,8 +65,8 @@ class StMgrClientMgr {
   // Interface to close all connections
   void CloseConnectionsAndClear();
 
-  // Check if all clients are connected
-  bool AllStMgrClientsConnected();
+  // Check if all clients are registered
+  bool AllStMgrClientsRegistered();
 
  private:
   StMgrClient* CreateClient(const sp_string& _other_stmgr_id, const sp_string& _host_name,

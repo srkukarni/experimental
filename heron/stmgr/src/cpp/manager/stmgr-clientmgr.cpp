@@ -173,8 +173,8 @@ void StMgrClientMgr::HandleDeadStMgrConnection(const sp_string& _dead_stmgr) {
 }
 
 void StMgrClientMgr::HandleStMgrClientRegistered() {
-  if (AllStMgrClientsConnected()) {
-    stream_manager_->HandleAllStMgrClientsConnected();
+  if (AllStMgrClientsRegistered()) {
+    stream_manager_->HandleAllStMgrClientsRegistered();
   }
 }
 
@@ -185,9 +185,12 @@ void StMgrClientMgr::CloseConnectionsAndClear() {
   clients_.clear();
 }
 
-bool StMgrClientMgr::AllStMgrClientsConnected() {
+bool StMgrClientMgr::AllStMgrClientsRegistered() {
   for (auto kv : clients_) {
     if (!kv.second->IsConnected()) {
+      return false;
+    }
+    if (!kv.second->IsRegistered()) {
       return false;
     }
   }

@@ -63,7 +63,8 @@ StMgrClient::StMgrClient(EventLoop* eventLoop, const NetworkOptions& _options,
       quit_(false),
       client_manager_(_client_manager),
       metrics_manager_client_(_metrics_manager_client),
-      ndropped_messages_(0) {
+      ndropped_messages_(0),
+      is_registered_(false) {
   reconnect_other_streammgrs_interval_sec_ =
       config::HeronInternalsConfigReader::Instance()->GetHeronStreammgrClientReconnectIntervalSec();
 
@@ -112,6 +113,7 @@ void StMgrClient::HandleConnect(NetworkErrorCode _status) {
 }
 
 void StMgrClient::HandleClose(NetworkErrorCode _code) {
+  is_registered_ = false;
   if (_code == OK) {
     LOG(INFO) << "We closed our server connection with stmgr " << other_stmgr_id_ << " running at "
               << get_clientoptions().get_host() << ":" << get_clientoptions().get_port()
@@ -151,6 +153,7 @@ void StMgrClient::HandleHelloResponse(void*, proto::stmgr::StrMgrHelloResponse* 
     return;
   }
   __global_protobuf_pool_release__(_response);
+  is_registered_ = true;
   if (client_manager_->DidAnnounceBackPressure()) {
     SendStartBackPressureMessage();
   }

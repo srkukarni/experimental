@@ -47,6 +47,7 @@ class StMgrClient : public Client {
   void SendStartBackPressureMessage();
   void SendStopBackPressureMessage();
   void SendDownstreamStatefulCheckpoint(proto::ckptmgr::DownstreamStatefulCheckpoint* _message);
+  bool IsRegistered() const;
 
  protected:
   virtual void HandleConnect(NetworkErrorCode status);
@@ -79,6 +80,9 @@ class StMgrClient : public Client {
 
   // Counters
   sp_int64 ndropped_messages_;
+
+  // Have we registered ourselves
+  bool is_registered_;
 };
 
 }  // namespace stmgr

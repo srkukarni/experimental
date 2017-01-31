@@ -97,7 +97,7 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
     GetCheckpoints();
   }
   clientmgr_->StartConnections(_pplan);
-  if (clientmgr_->AllStMgrClientsConnected()) {
+  if (clientmgr_->AllStMgrClientsRegistered()) {
     // Its possible that this is really a restore while we were already in progress
     // and there was no change in pplan. In which case there would be no new
     // connections to restore

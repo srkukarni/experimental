@@ -758,7 +758,7 @@ void StMgr::HandleDeadStMgrConnection(const sp_string& _stmgr_id) {
   }
 }
 
-void StMgr::HandleAllStMgrClientsConnected() {
+void StMgr::HandleAllStMgrClientsRegistered() {
   // If we are stateful topology, we might want to continue our restore process
   if (is_stateful_) {
     stateful_restorer_->HandleAllStMgrClientsConnected();

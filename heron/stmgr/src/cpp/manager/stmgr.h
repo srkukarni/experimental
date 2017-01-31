@@ -93,7 +93,7 @@ class StMgr {
   void StartTMasterClient();
   bool DidAnnounceBackPressure();
   void HandleDeadStMgrConnection(const sp_string& _stmgr);
-  void HandleAllStMgrClientsConnected();
+  void HandleAllStMgrClientsRegistered();
   void HandleDeadInstance(sp_int32 _task_id);
   void HandleAllInstancesConnected();
   void HandleCkptMgrRegistration();
