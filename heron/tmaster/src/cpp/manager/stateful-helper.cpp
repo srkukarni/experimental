@@ -107,6 +107,10 @@ void StatefulHelper::StartCheckpoint(const StMgrMap& _stmgrs) {
 
 void StatefulHelper::HandleInstanceStateStored(const std::string& _checkpoint_id,
                                                const proto::system::Instance& _instance) {
+  if (restorer_->InProgress()) {
+    LOG(INFO) << "Ignoring the Instance State because we are in Restore";
+    return;
+  }
   if (checkpointer_->HandleInstanceStateStored(_checkpoint_id, _instance)) {
     // This is now a globally consistent checkpoint
     auto new_ckpt_record = AddNewConsistentCheckpoint(_checkpoint_id);
