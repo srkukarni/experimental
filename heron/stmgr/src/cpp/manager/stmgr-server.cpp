@@ -739,7 +739,7 @@ void StMgrServer::HandleCheckpointMarker(sp_int32 _src_task_id, sp_int32 _destin
   stateful_gateway_->HandleUpstreamMarker(_src_task_id, _destination_task_id, _checkpoint_id);
 }
 
-void StMgrServer::SendRestoreInstanceStateRequest(sp_int32 _task_id,
+bool StMgrServer::SendRestoreInstanceStateRequest(sp_int32 _task_id,
             const proto::ckptmgr::InstanceStateCheckpoint& _state) {
   LOG(INFO) << "Sending RestoreInstanceState request to task " << _task_id;
   CHECK(instance_info_.find(_task_id) != instance_info_.end());
@@ -750,9 +750,11 @@ void StMgrServer::SendRestoreInstanceStateRequest(sp_int32 _task_id,
     message->mutable_state()->CopyFrom(_state);
     SendMessage(conn, *message);
     __global_protobuf_pool_release__(message);
+    return true;
   } else {
     LOG(WARNING) << "Cannot send RestoreInstanceState Request to task "
                  << _task_id << " because it is not connected to us";
+    return false;
   }
 }
 

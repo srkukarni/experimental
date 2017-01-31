@@ -67,7 +67,7 @@ class StatefulRestorer {
   // called when all clients get connected
   void HandleAllStMgrClientsConnected();
   // called when an instance is dead
-  void HandleDeadInstanceConnection();
+  void HandleDeadInstanceConnection(sp_int32 _task_id);
   // called when all instances are connected
   void HandleAllInstancesConnected();
   bool InProgress() const { return in_progress_; }

@@ -88,7 +88,9 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
       proto::ckptmgr::InstanceStateCheckpoint dummy;
       dummy.set_checkpoint_id(checkpoint_id_);
       dummy.mutable_state();
-      server_->SendRestoreInstanceStateRequest(task_id, dummy);
+      if (!server_->SendRestoreInstanceStateRequest(task_id, dummy)) {
+        get_ckpt_pending_.insert(task_id);
+      }
     }
   } else {
     // Send messages to ckpt
@@ -126,8 +128,9 @@ void StatefulRestorer::HandleCheckpointState(proto::system::StatusCode _status, 
     return;
   }
   if (_status == proto::system::OK) {
-    get_ckpt_pending_.erase(_task_id);
-    server_->SendRestoreInstanceStateRequest(_task_id, _state);
+    if (server_->SendRestoreInstanceStateRequest(_task_id, _state)) {
+      get_ckpt_pending_.erase(_task_id);
+    }
   } else {
     LOG(INFO) << "InstanceState from checkpont mgr contained non ok status " << _status;
     in_progress_ = false;
@@ -180,12 +183,19 @@ void StatefulRestorer::HandleAllInstancesConnected() {
     return;
   }
   instance_connections_pending_ = false;
-  CheckAndFinishRestore();
+  if (!get_ckpt_pending_.empty()) {
+    GetCheckpoints();
+  } else {
+    CheckAndFinishRestore();
+  }
 }
 
-void StatefulRestorer::HandleDeadInstanceConnection() {
+void StatefulRestorer::HandleDeadInstanceConnection(sp_int32 _task_id) {
   if (in_progress_) {
     instance_connections_pending_ = true;
+    CHECK(local_taskids_.find(_task_id) != local_taskids_.end());
+    restore_pending_.insert(_task_id);
+    get_ckpt_pending_.insert(_task_id);
   }
 }
 

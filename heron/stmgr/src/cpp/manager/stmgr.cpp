@@ -784,7 +784,7 @@ void StMgr::HandleAllInstancesConnected() {
 void StMgr::HandleDeadInstance(sp_int32 _task_id) {
   if (is_stateful_) {
     if (stateful_restorer_->InProgress()) {
-      stateful_restorer_->HandleDeadInstanceConnection();
+      stateful_restorer_->HandleDeadInstanceConnection(_task_id);
     } else {
       LOG(INFO) << "An instance " << _task_id << " died while we are not "
                 << "in restore. Sending ResetMessage to tmaster";

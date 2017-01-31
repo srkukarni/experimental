@@ -79,7 +79,7 @@ class StMgrServer : public Server {
   bool DidAnnounceBackPressure() { return !remote_ends_who_caused_back_pressure_.empty(); }
 
   void InitiateStatefulCheckpoint(const sp_string& _checkpoint_tag);
-  void SendRestoreInstanceStateRequest(sp_int32 _task_id,
+  bool SendRestoreInstanceStateRequest(sp_int32 _task_id,
                                        const proto::ckptmgr::InstanceStateCheckpoint& _state);
   void SendStartInstanceStatefulProcessing(const std::string& _ckpt_id);
   void ClearCache();
