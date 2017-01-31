@@ -359,7 +359,7 @@ void StMgrServer::HandleRegisterInstanceRequest(REQID _reqid, Connection* _conn,
 
     response->mutable_status()->set_status(proto::system::OK);
     const proto::system::PhysicalPlan* pplan = stmgr_->GetPhysicalPlan();
-    if (pplan && !config::TopologyConfigHelper::IsTopologyStateful(pplan->topology())) {
+    if (pplan) {
       response->mutable_pplan()->CopyFrom(*pplan);
     }
     SendResponse(_reqid, _conn, *response);
