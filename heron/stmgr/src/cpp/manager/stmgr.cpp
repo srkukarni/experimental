@@ -116,11 +116,13 @@ void StMgr::Init() {
 
   is_stateful_ = heron::config::TopologyConfigHelper::IsTopologyStateful(*hydrated_topology_);
 
+  // Start the stateful helper. Because this is needed by server
+  stateful_helper_ = new StatefulHelper();
+
   // Create and start StmgrServer
   StartStmgrServer();
 
-  // Start the stateful helper.
-  stateful_helper_ = new StatefulHelper();
+  // Now start the stateful restorer
   stateful_restorer_ = new StatefulRestorer(checkpoint_manager_client_, clientmgr_,
                              tuple_cache_, server_,
                              std::bind(&StMgr::HandleStatefulRestoreDone, this,
