@@ -533,7 +533,7 @@ void StMgr::HandleStreamManagerData(const sp_string&,
 
   // We have a shortcut for non-acking case
   if (!is_acking_enabled) {
-    server_->SendToInstance2(_task_id, _message);
+    server_->SendToInstance2(_message);
   } else {
     proto::system::HeronTupleSet2* tuple_set = NULL;
     tuple_set = __global_protobuf_pool_acquire__(tuple_set);
@@ -549,15 +549,16 @@ void StMgr::SendInBound(sp_int32 _task_id, proto::system::HeronTupleSet2* _messa
   }
   if (_message->has_control()) {
     // We got a bunch of acks/fails
-    ProcessAcksAndFails(_task_id, _message->control());
+    ProcessAcksAndFails(_message->src_task_id(), _task_id, _message->control());
     __global_protobuf_pool_release__(_message);
   }
 }
 
-void StMgr::ProcessAcksAndFails(sp_int32 _task_id,
+void StMgr::ProcessAcksAndFails(sp_int32 _src_task_id, sp_int32 _task_id,
                                 const proto::system::HeronControlTupleSet& _control) {
   proto::system::HeronTupleSet2* current_control_tuple_set = NULL;
   current_control_tuple_set = __global_protobuf_pool_acquire__(current_control_tuple_set);
+  current_control_tuple_set->set_src_task_id(_src_task_id);
 
   // First go over emits. This makes sure that new emits makes
   // a tuples stay alive before we process its acks
@@ -656,10 +657,10 @@ void StMgr::HandleInstanceData(const sp_int32 _src_task_id, bool _local_spout,
     proto::system::HeronControlTupleSet* c = _message->mutable_control();
     CHECK_EQ(c->emits_size(), 0);
     for (sp_int32 i = 0; i < c->acks_size(); ++i) {
-      CopyControlOutBound(c->acks(i), false);
+      CopyControlOutBound(_src_task_id, c->acks(i), false);
     }
     for (sp_int32 i = 0; i < c->fails_size(); ++i) {
-      CopyControlOutBound(c->fails(i), true);
+      CopyControlOutBound(_src_task_id, c->fails(i), true);
     }
   }
 }
@@ -682,15 +683,16 @@ void StMgr::DrainInstanceData(sp_int32 _task_id, proto::system::HeronTupleSet2* 
   }
 }
 
-void StMgr::CopyControlOutBound(const proto::system::AckTuple& _control, bool _is_fail) {
+void StMgr::CopyControlOutBound(sp_int32 _src_task_id,
+                                const proto::system::AckTuple& _control, bool _is_fail) {
   for (sp_int32 i = 0; i < _control.roots_size(); ++i) {
     proto::system::AckTuple t;
     t.add_roots()->CopyFrom(_control.roots(i));
     t.set_ackedtuple(_control.ackedtuple());
     if (!_is_fail) {
-      tuple_cache_->add_ack_tuple(_control.roots(i).taskid(), t);
+      tuple_cache_->add_ack_tuple(_src_task_id, _control.roots(i).taskid(), t);
     } else {
-      tuple_cache_->add_fail_tuple(_control.roots(i).taskid(), t);
+      tuple_cache_->add_fail_tuple(_src_task_id, _control.roots(i).taskid(), t);
     }
   }
 }
@@ -701,7 +703,7 @@ void StMgr::CopyDataOutBound(sp_int32 _src_task_id, bool _local_spout,
                              const std::vector<sp_int32>& _out_tasks) {
   bool first_iteration = true;
   for (auto& i : _out_tasks) {
-    sp_int64 tuple_key = tuple_cache_->add_data_tuple(i, _streamid, _tuple);
+    sp_int64 tuple_key = tuple_cache_->add_data_tuple(_src_task_id, i, _streamid, _tuple);
     if (_tuple->roots_size() > 0) {
       // Anchored tuple
       if (_local_spout) {
@@ -718,7 +720,7 @@ void StMgr::CopyDataOutBound(sp_int32 _src_task_id, bool _local_spout,
           proto::system::AckTuple t;
           t.add_roots()->CopyFrom(_tuple->roots(i));
           t.set_ackedtuple(tuple_key);
-          tuple_cache_->add_emit_tuple(_tuple->roots(i).taskid(), t);
+          tuple_cache_->add_emit_tuple(_src_task_id, _tuple->roots(i).taskid(), t);
         }
       }
     }
@@ -814,6 +816,10 @@ void StMgr::HandleInstanceStateCheckpointMessage(sp_int32 _task_id,
                                  proto::system::Instance* _instance) {
   LOG(INFO) << "Got a checkpoint state message from " << _task_id
             << " for checkpoint " << _message->checkpoint_id();
+  if (stateful_restorer_->InProgress()) {
+    LOG(INFO) << "Ignoring the message because we are in progress";
+    return;
+  }
   std::set<sp_int32> downstream_receivers = stateful_helper_->get_downstreamers(_task_id);
   for (auto downstream_receiver : downstream_receivers) {
     LOG(INFO) << "Adding a DownstreamCheckpointMessage triplet "
