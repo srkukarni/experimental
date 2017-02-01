@@ -37,11 +37,11 @@ class CheckpointGateway {
   explicit CheckpointGateway(sp_uint64 _drain_threshold,
         StatefulHelper* _stateful_helper,
         std::function<void(sp_int32, proto::system::HeronTupleSet2*)> drainer1,
-        std::function<void(sp_int32, proto::stmgr::TupleStreamMessage2*)> drainer2,
+        std::function<void(proto::stmgr::TupleStreamMessage2*)> drainer2,
         std::function<void(sp_int32, proto::ckptmgr::InitiateStatefulCheckpoint*)> drainer3);
   virtual ~CheckpointGateway();
   void SendToInstance(sp_int32 _task_id, proto::system::HeronTupleSet2* _message);
-  void SendToInstance(sp_int32 _task_id, proto::stmgr::TupleStreamMessage2* _message);
+  void SendToInstance(proto::stmgr::TupleStreamMessage2* _message);
   void HandleUpstreamMarker(sp_int32 _src_task_id, sp_int32 _destination_task_id,
                             const sp_string& _checkpoint_id);
 
@@ -68,6 +68,7 @@ class CheckpointGateway {
     void Clear();
    private:
     void add(Tuple _tuple, sp_uint64 _size);
+    void add_front(Tuple _tuple, sp_uint64 _size);
     sp_string checkpoint_id_;
     std::set<sp_int32> all_upstream_dependencies_;
     std::set<sp_int32> pending_upstream_dependencies_;
@@ -84,7 +85,7 @@ class CheckpointGateway {
   StatefulHelper* stateful_helper_;
   std::map<sp_int32, CheckpointInfo*> pending_tuples_;
   std::function<void(sp_int32, proto::system::HeronTupleSet2*)> drainer1_;
-  std::function<void(sp_int32, proto::stmgr::TupleStreamMessage2*)> drainer2_;
+  std::function<void(proto::stmgr::TupleStreamMessage2*)> drainer2_;
   std::function<void(sp_int32, proto::ckptmgr::InitiateStatefulCheckpoint*)> drainer3_;
 };
 
