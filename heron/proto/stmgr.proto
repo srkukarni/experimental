@@ -79,7 +79,8 @@ message TupleMessage2 {
 
 // Tuples exchanged between stream managers
 message TupleStreamMessage2 {
-  required int32 task_id = 1;
+  required int32 src_task_id = 3;
+  required int32 task_id = 1; // This is the destination
   // serialized data
   required bytes set = 2;
 }
