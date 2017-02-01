@@ -311,6 +311,8 @@ public class StreamManagerClient extends HeronClient {
 
   private void handleNewTuples2(HeronTuples.HeronTupleSet2 set) {
     HeronTuples.HeronTupleSet.Builder toFeed = HeronTuples.HeronTupleSet.newBuilder();
+    // Set the source task id
+    toFeed.setSrcTaskId(set.getSrcTaskId());
     if (set.hasControl()) {
       toFeed.setControl(set.getControl());
     } else {

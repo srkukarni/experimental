@@ -103,11 +103,12 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
       immediateAcks = null;
     }
 
-    this.outputter = new OutgoingTupleCollection(helper.getMyComponent(), streamOutQueue);
+    this.outputter = new OutgoingTupleCollection(helper, streamOutQueue);
   }
 
   void updatePhysicalPlanHelper(PhysicalPlanHelper physicalPlanHelper) {
     this.helper = physicalPlanHelper;
+    this.outputter.updatePhysicalPlanHelper(physicalPlanHelper);
   }
 
   /////////////////////////////////////////////////////////
