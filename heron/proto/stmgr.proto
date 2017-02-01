@@ -81,6 +81,6 @@ message TupleMessage2 {
 message TupleStreamMessage2 {
   required int32 src_task_id = 3;
   required int32 task_id = 1; // This is the destination
-  // serialized data
+  // serialized data of HeronTupleSet2
   required bytes set = 2;
 }

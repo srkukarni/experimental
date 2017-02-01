@@ -45,11 +45,11 @@ message HeronTupleSet {
 
 message HeronDataTupleSet2 {
   required heron.proto.api.StreamId stream = 1;
-  required int32 src_task_id = 3;
   repeated bytes tuples = 2;
 }
 
 message HeronTupleSet2 {
+  required int32 src_task_id = 3;
   optional HeronDataTupleSet2 data = 1;
   optional HeronControlTupleSet control = 2;
 }
