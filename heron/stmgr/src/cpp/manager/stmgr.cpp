@@ -622,7 +622,8 @@ void StMgr::ProcessAcksAndFails(sp_int32 _src_task_id, sp_int32 _task_id,
 void StMgr::HandleInstanceData(const sp_int32 _src_task_id, bool _local_spout,
                                proto::system::HeronTupleSet* _message) {
   if (stateful_restorer_->InProgress()) {
-    LOG(INFO) << "Dropping data received from instance because we are in Restore";
+    LOG(INFO) << "Dropping data received from instance " << _src_task_id
+              << " because we are in Restore";
     return;
   }
 
