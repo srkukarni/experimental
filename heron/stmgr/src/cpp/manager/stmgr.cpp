@@ -526,13 +526,15 @@ void StMgr::PopulateXorManagers(
 
 const proto::system::PhysicalPlan* StMgr::GetPhysicalPlan() const { return pplan_; }
 
-void StMgr::HandleStreamManagerData(const sp_string&,
+void StMgr::HandleStreamManagerData(const sp_string& _stmgr_id,
                                     proto::stmgr::TupleStreamMessage2* _message) {
   if (stateful_restorer_->InProgress()) {
     LOG(INFO) << "Dropping data received from stmgr because we are in Restore";
     __global_protobuf_pool_release__(_message);
     return;
   }
+  LOG(INFO) << "Received a TupleStreamMessage from stmgr " << _stmgr_id
+            << " " << _message->DebugString();
   // We received message from another stream manager
   sp_int32 _task_id = _message->task_id();
 
