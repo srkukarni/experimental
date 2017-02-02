@@ -174,6 +174,7 @@ void StMgrClient::SendHelloRequest() {
 
 bool StMgrClient::SendTupleStreamMessage(proto::stmgr::TupleStreamMessage2& _msg) {
   bool dropped = false;
+  LOG(INFO) << "Sending " << _msg.DebugString() << std::endl;
   if (IsConnected()) {
     SendMessage(_msg);
   } else {
@@ -237,6 +238,10 @@ void StMgrClient::SendStopBackPressureMessage() {
 
 void StMgrClient::SendDownstreamStatefulCheckpoint(
                   proto::ckptmgr::DownstreamStatefulCheckpoint* _message) {
+  LOG(INFO) << "Sending Downstream Checkpoint message for src_task_id: "
+             << _message->origin_task_id() << " dest_task_id: "
+             << _message->destination_task_id() << " checkpoint: "
+             << _message->checkpoint_id();
   SendMessage(*_message);
   __global_protobuf_pool_release__(_message);
 }

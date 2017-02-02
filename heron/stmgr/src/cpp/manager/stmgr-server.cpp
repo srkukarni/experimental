@@ -411,6 +411,7 @@ void StMgrServer::DrainToInstance2(proto::stmgr::TupleStreamMessage2* _message) 
   if (!drop) {
     SendMessage(iter->second->conn_, _message->set().size(),
                 heron_tuple_set_2_, _message->set().c_str());
+    LOG(INFO) << "Sending to task_id: " << task_id << ":\n" << _message->DebugString() << std::endl;
   }
   __global_protobuf_pool_release__(_message);
 }
@@ -444,6 +445,8 @@ void StMgrServer::DrainToInstance1(sp_int32 _task_id,
           ->incr_by(_message->control().fails_size());
     }
     SendMessage(iter->second->conn_, *_message);
+    LOG(INFO) << "Sending to task_id: " << _task_id << ":\n" << _message->DebugString()
+              << std::endl;
   }
   __global_protobuf_pool_release__(_message);
 }
@@ -458,6 +461,8 @@ void StMgrServer::DrainToInstance3(sp_int32 _task_id,
     LOG(INFO) << "Sending Initiate Checkpoint Message to local task "
               << _task_id;
     SendMessage(iter->second->conn_, *_message);
+    LOG(INFO) << "Sending to task_id: " << _task_id << ":\n" << _message->DebugString()
+              << std::endl;
   }
   __global_protobuf_pool_release__(_message);
 }

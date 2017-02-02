@@ -137,7 +137,7 @@ class HeronExecutor(object):
 
     self.shell_env = shell_env
     self.max_runs = 100
-    self.interval_between_runs = 10
+    self.interval_between_runs = 1
     self.shard = parsed_args.shard
     self.topology_name = parsed_args.topology_name
     self.topology_id = parsed_args.topology_id

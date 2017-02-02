@@ -626,6 +626,8 @@ void StMgr::HandleInstanceData(const sp_int32 _src_task_id, bool _local_spout,
     return;
   }
 
+  LOG(INFO) << "Received from instance " << _src_task_id << " : " << _message->DebugString()
+            << std::endl;
   // Note:- Process data before control
   // This is to make sure that anchored emits are sent out
   // before any acks/fails
