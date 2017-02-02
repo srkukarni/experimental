@@ -237,6 +237,10 @@ void StMgrClient::SendStopBackPressureMessage() {
 
 void StMgrClient::SendDownstreamStatefulCheckpoint(
                   proto::ckptmgr::DownstreamStatefulCheckpoint* _message) {
+  LOG(INFO) << "Sending Downstream Checkpoint message for src_task_id: "
+            << _message->origin_task_id() << " dest_task_id: "
+            << _message->destination_task_id() << " checkpoint: "
+            << _message->checkpoint_id();
   SendMessage(*_message);
   __global_protobuf_pool_release__(_message);
 }
