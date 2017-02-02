@@ -78,6 +78,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
 
     this.serializer = serializer;
     this.boltMetrics = boltMetrics;
+    this.outputter = new OutgoingTupleCollection(helper, streamOutQueue);
+
     updatePhysicalPlanHelper(helper);
 
     Map<String, Object> config = helper.getTopologyContext().getTopologyConfig();
@@ -87,8 +89,6 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     } else {
       this.ackEnabled = false;
     }
-
-    this.outputter = new OutgoingTupleCollection(helper, streamOutQueue);
   }
 
   void updatePhysicalPlanHelper(PhysicalPlanHelper physicalPlanHelper) {

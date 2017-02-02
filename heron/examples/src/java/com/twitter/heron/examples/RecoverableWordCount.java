@@ -119,7 +119,7 @@ public final class RecoverableWordCount {
     @Override
     public void preSave(String checkpointId) {
       System.out.println("Saving state...");
-      System.out.println("Current sentence emitted count: " + emitted);
+      System.out.println(checkpointId + " Current sentence emitted count: " + emitted);
       spoutState.put(KEY_EMITTED, emitted);
     }
   }
@@ -175,8 +175,7 @@ public final class RecoverableWordCount {
     @Override
     public void preSave(String checkpointId) {
       System.out.println("Saving state...");
-      System.out.println("Current word count result: ");
-      System.out.println(countMap.toString());
+      System.out.println(checkpointId + " Current word count result: " + countMap.toString());
       for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
         countState.put(entry.getKey(), entry.getValue());
       }
@@ -210,7 +209,7 @@ public final class RecoverableWordCount {
 
     // For stateful processing
     conf.put(Config.TOPOLOGY_STATEFUL, true);
-    conf.put(Config.TOPOLOGY_STATEFUL_CHECKPOINT_INTERVAL, 10);
+    conf.put(Config.TOPOLOGY_STATEFUL_CHECKPOINT_INTERVAL, 5);
 
     HeronSubmitter.submitTopology(args[0], conf, builder.createTopology());
   }

@@ -83,6 +83,8 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     this.serializer = serializer;
     this.spoutMetrics = spoutMetrics;
     this.keyGenerator = new TupleKeyGenerator();
+    this.outputter = new OutgoingTupleCollection(helper, streamOutQueue);
+
     updatePhysicalPlanHelper(helper);
 
     // with default capacity, load factor and insertion order
@@ -102,8 +104,6 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     } else {
       immediateAcks = null;
     }
-
-    this.outputter = new OutgoingTupleCollection(helper, streamOutQueue);
   }
 
   void updatePhysicalPlanHelper(PhysicalPlanHelper physicalPlanHelper) {
