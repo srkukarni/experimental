@@ -41,8 +41,8 @@ TupleCache::TupleCache(EventLoop* eventLoop, sp_uint32 _drain_threshold)
 }
 
 TupleCache::~TupleCache() {
-  // Drain the cache first
-  drain_impl();
+  // Clear first
+  clear();
 
   std::map<sp_int32, TupleList*>::iterator iter;
   for (iter = cache_.begin(); iter != cache_.end(); ++iter) {
