@@ -133,6 +133,7 @@ void CheckpointGateway::Clear() {
     delete kv.second;
   }
   pending_tuples_.clear();
+  current_size_ = 0;
 }
 
 CheckpointGateway::CheckpointInfo::CheckpointInfo(sp_int32 _this_task_id,
@@ -146,6 +147,7 @@ CheckpointGateway::CheckpointInfo::CheckpointInfo(sp_int32 _this_task_id,
 
 CheckpointGateway::CheckpointInfo::~CheckpointInfo() {
   CHECK(pending_tuples_.empty());
+  CHECK_EQ(current_size_, 0);
 }
 
 proto::system::HeronTupleSet2*
@@ -258,6 +260,8 @@ void CheckpointGateway::CheckpointInfo::Clear() {
     }
   }
   pending_tuples_.clear();
+  current_size_ = 0;
+  checkpoint_id_ = "";
 }
 }  // namespace stmgr
 }  // namespace heron
