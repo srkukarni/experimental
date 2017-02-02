@@ -126,6 +126,22 @@ void CkptMgrServer::HandleGetInstanceStateRequest(REQID _id, Connection* _conn,
             << checkpoint.getComponent() << " " << checkpoint.getInstance() << " "
             << "on connection " << _conn;
 
+  if (_req->checkpoint_id().empty()) {
+    LOG(INFO) << "The checkpoint id was empty, this sending empty state";
+    heron::proto::ckptmgr::GetInstanceStateResponse* dummy = nullptr;
+    dummy = __global_protobuf_pool_acquire__(dummy);
+    dummy->mutable_status()->set_status(proto::system::OK);
+    dummy->mutable_instance()->CopyFrom(_req->instance());
+    dummy->set_checkpoint_id(_req->checkpoint_id());
+    dummy->mutable_checkpoint()->set_checkpoint_id(_req->checkpoint_id());
+    dummy->mutable_checkpoint()->mutable_state();
+    SendResponse(_id, _conn, *dummy);
+
+    __global_protobuf_pool_release__(dummy);
+    __global_protobuf_pool_release__(_req);
+    return;
+  }
+
   auto ret = ckptmgr_->storage()->restore(checkpoint);
   proto::system::StatusCode status;
   if (ret != SP_OK) {

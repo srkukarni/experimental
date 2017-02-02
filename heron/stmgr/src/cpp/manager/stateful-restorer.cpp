@@ -81,21 +81,9 @@ void StatefulRestorer::StartRestore(const std::string& _checkpoint_id, sp_int64 
   checkpoint_id_ = _checkpoint_id;
   restore_txid_ = _restore_txid;
 
-  if (checkpoint_id_.empty()) {
-    LOG(INFO) << "Checkpoint id is empty meaning we are starting from scratch";
-    get_ckpt_pending_.clear();
-    for (auto task_id : restore_pending_) {
-      proto::ckptmgr::InstanceStateCheckpoint dummy;
-      dummy.set_checkpoint_id(checkpoint_id_);
-      dummy.mutable_state();
-      if (!server_->SendRestoreInstanceStateRequest(task_id, dummy)) {
-        get_ckpt_pending_.insert(task_id);
-      }
-    }
-  } else {
-    // Send messages to ckpt
-    GetCheckpoints();
-  }
+  // Send messages to ckpt
+  GetCheckpoints();
+
   clientmgr_->StartConnections(_pplan);
   if (clientmgr_->AllStMgrClientsRegistered()) {
     // Its possible that this is really a restore while we were already in progress
