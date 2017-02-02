@@ -528,6 +528,11 @@ const proto::system::PhysicalPlan* StMgr::GetPhysicalPlan() const { return pplan
 
 void StMgr::HandleStreamManagerData(const sp_string&,
                                     proto::stmgr::TupleStreamMessage2* _message) {
+  if (stateful_restorer_->InProgress()) {
+    LOG(INFO) << "Dropping data received from stmgr because we are in Restore";
+    __global_protobuf_pool_release__(_message);
+    return;
+  }
   // We received message from another stream manager
   sp_int32 _task_id = _message->task_id();
 
@@ -616,14 +621,14 @@ void StMgr::ProcessAcksAndFails(sp_int32 _src_task_id, sp_int32 _task_id,
 // Called when local tasks generate data
 void StMgr::HandleInstanceData(const sp_int32 _src_task_id, bool _local_spout,
                                proto::system::HeronTupleSet* _message) {
-  // Note:- Process data before control
-  // This is to make sure that anchored emits are sent out
-  // before any acks/fails
   if (stateful_restorer_->InProgress()) {
     LOG(INFO) << "Dropping data received from instance because we are in Restore";
     return;
   }
 
+  // Note:- Process data before control
+  // This is to make sure that anchored emits are sent out
+  // before any acks/fails
   if (_message->has_data()) {
     proto::system::HeronDataTupleSet* d = _message->mutable_data();
     std::pair<sp_string, sp_string> stream =

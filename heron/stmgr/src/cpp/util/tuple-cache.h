@@ -58,8 +58,6 @@ class TupleCache {
   void add_checkpoint_tuple(sp_int32 _task_id,
                             proto::ckptmgr::DownstreamStatefulCheckpoint* _message);
 
-  // Clear all data wrt a particular task_id
-  void clear(sp_int32 _task_id);
   // Clear all data of all task_ids
   void clear();
 
@@ -99,6 +97,8 @@ class TupleCache {
      set->Clear();
      return set;
     }
+
+    void clear();
 
    private:
     std::deque<google::protobuf::Message*> tuples_;

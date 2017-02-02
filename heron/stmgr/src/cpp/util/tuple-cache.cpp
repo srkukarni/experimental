@@ -101,17 +101,11 @@ TupleCache::TupleList* TupleCache::get(sp_int32 _task_id) {
 
 void TupleCache::clear() {
   for (auto kv : cache_) {
+    kv.second->clear();
     delete kv.second;
   }
   cache_.clear();
-}
-
-void TupleCache::clear(sp_int32 _task_id) {
-  std::map<sp_int32, TupleList*>::iterator iter = cache_.find(_task_id);
-  if (iter != cache_.end()) {
-    delete iter->second;
-    cache_.erase(_task_id);
-  }
+  total_size_ = 0;
 }
 
 void TupleCache::drain(EventLoop::Status) { drain_impl(); }
@@ -132,6 +126,20 @@ TupleCache::TupleList::TupleList() {
 
 TupleCache::TupleList::~TupleList() {
   CHECK(tuples_.empty());
+  CHECK(!current_);
+}
+
+void TupleCache::TupleList::clear() {
+  if (current_) {
+    __global_protobuf_pool_release__(current_);
+    current_ = NULL;
+  }
+  while (!tuples_.empty()) {
+    __global_protobuf_pool_release__(tuples_.front());
+    tuples_.pop_front();
+  }
+  current_size_ = 0;
+  last_drained_count_ = 0;
 }
 
 sp_int64 TupleCache::TupleList::add_data_tuple(sp_int32 _src_task_id,
