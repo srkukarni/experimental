@@ -168,11 +168,11 @@ StMgr::~StMgr() {
   CleanupStreamConsumers();
   CleanupXorManagers();
   delete hydrated_topology_;
-  delete metrics_manager_client_;
   delete checkpoint_manager_client_;
 
   delete stateful_helper_;
   delete stateful_restorer_;
+  delete metrics_manager_client_;
 }
 
 bool StMgr::DidAnnounceBackPressure() { return server_->DidAnnounceBackPressure(); }
