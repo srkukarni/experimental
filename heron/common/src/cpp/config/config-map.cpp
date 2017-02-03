@@ -93,11 +93,11 @@ Config::substitute(const std::string& _value) {
 std::string
 Config::combine(const std::vector<std::string>& paths) {
   std::string join_str(paths[0]);
-  for (auto i = 1 ; i < paths.size(); i++) {
-    if (paths[i].front() == '/') {
-      join_str.append(paths[i]);
+  for (auto i = paths.begin() ; i != paths.end(); i++) {
+    if (i->front() == '/') {
+      join_str.append(*i);
     } else {
-      join_str.append("/").append(paths[i]);
+      join_str.append("/").append(*i);
     }
   }
   return join_str;
