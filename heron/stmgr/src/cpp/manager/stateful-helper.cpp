@@ -43,7 +43,7 @@ void StatefulHelper::Reconstruct(const proto::system::PhysicalPlan& _pplan) {
   from_recv_list_.clear();
 
   // First deal with spouts
-  for (size_t i = 0; i < _pplan.topology().spouts_size(); ++i) {
+  for (sp_int32 i = 0; i < _pplan.topology().spouts_size(); ++i) {
     std::set<sp_int32> spout_tasks;
     config::PhysicalPlanHelper::GetComponentTasks(_pplan,
                                 _pplan.topology().spouts(i).comp().name(),
@@ -56,7 +56,7 @@ void StatefulHelper::Reconstruct(const proto::system::PhysicalPlan& _pplan) {
   }
 
   // Now deal with bolts
-  for (size_t i = 0; i < _pplan.topology().bolts_size(); ++i) {
+  for (sp_int32 i = 0; i < _pplan.topology().bolts_size(); ++i) {
     std::set<sp_int32> bolt_tasks;
     config::PhysicalPlanHelper::GetComponentTasks(_pplan,
                                 _pplan.topology().bolts(i).comp().name(),
