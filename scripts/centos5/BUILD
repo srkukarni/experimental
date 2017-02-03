@@ -249,6 +249,11 @@ filegroup(
 )
 
 filegroup(
+    name = "hckptmgr",
+    srcs = ["//heron/ckptmgr/src/cpp:heron-ckptmgr"],
+)
+
+filegroup(
     name = "hinstance",
     srcs = ["//heron/instance/src/java:heron-instance"],
 )
