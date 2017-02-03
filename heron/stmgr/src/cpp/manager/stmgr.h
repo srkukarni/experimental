@@ -34,6 +34,7 @@ namespace common {
 class HeronStateMgr;
 class MetricsMgrSt;
 class MultiAssignableMetric;
+class CountMetric;
 }
 }
 
@@ -202,6 +203,9 @@ class StMgr {
 
   // Process related metrics
   heron::common::MultiAssignableMetric* stmgr_process_metrics_;
+
+  // Stateful Restore metric
+  heron::common::CountMetric* restore_initiated_metrics_;
 
   // The time at which the stmgr was started up
   std::chrono::high_resolution_clock::time_point start_time_;

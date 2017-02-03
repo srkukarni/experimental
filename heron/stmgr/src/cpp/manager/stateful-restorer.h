@@ -34,7 +34,12 @@ namespace system {
 class PhysicalPlan;
 }
 }
+namespace common {
+class MetricsMgrSt;
+class MultiCountMetric;
+class TimeSpentMetric;
 }
+}  // namespace heron
 
 namespace heron {
 namespace stmgr {
@@ -49,6 +54,7 @@ class StatefulRestorer {
   explicit StatefulRestorer(CkptMgrClient* _ckptmgr,
                             StMgrClientMgr* _clientmgr, TupleCache* _tuple_cache,
                             StMgrServer* _server,
+                            common::MetricsMgrSt* _metrics_manager_client,
                             std::function<void(proto::system::StatusCode,
                                                std::string, sp_int64)> _restore_done_watcher);
   virtual ~StatefulRestorer();
@@ -88,9 +94,14 @@ class StatefulRestorer {
   StMgrClientMgr* clientmgr_;
   TupleCache* tuple_cache_;
   StMgrServer* server_;
+  common::MetricsMgrSt* metrics_manager_client_;
 
   bool in_progress_;
   std::function<void(proto::system::StatusCode, std::string, sp_int64)> restore_done_watcher_;
+
+  // Different metrics
+  common::MultiCountMetric* multi_count_metric_;
+  common::TimeSpentMetric* time_spent_metric_;
 };
 }  // namespace stmgr
 }  // namespace heron

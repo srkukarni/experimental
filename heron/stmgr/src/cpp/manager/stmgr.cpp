@@ -94,6 +94,8 @@ void StMgr::Init() {
       metrics_export_interval_sec, eventLoop_);
   stmgr_process_metrics_ = new heron::common::MultiAssignableMetric();
   metrics_manager_client_->register_metric("__process", stmgr_process_metrics_);
+  restore_initiated_metrics_ = new heron::common::CountMetric();
+  metrics_manager_client_->register_metric("__restore_initiated", restore_initiated_metrics_);
   state_mgr_->SetTMasterLocationWatch(topology_name_, [this]() { this->FetchTMasterLocation(); });
 
   // Start checkpoint manager client
@@ -124,7 +126,7 @@ void StMgr::Init() {
 
   // Now start the stateful restorer
   stateful_restorer_ = new StatefulRestorer(checkpoint_manager_client_, clientmgr_,
-                             tuple_cache_, server_,
+                             tuple_cache_, server_, metrics_manager_client_,
                              std::bind(&StMgr::HandleStatefulRestoreDone, this,
                                        std::placeholders::_1, std::placeholders::_2,
                                        std::placeholders::_3));
@@ -154,7 +156,9 @@ void StMgr::Init() {
 
 StMgr::~StMgr() {
   metrics_manager_client_->unregister_metric("__process");
+  metrics_manager_client_->unregister_metric("__restore_initiated");
   delete stmgr_process_metrics_;
+  delete restore_initiated_metrics_;
   delete tuple_cache_;
   delete state_mgr_;
   delete pplan_;
@@ -683,7 +687,8 @@ void StMgr::DrainInstanceData(sp_int32 _task_id, proto::system::HeronTupleSet2* 
       LOG(INFO) << "We dropped some messages because we are not yet connected with stmgr "
                 << dest_stmgr_id << " and we are not in restore. Hence sending Reset "
                 << "message to TMaster";
-      tmaster_client_->SendResetTopologyState("Dead Stmgr");
+      tmaster_client_->SendResetTopologyState("Dropped Instance Tuples");
+      restore_initiated_metrics_->incr();
     }
     __global_protobuf_pool_release__(_tuple);
   }
@@ -760,6 +765,7 @@ void StMgr::HandleDeadStMgrConnection(const sp_string& _stmgr_id) {
       LOG(INFO) << "We lost connection withi stmgr " << _stmgr_id
                 << " and hence sending ResetTopology message to tmaster";
       tmaster_client_->SendResetTopologyState("Dead Stmgr");
+      restore_initiated_metrics_->incr();
     } else {
       stateful_restorer_->HandleDeadStMgrConnection();
     }
@@ -781,7 +787,8 @@ void StMgr::HandleAllInstancesConnected() {
     } else if (tmaster_client_ && tmaster_client_->IsConnected()) {
       LOG(INFO) << "All instances have connected to us and we are already "
                 << "connected to tmaster. Sending ResetMessage to tmaster";
-      tmaster_client_->SendResetTopologyState("Stmgr not connected");
+      tmaster_client_->SendResetTopologyState("All Instances connected");
+      restore_initiated_metrics_->incr();
     } else {
       StartTMasterClient();
     }
@@ -798,7 +805,8 @@ void StMgr::HandleDeadInstance(sp_int32 _task_id) {
     } else {
       LOG(INFO) << "An instance " << _task_id << " died while we are not "
                 << "in restore. Sending ResetMessage to tmaster";
-      tmaster_client_->SendResetTopologyState("Stmgr not connected");
+      tmaster_client_->SendResetTopologyState("Dead Instance");
+      restore_initiated_metrics_->incr();
     }
   }
 }
