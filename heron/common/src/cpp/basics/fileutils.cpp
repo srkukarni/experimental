@@ -90,7 +90,7 @@ sp_int32 FileUtils::makePath(const std::string& path) {
         return SP_NOTOK;
 
       // now, try to create again
-      return 0 == ::mkdir(path.c_str(), mode) ? SP_OK : SP_NOTOK;
+      return makePath(path);
     }
     case EEXIST:
     // done!
