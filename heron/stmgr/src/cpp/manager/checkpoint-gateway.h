@@ -28,6 +28,13 @@
 #include "basics/basics.h"
 
 namespace heron {
+namespace common {
+class MetricsMgrSt;
+class AssignableMetric;
+}
+}  // namespace heron
+
+namespace heron {
 namespace stmgr {
 
 class StatefulHelper;
@@ -36,6 +43,7 @@ class CheckpointGateway {
  public:
   explicit CheckpointGateway(sp_uint64 _drain_threshold,
         StatefulHelper* _stateful_helper,
+        common::MetricsMgrSt* _metrics_manager_client,
         std::function<void(sp_int32, proto::system::HeronTupleSet2*)> drainer1,
         std::function<void(proto::stmgr::TupleStreamMessage2*)> drainer2,
         std::function<void(sp_int32, proto::ckptmgr::InitiateStatefulCheckpoint*)> drainer3);
@@ -83,6 +91,8 @@ class CheckpointGateway {
   sp_uint64 drain_threshold_;
   sp_uint64 current_size_;
   StatefulHelper* stateful_helper_;
+  common::MetricsMgrSt* metrics_manager_client_;
+  common::AssignableMetric* size_metric_;
   std::map<sp_int32, CheckpointInfo*> pending_tuples_;
   std::function<void(sp_int32, proto::system::HeronTupleSet2*)> drainer1_;
   std::function<void(proto::stmgr::TupleStreamMessage2*)> drainer2_;

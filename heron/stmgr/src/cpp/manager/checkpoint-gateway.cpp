@@ -22,6 +22,7 @@
 #include <set>
 #include <vector>
 #include "manager/stateful-helper.h"
+#include "metrics/metrics.h"
 #include "proto/messages.h"
 #include "basics/basics.h"
 #include "errors/errors.h"
@@ -33,6 +34,7 @@ namespace stmgr {
 
 CheckpointGateway::CheckpointGateway(sp_uint64 _drain_threshold,
              StatefulHelper* _stateful_helper,
+             common::MetricsMgrSt* _metrics_manager_client,
              std::function<void(sp_int32, proto::system::HeronTupleSet2*)> _drainer1,
              std::function<void(proto::stmgr::TupleStreamMessage2*)> _drainer2,
              std::function<void(sp_int32, proto::ckptmgr::InitiateStatefulCheckpoint*)> _drainer3) {
@@ -42,12 +44,17 @@ CheckpointGateway::CheckpointGateway(sp_uint64 _drain_threshold,
   drainer1_ = _drainer1;
   drainer2_ = _drainer2;
   drainer3_ = _drainer3;
+  metrics_manager_client_ = _metrics_manager_client;
+  size_metric_ = new common::AssignableMetric(current_size_);
+  metrics_manager_client_->register_metric("__stateful_gateway_size", size_metric_);
 }
 
 CheckpointGateway::~CheckpointGateway() {
   for (auto kv : pending_tuples_) {
     delete kv.second;
   }
+  metrics_manager_client_->unregister_metric("__stateful_gateway_size");
+  delete size_metric_;
 }
 
 void CheckpointGateway::SendToInstance(sp_int32 _task_id,
@@ -63,6 +70,7 @@ void CheckpointGateway::SendToInstance(sp_int32 _task_id,
   } else {
     drainer1_(_task_id, _message);
   }
+  size_metric_->SetValue(current_size_);
 }
 
 void CheckpointGateway::SendToInstance(proto::stmgr::TupleStreamMessage2* _message) {
@@ -78,6 +86,7 @@ void CheckpointGateway::SendToInstance(proto::stmgr::TupleStreamMessage2* _messa
   } else {
     drainer2_(_message);
   }
+  size_metric_->SetValue(current_size_);
 }
 
 void CheckpointGateway::HandleUpstreamMarker(sp_int32 _src_task_id, sp_int32 _destination_task_id,
@@ -91,6 +100,7 @@ void CheckpointGateway::HandleUpstreamMarker(sp_int32 _src_task_id, sp_int32 _de
     DrainTuple(_destination_task_id, tupl);
   }
   current_size_ -= size;
+  size_metric_->SetValue(current_size_);
 }
 
 void CheckpointGateway::DrainTuple(sp_int32 _dest, Tuple& _tuple) {
@@ -111,6 +121,7 @@ void CheckpointGateway::ForceDrain() {
     }
   }
   current_size_ = 0;
+  size_metric_->SetValue(current_size_);
 }
 
 CheckpointGateway::CheckpointInfo*
@@ -134,6 +145,7 @@ void CheckpointGateway::Clear() {
   }
   pending_tuples_.clear();
   current_size_ = 0;
+  size_metric_->SetValue(current_size_);
 }
 
 CheckpointGateway::CheckpointInfo::CheckpointInfo(sp_int32 _this_task_id,

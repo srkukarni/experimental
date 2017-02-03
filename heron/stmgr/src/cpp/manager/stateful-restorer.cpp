@@ -27,7 +27,6 @@
 #include "manager/stmgr-clientmgr.h"
 #include "util/tuple-cache.h"
 #include "metrics/metrics.h"
-#include "metrics/metrics-mgr-st.h"
 #include "proto/messages.h"
 #include "basics/basics.h"
 #include "errors/errors.h"

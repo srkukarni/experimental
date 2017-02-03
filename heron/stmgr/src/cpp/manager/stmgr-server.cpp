@@ -120,6 +120,7 @@ StMgrServer::StMgrServer(EventLoop* eventLoop, const NetworkOptions& _options,
     config::HeronInternalsConfigReader::Instance()->GetHeronStreammgrCheckpointDrainSizeMb() *
     1024 * 1024;
   stateful_gateway_ = new CheckpointGateway(drain_threshold_bytes, stateful_helper_,
+    metrics_manager_client_,
     std::bind(&StMgrServer::DrainToInstance1, this, std::placeholders::_1, std::placeholders::_2),
     std::bind(&StMgrServer::DrainToInstance2, this, std::placeholders::_1),
     std::bind(&StMgrServer::DrainToInstance3, this, std::placeholders::_1, std::placeholders::_2));
