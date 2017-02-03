@@ -191,6 +191,7 @@ public class BoltInstanceTest {
     }
 
     heronTupleSet.setData(dataTupleSet);
+    heronTupleSet.setSrcTaskId(0);
     inStreamQueue.offer(heronTupleSet.build());
 
     for (int i = 0; i < Constants.RETRY_TIMES; i++) {

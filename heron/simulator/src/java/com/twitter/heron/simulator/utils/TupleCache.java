@@ -86,6 +86,14 @@ public class TupleCache {
       random = new Random();
     }
 
+    // TODO(mfu): Currently simulator will not support exactly-once failure recovery
+    // TODO(mfu): We would set the scr_task_id as -1, a dummy value
+    public HeronTuples.HeronTupleSet.Builder getNewHeronTupleSetBuilder() {
+      HeronTuples.HeronTupleSet.Builder builder = HeronTuples.HeronTupleSet.newBuilder();
+      builder.setSrcTaskId(-1);
+      return builder;
+    }
+
     // returns the tuple key used for XOR
     public long addDataTuple(TopologyAPI.StreamId streamId,
                              HeronTuples.HeronDataTuple tuple,
@@ -93,12 +101,12 @@ public class TupleCache {
       if (current == null
           || current.hasControl()
           || !current.getDataBuilder().getStream().getComponentName().equals(
-              streamId.getComponentName())
+          streamId.getComponentName())
           || !current.getDataBuilder().getStream().getId().equals(streamId.getId())) {
         if (current != null) {
           tuples.add(current.build());
         }
-        current = HeronTuples.HeronTupleSet.newBuilder();
+        current = getNewHeronTupleSetBuilder();
         current.getDataBuilder().setStream(streamId);
       }
 
@@ -125,7 +133,7 @@ public class TupleCache {
           tuples.add(current.build());
         }
 
-        current = HeronTuples.HeronTupleSet.newBuilder();
+        current = getNewHeronTupleSetBuilder();
       }
 
       current.getControlBuilder().addAcks(tuple);
@@ -140,7 +148,7 @@ public class TupleCache {
           tuples.add(current.build());
         }
 
-        current = HeronTuples.HeronTupleSet.newBuilder();
+        current = getNewHeronTupleSetBuilder();
       }
 
       current.getControlBuilder().addFails(tuple);
@@ -155,7 +163,7 @@ public class TupleCache {
           tuples.add(current.build());
         }
 
-        current = HeronTuples.HeronTupleSet.newBuilder();
+        current = getNewHeronTupleSetBuilder();
       }
 
       current.getControlBuilder().addEmits(tuple);

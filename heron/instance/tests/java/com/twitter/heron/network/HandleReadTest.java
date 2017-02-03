@@ -257,6 +257,7 @@ public class HandleReadTest {
     }
 
     heronTupleSet.setData(dataTupleSet);
+    heronTupleSet.setSrcTaskId(0);
     message.setSet(heronTupleSet);
 
     return message.build();

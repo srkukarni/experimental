@@ -431,6 +431,7 @@ public class SpoutInstanceTest {
       controlTupleSet.addFails(ackBuilder);
     }
 
+    bldr.setSrcTaskId(0);
     bldr.setControl(controlTupleSet);
 
     // We will send back to the SpoutInstance
