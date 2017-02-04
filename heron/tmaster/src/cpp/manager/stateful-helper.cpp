@@ -178,7 +178,7 @@ const std::string& StatefulHelper::GetNextInLineCheckpointId(const std::string& 
   } else {
     for (int32_t i = 0; i < ckpt_record_->backup_checkpoint_ids_size(); ++i) {
       if (ckpt_record_->backup_checkpoint_ids(i) == _ckpt_id) {
-        if (ckpt_record_->backup_checkpoint_ids_size() >= i) {
+        if (i < ckpt_record_->backup_checkpoint_ids_size() - 1) {
           return ckpt_record_->backup_checkpoint_ids(i + 1);
         } else {
           return EMPTY_STRING;
