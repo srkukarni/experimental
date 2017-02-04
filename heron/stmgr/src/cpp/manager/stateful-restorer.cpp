@@ -138,13 +138,13 @@ void StatefulRestorer::HandleCheckpointState(proto::system::StatusCode _status, 
     multi_count_metric_->scope(METRIC_CKPT_REQUESTS_IGNORED)->incr();
     return;
   }
-  if (_state.checkpoint_id() != checkpoint_id_) {
-    LOG(WARNING) << "Discarding state retrieved from checkpoint mgr because the checkpoint"
-                 << " id in the response does not match ours " << checkpoint_id_;
-    multi_count_metric_->scope(METRIC_CKPT_REQUESTS_IGNORED)->incr();
-    return;
-  }
   if (_status == proto::system::OK) {
+    if (_state.checkpoint_id() != checkpoint_id_) {
+      LOG(WARNING) << "Discarding state retrieved from checkpoint mgr because the checkpoint"
+                   << " id in the response does not match ours " << checkpoint_id_;
+      multi_count_metric_->scope(METRIC_CKPT_REQUESTS_IGNORED)->incr();
+      return;
+    }
     if (server_->SendRestoreInstanceStateRequest(_task_id, _state)) {
       multi_count_metric_->scope(METRIC_INSTANCE_RESTORE_REQUESTS)->incr();
       get_ckpt_pending_.erase(_task_id);
