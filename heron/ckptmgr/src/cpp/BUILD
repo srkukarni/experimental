@@ -37,6 +37,23 @@ cc_library(
 )
 
 cc_library(
+    name = "hadoopfs-cxx",
+    srcs = glob(["hadoopfs/*.cpp"]),
+    hdrs = glob(["hadoopfs/*.h"]),
+    copts = [
+        "-Iheron",
+        "-I$(GENDIR)/heron",
+        "-Iheron/common/src/cpp",
+        "-I$(GENDIR)/heron/common/src/cpp",
+        "-Iheron/ckptmgr/src/cpp",
+    ],
+    deps = [
+        ":common-cxx",
+    ],
+    linkstatic = 1,
+)
+
+cc_library(
     name = "manager-cxx",
     srcs = glob(["manager/*.cpp"]),
     hdrs = glob(["manager/*.h"]),
