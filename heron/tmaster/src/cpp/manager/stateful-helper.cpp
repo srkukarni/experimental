@@ -24,28 +24,46 @@
 #include "manager/stateful-restorer.h"
 #include "manager/tmaster.h"
 #include "manager/stmgrstate.h"
+#include "metrics/metrics.h"
 #include "basics/basics.h"
 #include "errors/errors.h"
 
 namespace heron {
 namespace tmaster {
 
+const sp_string METRIC_RESTORE_START = "__restore_start";
+const sp_string METRIC_RESTORE_STMGR_RESPONSE = "__restore_stmgr_response";
+const sp_string METRIC_RESTORE_STMGR_RESPONSE_IGNORED = "__restore_stmgr_response_ignored";
+const sp_string METRIC_RESTORE_STMGR_RESPONSE_NOTOK = "__restore_stmgr_response_notok";
+const sp_string METRIC_CKPTMARKER_REQUESTS_SENT = "__ckptmarker_requests_sent";
+const sp_string METRIC_CKPTMARKER_REQUESTS_NOTSENT = "__ckptmarker_requests_notsent";
+const sp_string METRIC_INSTANCE_CKPT_SAVED = "__instance_ckpt_saved";
+const sp_string METRIC_INSTANCE_CKPT_SAVED_IGNORED = "__instance_ckpt_saved_ignored";
+const sp_string METRIC_GLOBAL_CONSISTENT_CKPT = "__globally_consistent_ckpt";
+
 StatefulHelper::StatefulHelper(const std::string& _topology_name,
                proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt,
                heron::common::HeronStateMgr* _state_mgr,
-               std::chrono::high_resolution_clock::time_point _tmaster_start_time)
-  : topology_name_(_topology_name), ckpt_record_(_ckpt), state_mgr_(_state_mgr) {
+               std::chrono::high_resolution_clock::time_point _tmaster_start_time,
+               common::MetricsMgrSt* _metrics_manager_client)
+  : topology_name_(_topology_name), ckpt_record_(_ckpt), state_mgr_(_state_mgr),
+    metrics_manager_client_(_metrics_manager_client) {
   checkpointer_ = new StatefulCheckpointer(_tmaster_start_time);
   restorer_ = new StatefulRestorer();
+  count_metrics_ = new common::MultiCountMetric();
+  metrics_manager_client_->register_metric("__stateful_helper", count_metrics_);
 }
 
 StatefulHelper::~StatefulHelper() {
   delete ckpt_record_;
   delete checkpointer_;
   delete restorer_;
+  metrics_manager_client_->unregister_metric("__stateful_helper");
+  delete count_metrics_;
 }
 
 void StatefulHelper::StartRestore(const StMgrMap& _stmgrs, bool _ignore_prev_state) {
+  count_metrics_->scope(METRIC_RESTORE_START)->incr();
   // TODO(sanjeev): Do we really need to start from most_recent_checkpoint?
   if (_ignore_prev_state) {
     restorer_->StartRestore("", _stmgrs);
@@ -59,11 +77,13 @@ void StatefulHelper::HandleStMgrRestored(const std::string& _stmgr_id,
                                          int64_t _restore_txid,
                                          proto::system::StatusCode _status,
                                          const StMgrMap& _stmgrs) {
+  count_metrics_->scope(METRIC_RESTORE_STMGR_RESPONSE)->incr();
   if (!restorer_->InProgress()) {
     LOG(WARNING) << "Got a Restored Topology State from stmgr "
                  << _stmgr_id << " for checkpoint " << _checkpoint_id
                  << " with txid " << _restore_txid << " when "
                  << " we are not in restore";
+    count_metrics_->scope(METRIC_RESTORE_STMGR_RESPONSE_IGNORED)->incr();
     return;
   } else if (restorer_->RestoreTxid() != _restore_txid ||
              restorer_->CheckpointIdInProgress() != _checkpoint_id) {
@@ -73,6 +93,7 @@ void StatefulHelper::HandleStMgrRestored(const std::string& _stmgr_id,
                  << " we are in progress with checkpoint "
                  << restorer_->CheckpointIdInProgress() << " and txid "
                  << restorer_->RestoreTxid();
+    count_metrics_->scope(METRIC_RESTORE_STMGR_RESPONSE_IGNORED)->incr();
     return;
   } else if (_status != proto::system::OK) {
     LOG(INFO) << "Got a Cannot Restore Topology State from stmgr "
@@ -83,6 +104,7 @@ void StatefulHelper::HandleStMgrRestored(const std::string& _stmgr_id,
     if (new_ckpt_id.empty()) {
       LOG(INFO) << "Next viable checkpoint id is empty";
     }
+    count_metrics_->scope(METRIC_RESTORE_STMGR_RESPONSE_NOTOK)->incr();
     restorer_->StartRestore(new_ckpt_id, _stmgrs);
   } else {
     LOG(INFO) << "Got a Restored Topology State from stmgr "
@@ -100,19 +122,24 @@ void StatefulHelper::StartCheckpoint(const StMgrMap& _stmgrs) {
   if (restorer_->InProgress()) {
     LOG(INFO) << "Will not send checkpoint messages to stmgr because "
               << "we are in restore";
+    count_metrics_->scope(METRIC_CKPTMARKER_REQUESTS_NOTSENT)->incr();
     return;
   }
+  count_metrics_->scope(METRIC_CKPTMARKER_REQUESTS_SENT)->incr();
   checkpointer_->StartCheckpoint(_stmgrs);
 }
 
 void StatefulHelper::HandleInstanceStateStored(const std::string& _checkpoint_id,
                                                const proto::system::Instance& _instance) {
+  count_metrics_->scope(METRIC_INSTANCE_CKPT_SAVED)->incr();
   if (restorer_->InProgress()) {
     LOG(INFO) << "Ignoring the Instance State because we are in Restore";
+    count_metrics_->scope(METRIC_INSTANCE_CKPT_SAVED_IGNORED)->incr();
     return;
   }
   if (checkpointer_->HandleInstanceStateStored(_checkpoint_id, _instance)) {
     // This is now a globally consistent checkpoint
+    count_metrics_->scope(METRIC_GLOBAL_CONSISTENT_CKPT)->incr();
     auto new_ckpt_record = AddNewConsistentCheckpoint(_checkpoint_id);
     state_mgr_->SetStatefulCheckpoint(topology_name_, *new_ckpt_record,
            std::bind(&StatefulHelper::HandleCkptSave, this,

@@ -24,6 +24,13 @@
 #include "basics/basics.h"
 
 namespace heron {
+namespace common {
+class MetricsMgrSt;
+class MultiCountMetric;
+}
+}  // namespace heron
+
+namespace heron {
 namespace tmaster {
 
 class StatefulRestorer;
@@ -34,7 +41,8 @@ class StatefulHelper {
   explicit StatefulHelper(const std::string& _topology_name,
                proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt,
                heron::common::HeronStateMgr* _state_mgr,
-               std::chrono::high_resolution_clock::time_point _tmaster_start_time);
+               std::chrono::high_resolution_clock::time_point _tmaster_start_time,
+               common::MetricsMgrSt* _metrics_manager_client);
   virtual ~StatefulHelper();
   // Start a new restore process
   void StartRestore(const StMgrMap& _stmgrs, bool _ignore_prev_checkpoints);
@@ -74,6 +82,8 @@ class StatefulHelper {
   heron::common::HeronStateMgr* state_mgr_;
   StatefulCheckpointer* checkpointer_;
   StatefulRestorer* restorer_;
+  common::MetricsMgrSt* metrics_manager_client_;
+  common::MultiCountMetric* count_metrics_;
 };
 }  // namespace tmaster
 }  // namespace heron

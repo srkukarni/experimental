@@ -296,7 +296,8 @@ void TMaster::SetupStatefulHelper(proto::ckptmgr::StatefulConsistentCheckpoints*
              config::TopologyConfigHelper::GetStatefulCheckpointInterval(*topology_);
   CHECK_GT(stateful_checkpoint_interval, 0);
   // Instantiate the stateful restorer/coordinator
-  stateful_helper_ = new StatefulHelper(topology_->name(), _ckpt, state_mgr_, start_time_);
+  stateful_helper_ = new StatefulHelper(topology_->name(), _ckpt, state_mgr_, start_time_,
+                                        mMetricsMgrClient);
   LOG(INFO) << "Starting timer to checkpoint state every "
             << stateful_checkpoint_interval << " seconds";
   CHECK_GT(eventLoop_->registerTimer(
@@ -318,12 +319,13 @@ void TMaster::ResetTopologyState(Connection* _conn) {
       stateful_helper_->StartRestore(stmgrs_, false);
     } else if (stateful_helper_->GotRestoreResponse(stmgr)) {
       // We are in Restore but we have already gotten response from this
-      // stmgr. So we can safely ignore this because the stmgr will later
-      // send us a RestoreResponse when things get better
-      LOG(INFO) << "We are in restore and have not yet received response from this stmgr";
-    } else {
+      // stmgr. Maybe some other connections dropped. So start afresh
       LOG(INFO) << "We are in restore and have already received response from this stmgr";
       stateful_helper_->StartRestore(stmgrs_, false);
+    } else {
+      // So we can safely ignore this because the stmgr will later
+      // send us a RestoreResponse when things get better
+      LOG(INFO) << "We are in restore and have not yet received response from this stmgr";
     }
   }
 }
@@ -339,6 +341,10 @@ void TMaster::FetchPhysicalPlan() {
 }
 
 void TMaster::SendCheckpointMarker() {
+  if (!absent_stmgrs_.empty()) {
+    LOG(INFO) << "Not sending checkpoint marker because not all stmgrs have connected to us";
+    return;
+  }
   stateful_helper_->StartCheckpoint(stmgrs_);
 }
 
