@@ -117,6 +117,7 @@ class StMgr {
   void HandleSavedInstanceState(const proto::system::Instance& _instance,
                                 const std::string& _checkpoint_id);
   void HandleGetInstanceState(proto::system::StatusCode _status, sp_int32 _task_id,
+                              sp_string _checkpoint_id,
                               const proto::ckptmgr::InstanceStateCheckpoint& _msg);
 
   void CleanupStreamConsumers();

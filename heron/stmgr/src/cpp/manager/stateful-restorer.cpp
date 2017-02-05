@@ -41,8 +41,9 @@ const sp_string METRIC_START_RESTORE = "__start_restore";
 const sp_string METRIC_START_RESTORE_IN_PROGRESS = "__start_restore_in_progress";
 const sp_string METRIC_START_RESTORE_FAILED = "__start_restore_failed";
 const sp_string METRIC_CKPT_REQUESTS = "__ckpt_requests";
-const sp_string METRIC_CKPT_REQUESTS_IGNORED = "__ckpt_requests_ignored";
-const sp_string METRIC_CKPT_RESPONSE_ERROR = "__ckpt_response_error";
+const sp_string METRIC_CKPT_RESPONSES = "__ckpt_responses";
+const sp_string METRIC_CKPT_RESPONSES_IGNORED = "__ckpt_responses_ignored";
+const sp_string METRIC_CKPT_RESPONSES_ERROR = "__ckpt_responses_error";
 const sp_string METRIC_INSTANCE_RESTORE_REQUESTS = "__instance_restore_requests";
 const sp_string METRIC_INSTANCE_RESTORE_RESPONSES = "__instance_restore_responses";
 const sp_string METRIC_INSTANCE_RESTORE_RESPONSES_IGNORED = "__instance_restore_response_ignored";
@@ -130,19 +131,28 @@ void StatefulRestorer::GetCheckpoints() {
 }
 
 void StatefulRestorer::HandleCheckpointState(proto::system::StatusCode _status, sp_int32 _task_id,
+                                       sp_string _checkpoint_id,
                                        const proto::ckptmgr::InstanceStateCheckpoint& _state) {
   LOG(INFO) << "Got InstanceState from checkpoint mgr for task " << _task_id
             << " and checkpoint " << _state.checkpoint_id();
+  multi_count_metric_->scope(METRIC_CKPT_RESPONSES)->incr();
   if (!in_progress_) {
     LOG(INFO) << "Ignoring it because we are not in restore";
-    multi_count_metric_->scope(METRIC_CKPT_REQUESTS_IGNORED)->incr();
+    multi_count_metric_->scope(METRIC_CKPT_RESPONSES_IGNORED)->incr();
+    return;
+  }
+  if (_checkpoint_id != checkpoint_id_) {
+    LOG(INFO) << "InstanceState from checkpont mgr for a checkpoint_id "
+              << _checkpoint_id << " that is different from ours "
+              << checkpoint_id_;
+    multi_count_metric_->scope(METRIC_CKPT_RESPONSES_IGNORED)->incr();
     return;
   }
   if (_status == proto::system::OK) {
     if (_state.checkpoint_id() != checkpoint_id_) {
       LOG(WARNING) << "Discarding state retrieved from checkpoint mgr because the checkpoint"
                    << " id in the response does not match ours " << checkpoint_id_;
-      multi_count_metric_->scope(METRIC_CKPT_REQUESTS_IGNORED)->incr();
+      multi_count_metric_->scope(METRIC_CKPT_RESPONSES_IGNORED)->incr();
       return;
     }
     if (server_->SendRestoreInstanceStateRequest(_task_id, _state)) {
@@ -153,7 +163,7 @@ void StatefulRestorer::HandleCheckpointState(proto::system::StatusCode _status, 
     LOG(INFO) << "InstanceState from checkpont mgr contained non ok status " << _status;
     in_progress_ = false;
     time_spent_metric_->Stop();
-    multi_count_metric_->scope(METRIC_CKPT_RESPONSE_ERROR)->incr();
+    multi_count_metric_->scope(METRIC_CKPT_RESPONSES_ERROR)->incr();
     multi_count_metric_->scope(METRIC_START_RESTORE_FAILED)->incr();
     restore_done_watcher_(_status, checkpoint_id_, restore_txid_);
   }

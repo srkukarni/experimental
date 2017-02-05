@@ -67,6 +67,7 @@ class StatefulRestorer {
   void HandleInstanceRestoredState(sp_int32 _task_id, const std::string& _checkpoint_id);
   // called when ckptmgr returns with instance state
   void HandleCheckpointState(proto::system::StatusCode _status, sp_int32 _task_id,
+                             sp_string _checkpoint_id,
                              const proto::ckptmgr::InstanceStateCheckpoint& _state);
   // called when a stmgr connection closes
   void HandleDeadStMgrConnection();

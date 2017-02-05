@@ -32,7 +32,7 @@ CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _option
                              const sp_string& _ckptmgr_id, const sp_string& _stmgr_id,
                              std::function<void(const proto::system::Instance&,
                                                 const std::string&)> _ckpt_saved_watcher,
-                             std::function<void(proto::system::StatusCode, sp_int32,
+                             std::function<void(proto::system::StatusCode, sp_int32, sp_string,
                                const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
                              std::function<void()> _register_watcher)
     : Client(eventloop, _options),
@@ -210,14 +210,16 @@ void CkptMgrClient::HandleGetInstanceStateResponse(void* _ctx,
       LOG(ERROR) << "Not Retrying because already tried too many times";
       delete nattempts;
       ckpt_get_watcher_(_response->status().status(),
-                        _response->instance().info().task_id(), _response->checkpoint());
+                        _response->instance().info().task_id(),
+                        _response->checkpoint_id(), _response->checkpoint());
     } else {
       LOG(INFO) << "Retrying...";
       GetInstanceState(_response->instance(), _response->checkpoint_id(), nattempts);
     }
   } else {
     ckpt_get_watcher_(_response->status().status(),
-                      _response->instance().info().task_id(), _response->checkpoint());
+                      _response->instance().info().task_id(), _response->checkpoint_id(),
+                      _response->checkpoint());
   }
   delete _response;
 }

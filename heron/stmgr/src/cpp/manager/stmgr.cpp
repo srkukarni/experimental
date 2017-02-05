@@ -269,7 +269,7 @@ void StMgr::CreateCheckpointMgrClient() {
                            std::placeholders::_1, std::placeholders::_2);
   auto get_watcher = std::bind(&StMgr::HandleGetInstanceState, this,
                            std::placeholders::_1, std::placeholders::_2,
-                           std::placeholders::_3);
+                           std::placeholders::_3, std::placeholders::_4);
   auto ckpt_watcher = std::bind(&StMgr::HandleCkptMgrRegistration, this);
   checkpoint_manager_client_ = new CkptMgrClient(eventLoop_, client_options,
                                                  topology_name_, topology_id_,
@@ -864,9 +864,10 @@ void StMgr::HandleSavedInstanceState(const proto::system::Instance& _instance,
 }
 
 void StMgr::HandleGetInstanceState(proto::system::StatusCode _status, sp_int32 _task_id,
+                                   sp_string _checkpoint_id,
                                    const proto::ckptmgr::InstanceStateCheckpoint& _msg) {
   if (stateful_restorer_) {
-    stateful_restorer_->HandleCheckpointState(_status, _task_id, _msg);
+    stateful_restorer_->HandleCheckpointState(_status, _task_id, _checkpoint_id, _msg);
   }
 }
 
