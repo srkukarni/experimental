@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-#ifndef HADOOPFS_CONFIG_VARS_H
-#define HADOOPFS_CONFIG_VARS_H
+////////////////////////////////////////////////////////////////////
+//
+// Utility functions for getting metadata about the user
+//
+/////////////////////////////////////////////////////////////////////
 
+#include <sys/types.h>
 #include <string>
 
-namespace heron {
-namespace ckptmgr {
+#if !defined(__USER_UTILS_H)
+#define __USER_UTILS_H
 
-class HadoopfsConfigVars {
+class UserUtils {
  public:
-  static const std::string ROOT_DIR;
-  static const std::string USER_NAME;
-  static const std::string NN_HOST;
-  static const std::string NN_PORT;
-};
-}  // namespace ckptmgr
-}  // namespace heron
+  // get the user name
+  static std::string getUserName();
 
-#endif  // HADOOPFS_CONFIG_VARS_H
+  // get user home directory
+  static std::string getUserHome();
+};
+
+#endif

@@ -21,6 +21,9 @@ namespace heron {
 namespace ckptmgr {
 
 const std::string HadoopfsConfigVars::ROOT_DIR = "heron.stateful.hdfs.root.path";
+const std::string HadoopfsConfigVars::USER_NAME = "heron.stateful.hdfs.username";
+const std::string HadoopfsConfigVars::NN_HOST = "heron.stateful.hdfs.namenode.host";
+const std::string HadoopfsConfigVars::NN_PORT = "heron.stateful.hdfs.namenode.port";
 
 }  // namespace ckptmgr
 }  // namespace heron

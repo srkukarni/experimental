@@ -17,8 +17,9 @@
 
 #include <cstdint>
 #include <algorithm>
-#include <unordered_map>
+#include <limits>
 #include <string>
+#include <unordered_map>
 
 namespace heron {
 namespace common {
@@ -52,7 +53,7 @@ class Parameters {
     return get(key);
   }
 
-  std::string getstr(const std::string& key, const std::string& defaults) {
+  std::string getstr(const std::string& key, const std::string& defaults) const {
     std::string value = getstr(key);
     return !value.empty() ? value : defaults;
   }
@@ -66,7 +67,7 @@ class Parameters {
     return value == "TRUE" ? true : false;
   }
 
-  bool getbool(const std::string& key, bool defaults) {
+  bool getbool(const std::string& key, bool defaults) const {
     std::string value = get(key);
     if (value.empty())
       return defaults;
@@ -80,7 +81,7 @@ class Parameters {
     return std::stol(value, nullptr);
   }
 
-  int64_t getint64(const std::string& key, int64_t defaults) {
+  int64_t getint64(const std::string& key, int64_t defaults) const {
     std::string value = get(key);
     if (value.empty()) return defaults;
     return std::stol(value, nullptr);
@@ -92,10 +93,22 @@ class Parameters {
     return std::stoi(value, nullptr);
   }
 
-  int32_t getint32(const std::string& key, int32_t defaults) {
+  int32_t getint32(const std::string& key, int32_t defaults) const {
     std::string value = get(key);
     if (value.empty()) return defaults;
     return std::stoi(value, nullptr);
+  }
+
+  // get the value associated with the key as integer 16
+  int16_t getint16(const std::string& key) {
+    std::string value = get(key);
+    return stos(value);
+  }
+
+  int16_t getint16(const std::string& key, int16_t defaults) const {
+    std::string value = get(key);
+    if (value.empty()) return defaults;
+    return stos(value);
   }
 
   // get the value associated with the key as double
@@ -104,7 +117,7 @@ class Parameters {
     return std::stod(value, nullptr);
   }
 
-  double getdouble(const std::string& key, double defaults) {
+  double getdouble(const std::string& key, double defaults) const {
     std::string value = get(key);
     if (value.empty()) return defaults;
     return std::stod(value, nullptr);
@@ -171,6 +184,12 @@ class Parameters {
       return *this;
     }
 
+    // put an int value associated with the key
+    Builder& putint16(const std::string& key, int16_t value) {
+      map_.emplace(key, std::to_string(value));
+      return *this;
+    }
+
     // put a double value associated with the key
     Builder& putdouble(const std::string& key, double value) {
       map_.emplace(key, std::to_string(value));
@@ -207,6 +226,15 @@ class Parameters {
   }
 
  private:
+  int16_t stos(const std::string& _value) const {
+    int ival = std::stoi(_value, nullptr);
+    if (ival < std::numeric_limits<int16_t>::min() ||
+        ival > std::numeric_limits<int16_t>::max()) {
+      throw std::range_error("Value is larger than short int range");
+    }
+    return (int16_t) ival;
+  }
+
   std::unordered_map<std::string, std::string> map_;
 };
 

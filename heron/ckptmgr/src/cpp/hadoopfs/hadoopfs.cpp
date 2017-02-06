@@ -32,7 +32,30 @@ HadoopFS::HadoopFS(const heron::config::Config& _config) {
 
   // get the root directory for storing checkpoints
   base_dir_ = _config.getstr(HadoopfsConfigVars::ROOT_DIR);
-  LOG_IF(FATAL, base_dir_.empty()) << "Local File System root directory not set";
+  LOG_IF(FATAL, base_dir_.empty()) << "Hadoop File System root directory not set";
+
+  // get the user name to store the checkpoints
+  username_ = _config.getstr(HadoopfsConfigVars::USER_NAME, UserUtils::getUserName());
+  LOG(INFO) << "Using username '" << UserUtils::getUserName() << "'";
+
+  // get the name node of the hadoop host
+  nnhost_ = _config.getstr(HadoopfsConfigVars::NN_HOST);
+  LOG_IF(FATAL, nnhost_.empty()) << "Hadoop name node address not set";
+
+  // get the name node port for hadoop, if not set default
+  nnport_ = _config.getint16(HadoopfsConfigVars::NN_PORT, 50070);
+
+  builder_ = hdfsNewBuilder();
+  CHECK(builder_ != nullptr);
+  hdfsBuilderSetNameNode(builder_, nnhost_.c_str());
+  hdfsBuilderSetNameNodePort(builder_, nnport_);
+  hdfsBuilderSetUserName(builder_, username_.c_str());
+}
+
+HadoopFS::~HadoopFS() {
+  if (builder_ != nullptr) {
+    hdfsFreeBuilder(builder_);
+  }
 }
 
 std::string HadoopFS::ckptDirectory(const Checkpoint& _ckpt) {
@@ -62,10 +85,30 @@ std::string HadoopFS::logMessageFragment(const Checkpoint& _ckpt) {
 
 int HadoopFS::createCkptDirectory(const Checkpoint& _ckpt) {
   std::string directory = ckptDirectory(_ckpt);
-  if (FileUtils::makePath(directory) != SP_OK) {
-    LOG(ERROR) << "Unable to create directory " << directory;
+
+  if (hdfsCreateDirectory(filesystem_, directory.c_str()) == -1) {
+    LOG(ERROR) << "Unable to create directory " << directory << " " << hdfsGetLastError();
     return SP_NOTOK;
   }
+  return SP_OK;
+}
+
+int HadoopFS::initialize() {
+  filesystem_ = hdfsBuilderConnect(builder_);
+  if (filesystem_ == nullptr) {
+    LOG(INFO) << "Unable to connect to Hadoop fs";
+    return SP_NOTOK;
+  }
+  LOG(INFO) << "Successfully connected to Hadoop fs";
+
+  hdfsCreateDirectory(filesystem_, base_dir_.c_str());
+  LOG(INFO) << "Successfully created base directory " << base_dir_;
+
+  return SP_OK;
+}
+
+int HadoopFS::cleanup() {
+  hdfsDisconnect(filesystem_);
   return SP_OK;
 }
 

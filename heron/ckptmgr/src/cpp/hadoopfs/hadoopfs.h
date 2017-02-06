@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#if !defined(HDFS_FILE_SYSTEM_H)
-#define HDFS_FILE_SYSTEM_H
+#if !defined(HADOOPFS_FILE_SYSTEM_H)
+#define HADOOPFS_FILE_SYSTEM_H
 
 #include <unistd.h>
 #include <string>
@@ -23,6 +23,7 @@
 #include "common/checkpoint.h"
 #include "common/storage.h"
 #include "config/config.h"
+#include "hdfs/hdfs.h"
 
 namespace heron {
 namespace ckptmgr {
@@ -33,17 +34,23 @@ class HadoopFS : public Storage {
   explicit HadoopFS(const heron::config::Config& _config);
 
   // destructor
-  virtual ~HadoopFS() {}
+  virtual ~HadoopFS();
 
   static std::string storage_type() {
     return "HadoopFS";
   }
+
+  // initialze - create hadoop connection/base directory
+  virtual int initialize();
 
   // store the checkpoint
   virtual int store(const Checkpoint& _ckpt);
 
   // retrieve the checkpoint
   virtual int restore(Checkpoint& _ckpt);
+
+  // cleanup - close hadoop connection/release resources
+  virtual int cleanup();
 
  private:
   // get the name of the checkpoint directory
@@ -63,10 +70,15 @@ class HadoopFS : public Storage {
   std::string logMessageFragment(const Checkpoint& _ckpt);
 
  private:
-  std::string   base_dir_;
+  std::string         base_dir_;
+  std::string         username_;
+  std::string         nnhost_;
+  int16_t             nnport_;
+  struct hdfsBuilder* builder_;
+  hdfsFS              filesystem_;
 };
 
 }  // namespace ckptmgr
 }  // namespace heron
 
-#endif  // localfs.h
+#endif  // hadoopfs.h

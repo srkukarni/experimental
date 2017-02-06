@@ -49,6 +49,7 @@ cc_library(
     ],
     deps = [
         ":common-cxx",
+        "//third_party/libhdfs3:libhdfs3-cxx",
     ],
     linkstatic = 1,
 )

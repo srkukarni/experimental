@@ -49,7 +49,7 @@ class Config {
     return params_.get(key);
   }
 
-  std::string getstr(const std::string& key, const std::string& defaults) {
+  std::string getstr(const std::string& key, const std::string& defaults) const {
     return params_.getstr(key, defaults);
   }
 
@@ -58,7 +58,7 @@ class Config {
     return params_.getbool(key);
   }
 
-  bool getbool(const std::string& key, bool defaults) {
+  bool getbool(const std::string& key, bool defaults) const {
     return params_.getbool(key, defaults);
   }
 
@@ -67,7 +67,7 @@ class Config {
     return params_.getint64(key);
   }
 
-  int64_t getint64(const std::string& key, int64_t defaults) {
+  int64_t getint64(const std::string& key, int64_t defaults) const {
     return params_.getint64(key, defaults);
   }
 
@@ -76,8 +76,17 @@ class Config {
     return params_.getint32(key);
   }
 
-  int32_t getint32(const std::string& key, int32_t defaults) {
+  int32_t getint32(const std::string& key, int32_t defaults) const {
     return params_.getint32(key, defaults);
+  }
+
+  // get the value associated with the key as integer 16 bits
+  int16_t getint16(const std::string& key) {
+    return params_.getint16(key);
+  }
+
+  int32_t getint16(const std::string& key, int16_t defaults) const {
+    return params_.getint16(key, defaults);
   }
 
   // get the value associated with the key as double
@@ -85,7 +94,7 @@ class Config {
     return params_.getdouble(key);
   }
 
-  double getdouble(const std::string& key, double defaults) {
+  double getdouble(const std::string& key, double defaults) const {
     return params_.getdouble(key, defaults);
   }
 
@@ -127,6 +136,12 @@ class Config {
     // put an int value associated with the key
     Builder& putint32(const std::string& key, int32_t value) {
       builder_.putint32(key, value);
+      return *this;
+    }
+
+    // put an int 16 value associated with the key
+    Builder& putint16(const std::string& key, int16_t value) {
+      builder_.putint16(key, value);
       return *this;
     }
 
