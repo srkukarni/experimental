@@ -49,7 +49,6 @@ public class SchedulerStateManagerAdaptor {
    * Noticed that the initialize and close of IStateManager is not in the
    * SchedulerStateManager. Users are restricted from using those interfaces
    * since it is upto the abstract scheduler to decide when to open and close.
-   *
    * @param timeout the maximum time to wait in milliseconds
    */
   public SchedulerStateManagerAdaptor(IStateManager delegate, int timeout) {
@@ -221,6 +220,10 @@ public class SchedulerStateManagerAdaptor {
     return awaitResult(delegate.deleteLocks(topologyName));
   }
 
+  public Boolean deleteStatefulCheckpoint(String topologyName) {
+    return awaitResult(delegate.deleteStatefulCheckpoint(topologyName));
+  }
+
   /**
    * Get the tmaster location for the given topology
    *
@@ -239,7 +242,7 @@ public class SchedulerStateManagerAdaptor {
     return awaitResult(delegate.getSchedulerLocation(null, topologyName));
   }
 
- /**
+  /**
    * Get the topology definition for the given topology
    *
    * @return Topology

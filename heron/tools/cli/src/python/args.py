@@ -154,3 +154,14 @@ def add_extra_launch_classpath(parser):
       metavar='(a string; additional JVM class path for launching topology)',
       default="")
   return parser
+
+def add_clean_stateful_checkpoints(parser):
+  '''
+  :param parser:
+  :return:
+  '''
+  parser.add_argument(
+      '--clean-stateful-checkpoints',
+      metavar='(a boolean; default: "false")',
+      default=False)
+  return parser

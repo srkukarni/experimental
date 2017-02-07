@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ''' kill.py '''
+import heron.tools.cli.src.python.args as cli_args
 import heron.tools.cli.src.python.cli_helper as cli_helper
 
 
@@ -20,7 +21,9 @@ def create_parser(subparsers):
   :param subparsers:
   :return:
   '''
-  return cli_helper.create_parser(subparsers, 'kill', 'Kill a topology')
+  parser = cli_helper.create_parser(subparsers, 'kill', 'Kill a topology')
+  cli_args.add_clean_stateful_checkpoints(parser)
+  return parser
 
 
 # pylint: disable=unused-argument
@@ -32,4 +35,7 @@ def run(command, parser, cl_args, unknown_args):
   :param unknown_args:
   :return:
   '''
-  return cli_helper.run(command, cl_args, "kill topology")
+  extra_args = []
+  if cl_args['clean_stateful_checkpoints']:
+    extra_args.append('--clean_stateful_checkpoints')
+  return cli_helper.run(command, cl_args, "kill topology", extra_args)

@@ -147,6 +147,14 @@ public class RuntimeManagerRunner {
     Scheduler.KillTopologyRequest killTopologyRequest = Scheduler.KillTopologyRequest.newBuilder()
         .setTopologyName(topologyName).build();
 
+    boolean isCleanStatefulCheckpoints = Context.isCleanStateCheckpoints(config);
+    if (isCleanStatefulCheckpoints) {
+      LOG.info("To kill topology with cleaning the stateful checkpoints");
+      // Add handlers to inform TMaster to clean the stateful checkpoints
+    } else {
+      LOG.info("To kill topology without cleaning the stateful checkpoints");
+    }
+
     if (!schedulerClient.killTopology(killTopologyRequest)) {
       throw new TopologyRuntimeManagementException(
           String.format("Failed to kill topology '%s' with scheduler", topologyName));
@@ -175,7 +183,7 @@ public class RuntimeManagerRunner {
     if (!changeDetected(currentPlan, changeRequests)) {
       throw new TopologyRuntimeManagementException(
           String.format("The component parallelism request (%s) is the same as the "
-          + "current topology parallelism. Not taking action.", newParallelism));
+              + "current topology parallelism. Not taking action.", newParallelism));
     }
 
     PackingPlans.PackingPlan proposedPlan = buildNewPackingPlan(currentPlan, changeRequests,
@@ -191,7 +199,7 @@ public class RuntimeManagerRunner {
     if (!schedulerClient.updateTopology(updateTopologyRequest)) {
       throw new TopologyRuntimeManagementException(String.format(
           "Failed to update topology with Scheduler, updateTopologyRequest="
-          + updateTopologyRequest));
+              + updateTopologyRequest));
     }
 
     // Clean the connection when we are done.
@@ -227,25 +235,25 @@ public class RuntimeManagerRunner {
     result = statemgr.deletePhysicalPlan(topologyName);
     if (result == null || !result) {
       throw new TopologyRuntimeManagementException(
-        "Failed to clear physical plan. Check whether TMaster set it correctly.");
+          "Failed to clear physical plan. Check whether TMaster set it correctly.");
     }
 
     result = statemgr.deleteSchedulerLocation(topologyName);
     if (result == null || !result) {
       throw new TopologyRuntimeManagementException(
-        "Failed to clear scheduler location. Check whether Scheduler set it correctly.");
+          "Failed to clear scheduler location. Check whether Scheduler set it correctly.");
     }
 
     result = statemgr.deleteLocks(topologyName);
     if (result == null || !result) {
       throw new TopologyRuntimeManagementException(
-        "Failed to delete locks. It's possible that the topology never created any.");
+          "Failed to delete locks. It's possible that the topology never created any.");
     }
 
     result = statemgr.deleteExecutionState(topologyName);
     if (result == null || !result) {
       throw new TopologyRuntimeManagementException(
-        "Failed to clear execution state");
+          "Failed to clear execution state");
     }
 
     // Set topology def at last since we determine whether a topology is running
@@ -253,7 +261,17 @@ public class RuntimeManagerRunner {
     result = statemgr.deleteTopology(topologyName);
     if (result == null || !result) {
       throw new TopologyRuntimeManagementException(
-        "Failed to clear topology definition");
+          "Failed to clear topology definition");
+    }
+
+    boolean isCleanStatefulCheckpoints = Context.isCleanStateCheckpoints(config);
+    if (isCleanStatefulCheckpoints) {
+      LOG.info("To clean the stateful checkpoints");
+      result = statemgr.deleteStatefulCheckpoint(topologyName);
+      if (result == null || !result) {
+        throw new TopologyRuntimeManagementException(
+            "Failed to clear stateful checkpoints");
+      }
     }
 
     LOG.fine("Cleaned up topology state");
