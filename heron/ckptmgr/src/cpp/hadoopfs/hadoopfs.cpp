@@ -112,8 +112,75 @@ int HadoopFS::cleanup() {
   return SP_OK;
 }
 
+bool HadoopFS::writeSyncAll(const std::string& filename, const char* data, size_t len) {
+  // open the file for creation and write only mode
+  auto fd = hdfsOpenFile(filesystem_, filename.c_str(), O_CREAT | O_WRONLY, 0, 0, 0);
+  if (fd == nullptr) {
+    LOG(ERROR) << "Unable to open hadoop file " << filename << " " << hdfsGetLastError();
+    return false;
+  }
+
+  // write the contents of the file
+  size_t count = 0;
+  while (count < len) {
+    int i = hdfsWrite(filesystem_, fd, data + count, len - count);
+    if (i < 0) {
+      LOG(ERROR) << "Unable to write contents to file " << filename << " " << hdfsGetLastError();
+      return false;
+    }
+    count += i;
+  }
+
+  // force flush the file contents to persistent store
+  auto code = hdfsHFlush(filesystem_, fd);
+  if (code < 0) {
+    LOG(ERROR) << "Unable to sync file " << filename << " " << hdfsGetLastError();
+    return false;
+  }
+
+  // close the file descriptor
+  code = hdfsCloseFile(filesystem_, fd);
+  if (code < 0) {
+    LOG(ERROR) << "Unable to close file " << filename << " " << hdfsGetLastError();
+    return false;
+  }
+  return true;
+}
+
+bool HadoopFS::writeAtomicAll(const std::string& filename, const char* data, size_t len) {
+  // form a temporary file name
+  size_t pos = filename.find_last_of("/");
+  if (pos == filename.size() - 1) {
+    LOG(ERROR) << "Specified filename " << filename << " is a directory" << std::endl;
+    return false;
+  }
+
+  std::string newfile;
+  if (pos == std::string::npos) {
+    newfile.append(".").append(filename);
+  } else {
+     newfile.append(filename.substr(0, pos + 1));
+     newfile.append(".").append(filename.substr(pos+1));
+  }
+
+  // Write and flush the contents of the file
+  if (!writeSyncAll(newfile, data, len))
+    return false;
+
+  // rename the file for atomic write
+  auto err = hdfsRename(filesystem_, newfile.c_str(), filename.c_str());
+  if (err < 0) {
+    LOG(ERROR) << "Unable to move file " << newfile << " to "  << filename
+        << " " << hdfsGetLastError();
+    return false;
+  }
+
+  return true;
+}
+
 int HadoopFS::store(const Checkpoint& _ckpt) {
   std::string path = ckptFile(_ckpt);
+
   // create the checkpoint directory, if not there
   if (createCkptDirectory(_ckpt) == SP_NOTOK) {
     LOG(ERROR) << "Failed to create dir "
@@ -126,7 +193,7 @@ int HadoopFS::store(const Checkpoint& _ckpt) {
   std::string buf;
   _ckpt.checkpoint()->SerializeToString(&buf);
 
-  if (!FileUtils::writeAtomicAll(path, buf.c_str(), len)) {
+  if (!writeAtomicAll(path, buf.c_str(), len)) {
     LOG(ERROR) << "Failed to checkpoint " << path << " for " << logMessageFragment(_ckpt);
     return SP_NOTOK;
   }

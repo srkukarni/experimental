@@ -24,6 +24,7 @@
 #include "network/network.h"
 #include "proto/messages.h"
 #include "localfs/localfs.h"
+#include "hadoopfs/hadoopfs.h"
 #include "manager/ckptmgr.h"
 
 heron::ckptmgr::Storage*
@@ -33,6 +34,10 @@ GetStorageInstance(const heron::config::Config& config) {
   LOG(INFO) << "Storage type: " << storage_type;
   if (storage_type == heron::ckptmgr::LocalFS::storage_type()) {
     return new heron::ckptmgr::LocalFS(config);
+  }
+
+  if (storage_type == heron::ckptmgr::HadoopFS::storage_type()) {
+    return new heron::ckptmgr::HadoopFS(config);
   }
 
   LOG(FATAL) << "Unknown storage type " <<  storage_type;

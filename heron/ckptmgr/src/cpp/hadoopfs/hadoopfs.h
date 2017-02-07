@@ -65,6 +65,12 @@ class HadoopFS : public Storage {
   // create the checkpoint directory
   int createCkptDirectory(const Checkpoint& _ckpt);
 
+  // write the hadoop file and flush it
+  bool writeSyncAll(const std::string& filename, const char* data, size_t len);
+
+  // write the hadoop file into a temporary file and then move to the actual file
+  bool writeAtomicAll(const std::string& filename, const char* data, size_t len);
+
  private:
   // generate the log message prefix/suffix for printing
   std::string logMessageFragment(const Checkpoint& _ckpt);

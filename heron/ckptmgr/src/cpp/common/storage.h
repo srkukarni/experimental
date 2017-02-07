@@ -28,6 +28,12 @@ class Storage {
 
   virtual ~Storage() {}
 
+  // initialze the storage
+  virtual int initialize() = 0;
+
+  // cleanup the storage, if needed
+  virtual int cleanup() = 0;
+
   // store the checkpoint
   virtual int store(const Checkpoint& _ckpt) = 0;
 

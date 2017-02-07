@@ -50,6 +50,7 @@ cc_library(
     deps = [
         ":common-cxx",
         "//third_party/libhdfs3:libhdfs3-cxx",
+        "//third_party/libxml2:libxml2-cxx",
     ],
     linkstatic = 1,
 )
@@ -83,6 +84,7 @@ cc_binary(
     ],
     deps = [
         ":localfs-cxx",
+        ":hadoopfs-cxx",
         ":manager-cxx",
     ],
     linkstatic = 1,

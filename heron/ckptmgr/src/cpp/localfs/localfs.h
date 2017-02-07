@@ -39,6 +39,15 @@ class LocalFS : public Storage {
     return "LocalFS";
   }
 
+  // initialize the storage
+  virtual int initialize() {
+    return SP_OK;
+  }
+
+  virtual int cleanup() {
+    return SP_OK;
+  }
+
   // store the checkpoint
   virtual int store(const Checkpoint& _ckpt);
 

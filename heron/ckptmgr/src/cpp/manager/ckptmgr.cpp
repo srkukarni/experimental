@@ -56,6 +56,8 @@ void CkptMgr::StartCkptmgrServer() {
   ops.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);
   server_ = new CkptMgrServer(eventLoop_, ops, topology_name_, topology_id_, ckptmgr_id_, this);
 
+  CHECK_EQ(storage_->initialize(), SP_OK);
+
   // start the server
   CHECK_EQ(server_->Start(), 0);
 }
