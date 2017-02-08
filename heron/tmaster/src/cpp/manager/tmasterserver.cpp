@@ -105,6 +105,7 @@ void TMasterServer::SetCleanStatefulCheckpointCb(VCallback<proto::system::Status
 
 void TMasterServer::HandleCleanStatefulCheckpointResponse(Connection*,
                                  proto::ckptmgr::CleanStatefulCheckpointResponse* _message) {
+  LOG(INFO) << "Got CleanStatefulCheckpointResponse from stmgr";
   if (clean_stateful_checkpoint_cb_) {
     clean_stateful_checkpoint_cb_(_message->status().status());
   }

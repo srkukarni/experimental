@@ -179,6 +179,8 @@ void TController::HandleCleanStatefulCheckpointRequest(IncomingHTTPRequest* requ
 
 void TController::HandleCleanStatefulCheckpointRequestDone(IncomingHTTPRequest* request,
                                               proto::system::StatusCode _status) {
+  LOG(INFO) << "Done with CleanStatefulCheckpoint Request with "
+            << _status;
   if (_status != proto::system::OK) {
     LOG(ERROR) << "Unable to CleanStatefulCheckpoint " << _status;
     http_server_->SendErrorReply(request, 500);

@@ -179,6 +179,7 @@ void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
 
 void CkptMgrClient::CleanStatefulCheckpoint(const std::string& _oldest_ckpt,
                                             bool _clean_all) {
+  LOG(INFO) << "Sending CleanStatefulCheckpoint message to ckptmgr";
   auto request = new proto::ckptmgr::CleanStatefulCheckpointRequest();
   request->set_oldest_checkpoint_preserved(_oldest_ckpt);
   request->set_clean_all_checkpoints(_clean_all);
@@ -241,6 +242,7 @@ void CkptMgrClient::HandleGetInstanceStateResponse(void* _ctx,
 void CkptMgrClient::HandleCleanStatefulCheckpointResponse(void* _ctx,
                              proto::ckptmgr::CleanStatefulCheckpointResponse* _response,
                              NetworkErrorCode _status) {
+  LOG(INFO) << "Got a CleanStatefulCheckpoint Response from ckptmgr";
   if (_status != OK) {
     LOG(ERROR) << "NonOK response message for CleanStatefulCheckpointResponse";
     proto::system::Status s;

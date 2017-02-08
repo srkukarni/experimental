@@ -929,9 +929,12 @@ void StMgr::HandleStatefulRestoreDone(proto::system::StatusCode _status,
 }
 
 void StMgr::CleanStatefulCheckpoint(const std::string& _old_ckpt, bool _clean_all) {
+  LOG(INFO) << "Got a CleanStatefulCheckpoint Request for " << _old_ckpt
+            << " " << _clean_all;
   if (checkpoint_manager_client_) {
     checkpoint_manager_client_->CleanStatefulCheckpoint(_old_ckpt, _clean_all);
   } else {
+    LOG(INFO) << "We are not connected to checkpoint manager, so ignoring...";
     proto::system::Status status;
     status.set_status(proto::system::NOTOK);
     tmaster_client_->SendCleanStatefulCheckpointResponse(status);
@@ -939,6 +942,8 @@ void StMgr::CleanStatefulCheckpoint(const std::string& _old_ckpt, bool _clean_al
 }
 
 void StMgr::CleanStatefulCheckpointResponse(const proto::system::Status& _status) {
+  LOG(INFO) << "Got a Clean StatefulCheckpoint Response from ckpmgr with status "
+            << _status.status();
   tmaster_client_->SendCleanStatefulCheckpointResponse(_status);
 }
 }  // namespace stmgr
