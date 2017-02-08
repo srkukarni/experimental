@@ -34,7 +34,8 @@ class TMasterClient : public Client {
                 VCallback<proto::system::PhysicalPlan*> _pplan_watch,
                 VCallback<sp_string> _stateful_checkpoint_watch,
                 VCallback<sp_string, sp_int64> _restore_topology_watch,
-                VCallback<sp_string> _start_stateful_watch);
+                VCallback<sp_string> _start_stateful_watch,
+                VCallback<sp_string, bool> _clean_stateful_checkpoints_watch);
   virtual ~TMasterClient();
 
   // Told by the upper layer to disconnect and self destruct
@@ -60,6 +61,9 @@ class TMasterClient : public Client {
   // Send ResetTopologyState message to tmaster
   void SendResetTopologyState(const std::string& _reason);
 
+  // Send CleanStatefulCheckpointResponse message to tmaster
+  void SendCleanStatefulCheckpointResponse(const proto::system::Status& _status);
+
  protected:
   virtual void HandleConnect(NetworkErrorCode status);
   virtual void HandleClose(NetworkErrorCode status);
@@ -74,6 +78,7 @@ class TMasterClient : public Client {
   void HandleStatefulCheckpointMessage(proto::ckptmgr::StartStatefulCheckpoint* _message);
   void HandleRestoreTopologyStateRequest(proto::ckptmgr::RestoreTopologyStateRequest* _message);
   void HandleStartStmgrStatefulProcessing(proto::ckptmgr::StartStmgrStatefulProcessing* _msg);
+  void HandleCleanStatefulCheckpointRequest(proto::ckptmgr::CleanStatefulCheckpointRequest* _msg);
 
   void OnReConnectTimer();
   void OnHeartbeatTimer();
@@ -90,6 +95,7 @@ class TMasterClient : public Client {
   VCallback<sp_string> stateful_checkpoint_watch_;
   VCallback<sp_string, sp_int64> restore_topology_watch_;
   VCallback<sp_string> start_stateful_watch_;
+  VCallback<sp_string, bool> clean_stateful_checkpoint_watch_;
 
   // Configs to be read
   sp_int32 reconnect_tmaster_interval_sec_;

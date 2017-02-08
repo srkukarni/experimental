@@ -484,6 +484,23 @@ void TMaster::DeActivateTopology(VCallback<proto::system::StatusCode> cb) {
   state_mgr_->SetPhysicalPlan(*new_pplan, std::move(callback));
 }
 
+void TMaster::CleanStatefulCheckpoint(VCallback<proto::system::StatusCode> _cb) {
+  int* nreplies = new int;
+  *nreplies = 0;
+  auto callback = [this, _cb, nreplies](proto::system::StatusCode code) {
+    *nreplies = *nreplies + 1;
+    if (*nreplies >= stmgrs_.size()) {
+      // TODO(sanjeev): Pass the right status code here
+      _cb(proto::system::OK);
+      delete nreplies;
+    }
+  };
+  master_->SetCleanStatefulCheckpointCb(_cb);
+  for (auto stmgr : stmgrs_) {
+    stmgr.second->CleanAllStatefulCheckpoints();
+  }
+}
+
 proto::system::Status* TMaster::RegisterStMgr(
     const proto::system::StMgr& _stmgr, const std::vector<proto::system::Instance*>& _instances,
     Connection* _conn, proto::system::PhysicalPlan*& _pplan) {

@@ -67,6 +67,9 @@ class TMaster {
   // When stmgr disconnects from us
   proto::system::StatusCode RemoveStMgrConnection(Connection* _conn);
 
+  // Called by http server upon receiving a user message to cleanup the state
+  void CleanStatefulCheckpoint(VCallback<proto::system::StatusCode> cb);
+
   // Accessors
   const proto::system::PhysicalPlan* getPhysicalPlan() const { return current_pplan_; }
   // TODO(mfu): Should we provide this?

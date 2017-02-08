@@ -44,6 +44,9 @@ class TController {
   void HandleActivateRequestDone(IncomingHTTPRequest* request, proto::system::StatusCode);
   void HandleDeActivateRequest(IncomingHTTPRequest* request);
   void HandleDeActivateRequestDone(IncomingHTTPRequest* request, proto::system::StatusCode);
+  void HandleCleanStatefulCheckpointRequest(IncomingHTTPRequest* request);
+  void HandleCleanStatefulCheckpointRequestDone(IncomingHTTPRequest* request,
+                                                proto::system::StatusCode);
 
   // We are a http server
   HTTPServer* http_server_;

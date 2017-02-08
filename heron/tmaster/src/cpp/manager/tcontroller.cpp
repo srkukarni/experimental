@@ -146,5 +146,50 @@ void TController::HandleDeActivateRequestDone(IncomingHTTPRequest* request,
   }
   delete request;
 }
+
+void TController::HandleCleanStatefulCheckpointRequest(IncomingHTTPRequest* request) {
+  LOG(INFO) << "Got a CleanStatefulCheckpoint request from " << request->GetRemoteHost() << ":"
+            << request->GetRemotePort();
+  const sp_string& id = request->GetValue("topologyid");
+  if (id == "") {
+    LOG(ERROR) << "Request does not contain topology id";
+    http_server_->SendErrorReply(request, 400);
+    delete request;
+    return;
+  }
+  if (tmaster_->getPhysicalPlan() == NULL) {
+    LOG(ERROR) << "Tmaster still not initialized";
+    http_server_->SendErrorReply(request, 500);
+    delete request;
+    return;
+  }
+  if (id != tmaster_->GetTopologyId()) {
+    LOG(ERROR) << "Topology id does not match";
+    http_server_->SendErrorReply(request, 400);
+    delete request;
+    return;
+  }
+
+  auto cb = [request, this](proto::system::StatusCode status) {
+    this->HandleCleanStatefulCheckpointRequestDone(request, status);
+  };
+
+  tmaster_->CleanStatefulCheckpoint(std::move(cb));
+}
+
+void TController::HandleCleanStatefulCheckpointRequestDone(IncomingHTTPRequest* request,
+                                              proto::system::StatusCode _status) {
+  if (_status != proto::system::OK) {
+    LOG(ERROR) << "Unable to CleanStatefulCheckpoint " << _status;
+    http_server_->SendErrorReply(request, 500);
+  } else {
+    sp_string s = "Checkpoints successfully cleaned";
+    LOG(INFO) << s;
+    OutgoingHTTPResponse* response = new OutgoingHTTPResponse(request);
+    response->AddResponse(s);
+    http_server_->SendReply(request, 200, response);
+  }
+  delete request;
+}
 }  // namespace tmaster
 }  // namespace heron

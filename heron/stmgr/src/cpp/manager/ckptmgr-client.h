@@ -35,7 +35,8 @@ class CkptMgrClient : public Client {
                                    const std::string&)> _ckpt_saved_watcher,
                 std::function<void(proto::system::StatusCode, sp_int32, sp_string,
                               const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
-                std::function<void()> _register_watcher);
+                std::function<void()> _register_watcher,
+                std::function<void(const proto::system::Status&)> _clean_watcher);
   virtual ~CkptMgrClient();
 
   void Quit();
@@ -44,6 +45,7 @@ class CkptMgrClient : public Client {
   void SaveInstanceState(proto::ckptmgr::SaveInstanceStateRequest* _request);
   void GetInstanceState(const proto::system::Instance& _instance,
                         const std::string& _checkpoint_id);
+  void CleanStatefulCheckpoint(const std::string& _oldest_ckpt, bool _clean_all);
 
  protected:
   void GetInstanceState(const proto::system::Instance& _instance,
@@ -53,6 +55,9 @@ class CkptMgrClient : public Client {
                              NetworkErrorCode status);
   virtual void HandleGetInstanceStateResponse(void*,
                              proto::ckptmgr::GetInstanceStateResponse* _response,
+                             NetworkErrorCode status);
+  virtual void HandleCleanStatefulCheckpointResponse(void*,
+                             proto::ckptmgr::CleanStatefulCheckpointResponse* _response,
                              NetworkErrorCode status);
   virtual void HandleConnect(NetworkErrorCode status);
   virtual void HandleClose(NetworkErrorCode status);
@@ -76,6 +81,7 @@ class CkptMgrClient : public Client {
   std::function<void(proto::system::StatusCode, sp_int32, sp_string,
                      const proto::ckptmgr::InstanceStateCheckpoint&)> ckpt_get_watcher_;
   std::function<void()> register_watcher_;
+  std::function<void(const proto::system::Status&)> clean_watcher_;
 
   // Config
   sp_int32 reconnect_cpktmgr_interval_sec_;

@@ -106,6 +106,10 @@ class StMgr {
   // Handle RestoreInstanceStateResponse message from local instance
   void HandleRestoreInstanceStateResponse(sp_int32 _task_id, const std::string& _checkpoint_id);
 
+  // Handle CleanStatefulCheckpoint message from tmaster
+  void CleanStatefulCheckpoint(const std::string& _oldest_ckpt, bool _clean_all);
+  void CleanStatefulCheckpointResponse(const proto::system::Status& _status);
+
  private:
   void OnTMasterLocationFetch(proto::tmaster::TMasterLocation* _tmaster, proto::system::StatusCode);
   void FetchTMasterLocation();

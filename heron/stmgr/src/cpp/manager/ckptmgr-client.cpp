@@ -34,7 +34,8 @@ CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _option
                                                 const std::string&)> _ckpt_saved_watcher,
                              std::function<void(proto::system::StatusCode, sp_int32, sp_string,
                                const proto::ckptmgr::InstanceStateCheckpoint&)> _ckpt_get_watcher,
-                             std::function<void()> _register_watcher)
+                             std::function<void()> _register_watcher,
+                             std::function<void(const proto::system::Status&)> _clean_watcher)
     : Client(eventloop, _options),
       topology_name_(_topology_name),
       topology_id_(_topology_id),
@@ -43,7 +44,8 @@ CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _option
       quit_(false),
       ckpt_saved_watcher_(_ckpt_saved_watcher),
       ckpt_get_watcher_(_ckpt_get_watcher),
-      register_watcher_(_register_watcher) {
+      register_watcher_(_register_watcher),
+      clean_watcher_(_clean_watcher) {
 
   reconnect_cpktmgr_interval_sec_ =
     config::HeronInternalsConfigReader::Instance()->GetHeronStreammgrClientReconnectIntervalSec();
@@ -54,6 +56,10 @@ CkptMgrClient::CkptMgrClient(EventLoop* eventloop, const NetworkOptions& _option
                          &CkptMgrClient::HandleSaveInstanceStateResponse);
   InstallResponseHandler(new proto::ckptmgr::GetInstanceStateRequest(),
                          &CkptMgrClient::HandleGetInstanceStateResponse);
+  InstallResponseHandler(new proto::ckptmgr::GetInstanceStateRequest(),
+                         &CkptMgrClient::HandleGetInstanceStateResponse);
+  InstallResponseHandler(new proto::ckptmgr::CleanStatefulCheckpointRequest(),
+                         &CkptMgrClient::HandleCleanStatefulCheckpointResponse);
 }
 
 CkptMgrClient::~CkptMgrClient() {
@@ -171,6 +177,14 @@ void CkptMgrClient::GetInstanceState(const proto::system::Instance& _instance,
   SendRequest(request, _nattempts);
 }
 
+void CkptMgrClient::CleanStatefulCheckpoint(const std::string& _oldest_ckpt,
+                                            bool _clean_all) {
+  auto request = new proto::ckptmgr::CleanStatefulCheckpointRequest();
+  request->set_oldest_checkpoint_preserved(_oldest_ckpt);
+  request->set_clean_all_checkpoints(_clean_all);
+  SendRequest(request, NULL);
+}
+
 void CkptMgrClient::HandleSaveInstanceStateResponse(void*,
                              proto::ckptmgr::SaveInstanceStateResponse* _response,
                              NetworkErrorCode _status) {
@@ -220,6 +234,20 @@ void CkptMgrClient::HandleGetInstanceStateResponse(void* _ctx,
     ckpt_get_watcher_(_response->status().status(),
                       _response->instance().info().task_id(), _response->checkpoint_id(),
                       _response->checkpoint());
+  }
+  delete _response;
+}
+
+void CkptMgrClient::HandleCleanStatefulCheckpointResponse(void* _ctx,
+                             proto::ckptmgr::CleanStatefulCheckpointResponse* _response,
+                             NetworkErrorCode _status) {
+  if (_status != OK) {
+    LOG(ERROR) << "NonOK response message for CleanStatefulCheckpointResponse";
+    proto::system::Status s;
+    s.set_status(proto::system::NOTOK);
+    clean_watcher_(s);
+  } else {
+    clean_watcher_(_response->status());
   }
   delete _response;
 }

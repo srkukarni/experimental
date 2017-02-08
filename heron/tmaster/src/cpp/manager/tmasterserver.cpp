@@ -98,5 +98,17 @@ void TMasterServer::HandleResetTopologyStateMessage(Connection* _conn,
   tmaster_->ResetTopologyState(_conn);
   __global_protobuf_pool_release__(_message);
 }
+
+void TMasterServer::SetCleanStatefulCheckpointCb(VCallback<proto::system::StatusCode> _cb) {
+  clean_stateful_checkpoint_cb_ = _cb;
+}
+
+void TMasterServer::HandleCleanStatefulCheckpointResponse(Connection*,
+                                 proto::ckptmgr::CleanStatefulCheckpointResponse* _message) {
+  if (clean_stateful_checkpoint_cb_) {
+    clean_stateful_checkpoint_cb_(_message->status().status());
+  }
+  delete _message;
+}
 }  // namespace tmaster
 }  // namespace heron

@@ -36,7 +36,8 @@ TMasterClient::TMasterClient(EventLoop* eventLoop, const NetworkOptions& _option
                              VCallback<proto::system::PhysicalPlan*> _pplan_watch,
                              VCallback<sp_string> _stateful_checkpoint_watch,
                              VCallback<sp_string, sp_int64> _restore_topology_watch,
-                             VCallback<sp_string> _start_stateful_watch)
+                             VCallback<sp_string> _start_stateful_watch,
+                             VCallback<sp_string, bool> _clean_stateful_checkpoint_watch)
     : Client(eventLoop, _options),
       stmgr_id_(_stmgr_id),
       stmgr_port_(_stmgr_port),
@@ -46,6 +47,7 @@ TMasterClient::TMasterClient(EventLoop* eventLoop, const NetworkOptions& _option
       stateful_checkpoint_watch_(std::move(_stateful_checkpoint_watch)),
       restore_topology_watch_(std::move(_restore_topology_watch)),
       start_stateful_watch_(std::move(_start_stateful_watch)),
+      clean_stateful_checkpoint_watch_(std::move(_clean_stateful_checkpoint_watch)),
       reconnect_timer_id(0),
       heartbeat_timer_id(0) {
   reconnect_tmaster_interval_sec_ = config::HeronInternalsConfigReader::Instance()
@@ -67,6 +69,7 @@ TMasterClient::TMasterClient(EventLoop* eventLoop, const NetworkOptions& _option
   InstallMessageHandler(&TMasterClient::HandleStatefulCheckpointMessage);
   InstallMessageHandler(&TMasterClient::HandleRestoreTopologyStateRequest);
   InstallMessageHandler(&TMasterClient::HandleStartStmgrStatefulProcessing);
+  InstallMessageHandler(&TMasterClient::HandleCleanStatefulCheckpointRequest);
 }
 
 TMasterClient::~TMasterClient() {}
@@ -281,6 +284,24 @@ void TMasterClient::SendResetTopologyState(const std::string& _stmgr) {
   proto::ckptmgr::ResetTopologyState* message = nullptr;
   message = __global_protobuf_pool_acquire__(message);
   message->set_dead_stmgr(_stmgr);
+
+  SendMessage(*message);
+
+  __global_protobuf_pool_release__(message);
+}
+
+void TMasterClient::HandleCleanStatefulCheckpointRequest(
+              proto::ckptmgr::CleanStatefulCheckpointRequest* _message) {
+  clean_stateful_checkpoint_watch_(_message->oldest_checkpoint_preserved(),
+                                   _message->clean_all_checkpoints());
+  __global_protobuf_pool_release__(_message);
+}
+
+void TMasterClient::SendCleanStatefulCheckpointResponse(
+              const proto::system::Status& _status) {
+  proto::ckptmgr::CleanStatefulCheckpointResponse* message = nullptr;
+  message = __global_protobuf_pool_acquire__(message);
+  message->mutable_status()->CopyFrom(_status);
 
   SendMessage(*message);
 
