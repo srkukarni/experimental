@@ -146,6 +146,11 @@ public class RuntimeManagerMain {
         .longOpt("verbose")
         .build();
 
+    Option isCleanStatefulCheckpoints = Option.builder("s")
+        .desc("To clean the stateful checkpoints")
+        .longOpt("clean_stateful_checkpoints")
+        .build();
+
     options.addOption(cluster);
     options.addOption(role);
     options.addOption(environment);
@@ -158,6 +163,7 @@ public class RuntimeManagerMain {
     options.addOption(containerId);
     options.addOption(componentParallelism);
     options.addOption(verbose);
+    options.addOption(isCleanStatefulCheckpoints);
 
     return options;
   }
@@ -225,6 +231,11 @@ public class RuntimeManagerMain {
       containerId = cmd.getOptionValue("container_id");
     }
 
+    Boolean isCleanStatefulCheckpoints = false;
+    if (cmd.hasOption("s")) {
+      isCleanStatefulCheckpoints = true;
+    }
+
     Command command = Command.makeCommand(commandOption);
 
     // first load the defaults, then the config from files to override it
@@ -238,7 +249,8 @@ public class RuntimeManagerMain {
         .put(Keys.role(), role)
         .put(Keys.environ(), environ)
         .put(Keys.verbose(), verbose)
-        .put(Keys.topologyContainerId(), containerId);
+        .put(Keys.topologyContainerId(), containerId)
+        .put(Keys.IS_CLEAN_STATEFUL_CHECKPOINTS, isCleanStatefulCheckpoints);
 
     // This is a command line option, but not a valid config key. Hence we don't use Keys
     if (componentParallelism != null) {
@@ -310,7 +322,6 @@ public class RuntimeManagerMain {
    * 1. Instantiate necessary resources
    * 2. Valid whether the runtime management is legal
    * 3. Complete the runtime management for a specific command
-   *
    */
   public void manageTopology()
       throws TopologyRuntimeManagementException, TMasterException, PackingException {
@@ -396,7 +407,7 @@ public class RuntimeManagerMain {
   }
 
   protected void callRuntimeManagerRunner(Config runtime, ISchedulerClient schedulerClient)
-    throws TopologyRuntimeManagementException, TMasterException, PackingException {
+      throws TopologyRuntimeManagementException, TMasterException, PackingException {
     // create an instance of the runner class
     RuntimeManagerRunner runtimeManagerRunner =
         new RuntimeManagerRunner(config, runtime, command, schedulerClient);

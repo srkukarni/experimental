@@ -403,7 +403,8 @@ def insert_bool_values(command_line_args):
   '''
   args1 = insert_bool('--verbose', command_line_args)
   args2 = insert_bool('--deploy-deactivated', args1)
-  return args2
+  args3 = insert_bool('--clean-stateful-checkpoints', args2)
+  return args3
 
 class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
   def _format_action(self, action):

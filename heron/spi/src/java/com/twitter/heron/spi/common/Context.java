@@ -369,4 +369,8 @@ public class Context {
   public static final String uploaderSandboxClassPath(Config cfg) {
     return cfg.getStringValue(ConfigKeys.get("SANDBOX_UPLOADER_CLASSPATH"));
   }
+
+  public static final Boolean isCleanStateCheckpoints(Config cfg) {
+    return cfg.getBooleanValue(Keys.IS_CLEAN_STATEFUL_CHECKPOINTS, false);
+  }
 }

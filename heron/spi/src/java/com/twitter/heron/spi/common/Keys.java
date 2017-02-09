@@ -17,6 +17,7 @@ package com.twitter.heron.spi.common;
 public class Keys {
   public static final String SCHEDULER_PROPERTIES = "heron.scheduler.properties";
   public static final String SCHEDULER_COMMAND_LINE_PROPERTIES_OVERRIDE_OPTION = "P";
+  public static final String IS_CLEAN_STATEFUL_CHECKPOINTS = "is.clean.stateful.checkpoints";
 
   protected Keys() {
   }
