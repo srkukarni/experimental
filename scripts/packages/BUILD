@@ -20,6 +20,7 @@ load("/tools/rules/heron_core", "heron_core_lib_scheduler_files")
 load("/tools/rules/heron_core", "heron_core_lib_metricsmgr_files")
 load("/tools/rules/heron_core", "heron_core_lib_packing_files")
 load("/tools/rules/heron_core", "heron_core_lib_statemgr_files")
+load("/tools/rules/heron_core", "heron_core_lib_ckptmgr_files")
 
 load("/tools/rules/heron_tools", "heron_tools_files")
 load("/tools/rules/heron_tools", "heron_tools_bin_files")
@@ -69,6 +70,7 @@ pkg_tar(
         ":heron-core-lib-metricsmgr",
         ":heron-core-lib-statemgr",
         ":heron-core-lib-instance",
+        ":heron-core-lib-ckptmgr",
     ],
 )
 
@@ -106,6 +108,12 @@ pkg_tar(
     name = "heron-core-lib-instance",
     package_dir = "heron-core/lib/instance",
     files = heron_core_lib_instance_files(),
+)
+
+pkg_tar(
+    name = "heron-core-lib-ckptmgr",
+    package_dir = "heron-core/lib/ckptmgr",
+    files = heron_core_lib_ckptmgr_files(),
 )
 
 ################################################################################

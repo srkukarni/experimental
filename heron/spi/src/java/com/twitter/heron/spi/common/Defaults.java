@@ -321,4 +321,8 @@ public class Defaults {
   public static String uploaderSandboxClassPath() {
     return ConfigDefaults.get("SANDBOX_UPLOADER_CLASSPATH");
   }
+
+  public static String ckptmgrSandboxClassPath() {
+    return ConfigDefaults.get("SANDBOX_CKPTMGR_CLASSPATH");
+  }
 }

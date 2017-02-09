@@ -53,7 +53,7 @@ def print_usage():
       " <heron_java_home> <shell-port> <heron_shell_binary> <metricsmgr_port>"
       " <cluster> <role> <environ> <instance_classpath> <metrics_sinks_config_file>"
       " <scheduler_classpath> <scheduler_port> <python_instance_binary> <is_stateful>"
-      " <ckptmgr_binary> <ckptmgr_port> <stateful_config_file>")
+      " <ckptmgr_classpath> <ckptmgr_port> <stateful_config_file>")
 
 def id_map(prefix, container_plans, add_zero_id=False):
   ids = {}
@@ -137,7 +137,7 @@ class HeronExecutor(object):
 
     self.shell_env = shell_env
     self.max_runs = 100
-    self.interval_between_runs = 10
+    self.interval_between_runs = 1
     self.shard = parsed_args.shard
     self.topology_name = parsed_args.topology_name
     self.topology_id = parsed_args.topology_id
@@ -146,7 +146,7 @@ class HeronExecutor(object):
     self.zkroot = parsed_args.zkroot
     self.tmaster_binary = parsed_args.tmaster_binary
     self.stmgr_binary = parsed_args.stmgr_binary
-    self.ckptmgr_binary = parsed_args.ckptmgr_binary
+    self.ckptmgr_classpath = parsed_args.ckptmgr_classpath
     self.is_stateful = parsed_args.is_stateful
     self.metricsmgr_classpath = parsed_args.metricsmgr_classpath
     self.instance_jvm_opts =\
@@ -247,7 +247,7 @@ class HeronExecutor(object):
     parser.add_argument("scheduler_port")
     parser.add_argument("python_instance_binary")
     parser.add_argument("is_stateful", type=bool)
-    parser.add_argument("ckptmgr_binary")
+    parser.add_argument("ckptmgr_classpath")
     parser.add_argument("ckptmgr_port")
     parser.add_argument("stateful_config_file")
 
@@ -505,18 +505,44 @@ class HeronExecutor(object):
 
   def _get_ckptmgr_process(self):
     ''' get the command to start the checkpoint manager process '''
+
+    ckptmgr_main_class = 'com.twitter.heron.ckptmgr.CheckpointManager'
+
+    ckptmgr_cmd = [os.path.join(self.heron_java_home, 'bin/java'),
+                   # We could not rely on the default -Xmx setting, which could be very big,
+                   # for instance, the default -Xmx in Twitter mesos machine is around 18GB
+                   '-Xmx512M',
+                   '-XX:+PrintCommandLineFlags',
+                   '-verbosegc',
+                   '-XX:+PrintGCDetails',
+                   '-XX:+PrintGCTimeStamps',
+                   '-XX:+PrintGCDateStamps',
+                   '-XX:+PrintGCCause',
+                   '-XX:+UseGCLogFileRotation',
+                   '-XX:NumberOfGCLogFiles=5',
+                   '-XX:GCLogFileSize=100M',
+                   '-XX:+PrintPromotionFailure',
+                   '-XX:+PrintTenuringDistribution',
+                   '-XX:+PrintHeapAtGC',
+                   '-XX:+HeapDumpOnOutOfMemoryError',
+                   '-XX:+UseConcMarkSweepGC',
+                   '-XX:+PrintCommandLineFlags',
+                   '-Xloggc:log-files/gc.metricsmgr.log',
+                   '-Djava.net.preferIPv4Stack=true',
+                   '-cp',
+                   self.ckptmgr_classpath,
+                   ckptmgr_main_class,
+                   self.topology_name,
+                   self.topology_id,
+                   self.ckptmgr_ids[self.shard],
+                   self.ckptmgr_port,
+                   self.stateful_config_file,
+                   self.cluster,
+                   self.role,
+                   self.environ,
+                   self.heron_internals_config_file]
+
     retval = {}
-    ckptmgr_cmd = [
-        self.ckptmgr_binary,
-        self.topology_name,
-        self.topology_id,
-        self.ckptmgr_ids[self.shard],
-        self.ckptmgr_port,
-        self.stateful_config_file,
-        self.cluster,
-        self.role,
-        self.environ
-    ]
     retval[self.ckptmgr_ids[self.shard]] = ckptmgr_cmd
 
     return retval
