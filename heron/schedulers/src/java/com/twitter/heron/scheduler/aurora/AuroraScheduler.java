@@ -226,7 +226,7 @@ public class AuroraScheduler implements IScheduler, IScalable {
     auroraProperties.put("TOPOLOGY_PACKAGE_URI", topologyPkgURI);
 
     auroraProperties.put("IS_STATEFUL", Boolean.toString(Context.isStateful(config)));
-    auroraProperties.put("SANDBOX_CKPTMGR_BINARY", Context.ckptmgrSandboxBinary(config));
+    auroraProperties.put("SANDBOX_CKPTMGR_CLASSPATH", Context.ckptmgrSandboxClassPath(config));
     auroraProperties.put("SANDBOX_STATEFUL_YAML", Context.statefulConfigSandboxFile(config));
 
     return auroraProperties;

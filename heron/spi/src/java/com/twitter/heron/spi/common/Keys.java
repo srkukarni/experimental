@@ -400,4 +400,9 @@ public class Keys {
   public static String uploaderSandboxClassPath() {
     return ConfigKeys.get("SANDBOX_UPLOADER_CLASSPATH");
   }
+
+  public static String ckptmgrSandboxClassPath() {
+    return ConfigKeys.get("SANDBOX_CKPTMGR_CLASSPATH");
+  }
+
 }

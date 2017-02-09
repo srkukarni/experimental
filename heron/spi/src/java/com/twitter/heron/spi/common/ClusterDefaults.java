@@ -122,6 +122,7 @@ public final class ClusterDefaults {
     cb.put(Keys.schedulerSandboxClassPath(), Defaults.schedulerSandboxClassPath());
     cb.put(Keys.stateManagerSandboxClassPath(), Defaults.stateManagerSandboxClassPath());
     cb.put(Keys.uploaderSandboxClassPath(), Defaults.uploaderSandboxClassPath());
+    cb.put(Keys.ckptmgrSandboxClassPath(), Defaults.ckptmgrSandboxClassPath());
     return cb.build();
   }
 

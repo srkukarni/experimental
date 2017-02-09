@@ -193,3 +193,4 @@ SANDBOX_PACKING_CLASSPATH:           heron.classpath.sandbox.packing
 SANDBOX_SCHEDULER_CLASSPATH:         heron.classpath.sandbox.scheduler
 SANDBOX_STATEMGR_CLASSPATH:          heron.classpath.sandbox.statemgr
 SANDBOX_UPLOADER_CLASSPATH:          heron.classpath.sandbox.uploader
+SANDBOX_CKPTMGR_CLASSPATH:           heron.classpath.sandbox.ckptmgr

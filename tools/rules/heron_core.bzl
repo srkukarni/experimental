@@ -26,7 +26,8 @@ def heron_core_lib_files():
         heron_core_lib_packing_files() + \
         heron_core_lib_metricsmgr_files() + \
         heron_core_lib_statemgr_files() + \
-        heron_core_lib_instance_files()
+        heron_core_lib_instance_files() + \
+        heron_core_lib_ckptmgr_files()
 
 def heron_core_lib_scheduler_files():
     return [
@@ -57,4 +58,9 @@ def heron_core_lib_statemgr_files():
 def heron_core_lib_instance_files():
     return [
         "//heron/instance/src/java:heron-instance",
+    ]
+
+def heron_core_lib_ckptmgr_files():
+    return [
+        "//heron/ckptmgr/src/java:heron-ckptmgr",
     ]

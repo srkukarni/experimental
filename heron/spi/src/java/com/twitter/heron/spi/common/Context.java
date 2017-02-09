@@ -322,6 +322,10 @@ public class Context {
     return cfg.getStringValue(ConfigKeys.get("SANDBOX_CKPTMGR_BINARY"));
   }
 
+  public static String ckptmgrSandboxClassPath(Config cfg) {
+    return cfg.getStringValue(ConfigKeys.get("SANDBOX_CKPTMGR_CLASSPATH"));
+  }
+
   public static Boolean isStateful(Config cfg) {
     return cfg.getBooleanValue(ConfigKeys.get("IS_STATEFUL"), true);
   }
