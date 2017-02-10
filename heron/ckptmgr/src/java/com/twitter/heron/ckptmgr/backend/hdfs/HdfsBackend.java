@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -68,6 +69,22 @@ public class HdfsBackend implements IBackend {
       LOG.severe("Failed to ensure root path: " + checkpointRootPath);
     }
 
+    // List
+    try {
+      for (FileStatus fs : fileSystem.listStatus(new Path("/user/mfu"))) {
+        LOG.info(fs.getPath().toString());
+      }
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "Failed to ls the path: " + "/user/mfu", e);
+    }
+
+    try {
+      boolean res = fileSystem.exists(new Path("/user/mfu/test.yaml"));
+      LOG.info("exists? " + res);
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "Failed to exists /user/mfu/test.yaml", e);
+    }
+
 
     Path path = new Path("/user/mfu/test-data");
 
@@ -80,7 +97,7 @@ public class HdfsBackend implements IBackend {
       out.flush();
       out.close();
     } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to write: ", e);
+      LOG.log(Level.SEVERE, "Failed to write to path: " + path, e);
     }
 
     // Try to read something
@@ -90,8 +107,20 @@ public class HdfsBackend implements IBackend {
       in.readFully(b);
       String s = new String(b);
       LOG.info(s);
+      in.close();
     } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to read: ", e);
+      LOG.log(Level.SEVERE, "Failed to read from path: " + path, e);
+    }
+
+    // Try to read something
+    try {
+      FSDataInputStream in = fileSystem.open(new Path("/user/mfu/test.yaml"));
+      byte[] b = new byte[content.getBytes().length];
+      in.readFully(b);
+      String s = new String(b);
+      LOG.info(s);
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "Failed to read from path: /user/mfu/test.yaml", e);
     }
 
   }
