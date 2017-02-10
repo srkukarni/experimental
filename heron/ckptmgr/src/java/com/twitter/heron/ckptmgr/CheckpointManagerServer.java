@@ -181,23 +181,25 @@ public class CheckpointManagerServer extends HeronServer {
               .setCheckpointId(request.getCheckpointId())
               .setState(ByteString.EMPTY).build();
 
-
       responseBuilder.setCheckpoint(dummyState);
     } else {
       boolean res = checkpointsBackend.restore(checkpoint);
-      statusCode = res ? Common.StatusCode.OK : Common.StatusCode.NOTOK;
+      if (res) {
+        LOG.info("Get checkpoint successful for " + checkpoint.getCheckpointId() + " "
+            + checkpoint.getComponent() + " " + checkpoint.getInstance());
 
-      responseBuilder.setCheckpoint(checkpoint.checkpoint().getCheckpoint());
+        // Set the checkpoint-state in response
+        responseBuilder.setCheckpoint(checkpoint.checkpoint().getCheckpoint());
+      } else {
+        LOG.info("Get checkpoint not successful for " + checkpoint.getCheckpointId() + " "
+            + checkpoint.getComponent() + " " + checkpoint.getInstance());
+      }
+
+      statusCode = res ? Common.StatusCode.OK : Common.StatusCode.NOTOK;
     }
 
     responseBuilder.setStatus(Common.Status.newBuilder().setStatus(statusCode));
-    if (statusCode.equals(Common.StatusCode.OK)) {
-      LOG.info("Get checkpoint successful for " + checkpoint.getCheckpointId() + " "
-          + checkpoint.getComponent() + " " + checkpoint.getInstance());
-    } else {
-      LOG.info("Get checkpoint not successful for " + checkpoint.getCheckpointId() + " "
-          + checkpoint.getComponent() + " " + checkpoint.getInstance());
-    }
+
 
     sendResponse(rid, channel, responseBuilder.build());
   }
