@@ -15,9 +15,15 @@ java_library(
         "//heron/proto:proto_ckptmgr_java",
         "@com_google_protobuf_protobuf_java//jar",
         "@org_yaml_snakeyaml//jar",
-        # for hdfs-state-backend, the jar should be attached in runtime
-        "@org_apache_hadoop_hadoop_core//jar",
+        # for hdfs-state-backend, these jars should be attached in runtime
+        "@org_apache_hadoop_hadoop_common_2_6_0//jar",
+        "@org_apache_hadoop_hadoop_annotations_2_6_0//jar",
         "@commons_logging_commons_logging//jar",
+        "@commons_collections_commons_collections//jar",
+        "@commons_lang_commons_lang//jar",
+        "@commons_configuration_commons_configuration_1_6//jar",
+        "@org_apache_hadoop_hadoop_auth_2_6_0//jar",
+        "//third_party/java:logging",
     ],
 )
 

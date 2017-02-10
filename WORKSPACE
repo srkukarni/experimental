@@ -117,6 +117,16 @@ maven_jar(
 )
 
 maven_jar(
+  name = "org_apache_hadoop_hadoop_common_2_6_0",
+  artifact = "org.apache.hadoop:hadoop-common:2.6.0",
+)
+
+maven_jar(
+  name = "org_apache_hadoop_hadoop_annotations_2_6_0",
+  artifact = "org.apache.hadoop:hadoop-annotations:2.6.0",
+)
+
+maven_jar(
   name = "org_apache_httpcomponents_http_client",
   artifact = "org.apache.httpcomponents:httpclient:4.5.2",
 )
@@ -335,4 +345,14 @@ maven_jar(
 maven_jar(
   name = "com_101tec_zkclient",
   artifact = "com.101tec:zkclient:0.3"
+)
+
+maven_jar(
+  name = "commons_configuration_commons_configuration_1_6",
+  artifact = "commons-configuration:commons-configuration:1.6",
+)
+
+maven_jar(
+  name = "org_apache_hadoop_hadoop_auth_2_6_0",
+  artifact = "org.apache.hadoop:hadoop-auth:2.6.0",
 )
