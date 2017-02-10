@@ -485,7 +485,8 @@ void TMaster::DeActivateTopology(VCallback<proto::system::StatusCode> cb) {
 }
 
 void TMaster::CleanStatefulCheckpoint(VCallback<proto::system::StatusCode> _cb) {
-  int* nreplies = new int;
+  std::map<std::string, StMgrState*>::size_type* nreplies =
+    new std::map<std::string, StMgrState*>::size_type;
   *nreplies = 0;
   auto callback = [this, _cb, nreplies](proto::system::StatusCode code) {
     *nreplies = *nreplies + 1;
