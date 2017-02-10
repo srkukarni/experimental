@@ -59,6 +59,8 @@ public class HdfsBackend implements IBackend {
 
     try {
       fileSystem = FileSystem.get(hadoopConfig);
+      LOG.info("URI: " + fileSystem.getUri());
+      LOG.info("Home dir: " + fileSystem.getHomeDirectory());
     } catch (IOException e) {
       throw new RuntimeException("Failed to get hadoop file system", e);
     }
