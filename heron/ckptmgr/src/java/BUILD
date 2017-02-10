@@ -13,7 +13,8 @@ java_library(
         "//heron/common/src/java:common-java",
         "//heron/proto:proto_common_java",
         "//heron/proto:proto_ckptmgr_java",
-        "//third_party/java:hadoop-core",  # for hdfs-state-backend
+        # for hdfs-state-backend, the jar should be attached in runtime
+        "@org_apache_hadoop_hadoop_core//jar",
         "@com_google_protobuf_protobuf_java//jar",
         "@org_yaml_snakeyaml//jar",
     ],
