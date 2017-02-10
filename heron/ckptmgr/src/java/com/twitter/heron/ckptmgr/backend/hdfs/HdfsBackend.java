@@ -53,9 +53,11 @@ public class HdfsBackend implements IBackend {
 
     // TODO(mfu): Make it work with passing the config folder from classpath
     Configuration hadoopConfig = new Configuration();
+    LOG.info("before. hadoop config: " + hadoopConfig.toString());
     hadoopConfig.addResource(new Path(hdfsConfigDir + "core-site.xml"));
     hadoopConfig.addResource(new Path(hdfsConfigDir + "hdfs-site.xml"));
     hadoopConfig.addResource(new Path(hdfsConfigDir + "mapred-site.xml"));
+    LOG.info("after. hadoop config: " + hadoopConfig.toString());
 
     try {
       fileSystem = FileSystem.get(hadoopConfig);
