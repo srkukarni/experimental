@@ -3,6 +3,6 @@ stateful-backend:    hdfs-backend
 
 hdfs-backend:
   class: "com.twitter.heron.ckptmgr.backend.hdfs.HdfsBackend"
-  root.path:     "/user/mfu/"
+  root.path:     "/user/mfu/checkpoints"
   hdfs.config.dir: "/hadoop/config/folder"
   hadoop.classpath: ""

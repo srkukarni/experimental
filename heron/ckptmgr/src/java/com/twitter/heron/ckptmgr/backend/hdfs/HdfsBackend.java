@@ -61,6 +61,39 @@ public class HdfsBackend implements IBackend {
     } catch (IOException e) {
       throw new RuntimeException("Failed to get hadoop file system", e);
     }
+
+
+    // For test
+    if (!ensureDirExists(checkpointRootPath)) {
+      LOG.severe("Failed to ensure root path: " + checkpointRootPath);
+    }
+
+
+    Path path = new Path("/user/mfu/test-data");
+
+
+    // Trey to write something
+    String content = "WO cao ni ma bi";
+    try {
+      FSDataOutputStream out = fileSystem.create(path);
+      out.write(content.getBytes());
+      out.flush();
+      out.close();
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "Failed to write: ", e);
+    }
+
+    // Try to read something
+    try {
+      FSDataInputStream in = fileSystem.open(path);
+      byte[] b = new byte[content.getBytes().length];
+      in.readFully(b);
+      String s = new String(b);
+      LOG.info(s);
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "Failed to read: ", e);
+    }
+
   }
 
   @Override
