@@ -2,6 +2,8 @@ licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
+load("/tools/rules/jarjar_rules", "jarjar_binary")
+
 java_library(
     name = "ckptmgr-java",
     srcs = glob(
@@ -39,9 +41,17 @@ java_binary(
     ],
 )
 
-genrule(
+jarjar_binary(
     name = "heron-ckptmgr",
-    srcs = [":ckptmgr-unshaded_deploy.jar"],
-    outs = ["heron-ckptmgr.jar"],
-    cmd  = "cp $< $@",
+    src = ":ckptmgr-unshaded_deploy.jar",
+    shade = "shade.conf",
+    deps = ["@org_sonatype_plugins_jarjar_maven_plugin//jar"]
 )
+
+#genrule(
+#    name = "heron-ckptmgr",
+#    srcs = [":ckptmgr-unshaded_deploy.jar"],
+#    outs = ["heron-ckptmgr.jar"],
+#    cmd  = "cp $< $@",
+#)
+#
