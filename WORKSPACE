@@ -117,13 +117,13 @@ maven_jar(
 )
 
 maven_jar(
-  name = "org_apache_hadoop_hadoop_common_2_6_0",
-  artifact = "org.apache.hadoop:hadoop-common:2.6.0",
+  name = "org_apache_hadoop_hadoop_common_2_6_1",
+  artifact = "org.apache.hadoop:hadoop-common:2.6.1",
 )
 
 maven_jar(
-  name = "org_apache_hadoop_hadoop_annotations_2_6_0",
-  artifact = "org.apache.hadoop:hadoop-annotations:2.6.0",
+  name = "org_apache_hadoop_hadoop_annotations_2_6_1",
+  artifact = "org.apache.hadoop:hadoop-annotations:2.6.1",
 )
 
 maven_jar(
@@ -353,6 +353,6 @@ maven_jar(
 )
 
 maven_jar(
-  name = "org_apache_hadoop_hadoop_auth_2_6_0",
-  artifact = "org.apache.hadoop:hadoop-auth:2.6.0",
+  name = "org_apache_hadoop_hadoop_auth_2_6_1",
+  artifact = "org.apache.hadoop:hadoop-auth:2.6.1",
 )
