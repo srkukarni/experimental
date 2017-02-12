@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -53,80 +52,17 @@ public class HdfsBackend implements IBackend {
 
     // TODO(mfu): Make it work with passing the config folder from classpath
     Configuration hadoopConfig = new Configuration();
-    LOG.info("before. hadoop config: " + hadoopConfig.toString());
-    hadoopConfig.addResource(new Path(hdfsConfigDir + "core-site.xml"));
-    hadoopConfig.addResource(new Path(hdfsConfigDir + "hdfs-site.xml"));
-    hadoopConfig.addResource(new Path(hdfsConfigDir + "mapred-site.xml"));
-    LOG.info("after. hadoop config: " + hadoopConfig.toString());
+    // Passing config folder via classpath
+//    hadoopConfig.addResource(new Path(hdfsConfigDir + "core-site.xml"));
+//    hadoopConfig.addResource(new Path(hdfsConfigDir + "hdfs-site.xml"));
+//    hadoopConfig.addResource(new Path(hdfsConfigDir + "mapred-site.xml"));
 
     try {
       fileSystem = FileSystem.get(hadoopConfig);
-      LOG.info("URI: " + fileSystem.getUri());
-      LOG.info("Home dir: " + fileSystem.getHomeDirectory());
+      LOG.info("URI: " + fileSystem.getUri() + " ; Home Dir: " + fileSystem.getHomeDirectory());
     } catch (IOException e) {
       throw new RuntimeException("Failed to get hadoop file system", e);
     }
-
-
-    // For test
-    if (!ensureDirExists(checkpointRootPath)) {
-      LOG.severe("Failed to ensure root path: " + checkpointRootPath);
-    }
-
-    // List
-    try {
-      for (FileStatus fs : fileSystem.listStatus(new Path("/user/mfu"))) {
-        LOG.info(fs.getPath().toString());
-      }
-    } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to ls the path: " + "/user/mfu", e);
-    }
-
-    try {
-      boolean res = fileSystem.exists(new Path("/user/mfu/test.yaml"));
-      LOG.info("exists? " + res);
-    } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to exists /user/mfu/test.yaml", e);
-    }
-
-
-    Path path = new Path("/user/mfu/test-data");
-
-
-    // Trey to write something
-    String content = "WO cao ni ma bi";
-    try {
-      FSDataOutputStream out = fileSystem.create(path);
-      out.write(content.getBytes());
-      out.flush();
-      out.close();
-    } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to write to path: " + path, e);
-    }
-
-    // Try to read something
-    try {
-      FSDataInputStream in = fileSystem.open(path);
-      byte[] b = new byte[content.getBytes().length];
-      in.readFully(b);
-      String s = new String(b);
-      LOG.info(s);
-      in.close();
-    } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to read from path: " + path, e);
-    }
-
-    // Try to read something
-    try {
-      FSDataInputStream in = fileSystem.open(new Path("/user/mfu/test.yaml"));
-      byte[] b = new byte[content.getBytes().length];
-      in.readFully(b);
-      String s = new String(b);
-      LOG.info(s);
-    } catch (IOException e) {
-      LOG.log(Level.SEVERE, "Failed to read from path: /user/mfu/test.yaml", e);
-    }
-
   }
 
   @Override
@@ -138,6 +74,8 @@ public class HdfsBackend implements IBackend {
   public boolean store(Checkpoint checkpoint) {
     Path path = new Path(getCheckpointPath(checkpoint));
 
+    // We need to ensure the existence of directories structure,
+    // since it is not guaranteed that FileSystem.create(..) always creates parents' dirs.
     if (!ensureDirExists(getCheckpointDir(checkpoint))) {
       LOG.warning("Failed to ensure dir exists: " + getCheckpointDir(checkpoint));
       return false;
