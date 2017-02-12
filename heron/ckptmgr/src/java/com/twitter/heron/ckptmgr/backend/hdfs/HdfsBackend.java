@@ -15,6 +15,8 @@
 package com.twitter.heron.ckptmgr.backend.hdfs;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,6 +65,18 @@ public class HdfsBackend implements IBackend {
     } catch (IOException e) {
       throw new RuntimeException("Failed to get hadoop file system", e);
     }
+
+    LOG.info("Class path:");
+    //Get the System Classloader
+    ClassLoader sysClassLoader = ClassLoader.getSystemClassLoader();
+
+    //Get the URLs
+    URL[] urls = ((URLClassLoader) sysClassLoader).getURLs();
+
+    for (int i = 0; i < urls.length; i++) {
+      LOG.info(urls[i].getFile());
+    }
+    LOG.info("class path ----end---");
   }
 
   @Override
