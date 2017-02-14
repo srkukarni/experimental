@@ -2,5 +2,6 @@
 stateful-backend:    local-fs-backend
 
 local-fs-backend:
-  class: "com.twitter.heron.ckptmgr.backend.localfs.LocalFS"
-  root.path:     ./checkpoints
+  class:             "com.twitter.heron.ckptmgr.backend.localfs.LocalFS"
+  classpath:         ""
+  root.path:         "./checkpoints"

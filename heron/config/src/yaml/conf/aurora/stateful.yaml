@@ -1,8 +1,7 @@
-# indicate the type of storage for checkpoint is local file system
+# indicate the type of storage for checkpoint is hdfs
 stateful-backend:    hdfs-backend
 
 hdfs-backend:
-  class: "com.twitter.heron.ckptmgr.backend.hdfs.HdfsBackend"
-  root.path:     "/user/mfu/checkpoints"
-  hdfs.config.dir: "/hadoop/config/folder"
-  hadoop.classpath: ""
+  class:             "com.twitter.heron.ckptmgr.backend.hdfs.HdfsBackend"
+  classpath:         "$(hadoop --config /path/to/configs classpath)"
+  root.path:         "/user/heron/checkpoints"

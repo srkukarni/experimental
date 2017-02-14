@@ -15,8 +15,6 @@
 package com.twitter.heron.ckptmgr.backend.hdfs;
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,32 +30,27 @@ import com.twitter.heron.ckptmgr.backend.IBackend;
 import com.twitter.heron.common.basics.SysUtils;
 import com.twitter.heron.proto.ckptmgr.CheckpointManager;
 
+/**
+ * Note: The hadoop cluster config should be provided through the classpath
+ */
 public class HdfsBackend implements IBackend {
   private static final Logger LOG = Logger.getLogger(HdfsBackend.class.getName());
 
   private static final String ROOT_PATH_KEY = "root.path";
-  private static final String HDFS_CONFIG_DIR_KEY = "hdfs.config.dir";
-
-  // TODO(mfu): Also need to specify actual hadoop jar in config and append on classpath
 
   private String checkpointRootPath;
-  private String hdfsConfigDir;
-
   private FileSystem fileSystem;
 
   @Override
   public void init(Map<String, Object> conf) {
     LOG.info("Initialing... Config: " + conf.toString());
+    LOG.info("Class path: " + System.getProperty("java.class.path"));
 
-    hdfsConfigDir = (String) conf.get(HDFS_CONFIG_DIR_KEY);
     checkpointRootPath = (String) conf.get(ROOT_PATH_KEY);
 
-    // TODO(mfu): Make it work with passing the config folder from classpath
+    // Notice, we pass the config folder via classpath
+    // So hadoop will automatically search config files from classpath
     Configuration hadoopConfig = new Configuration();
-    // Passing config folder via classpath
-//    hadoopConfig.addResource(new Path(hdfsConfigDir + "core-site.xml"));
-//    hadoopConfig.addResource(new Path(hdfsConfigDir + "hdfs-site.xml"));
-//    hadoopConfig.addResource(new Path(hdfsConfigDir + "mapred-site.xml"));
 
     try {
       fileSystem = FileSystem.get(hadoopConfig);
@@ -65,18 +58,6 @@ public class HdfsBackend implements IBackend {
     } catch (IOException e) {
       throw new RuntimeException("Failed to get hadoop file system", e);
     }
-
-    LOG.info("Class path:");
-    //Get the System Classloader
-    ClassLoader sysClassLoader = ClassLoader.getSystemClassLoader();
-
-    //Get the URLs
-    URL[] urls = ((URLClassLoader) sysClassLoader).getURLs();
-
-    for (int i = 0; i < urls.length; i++) {
-      LOG.info(urls[i].getFile());
-    }
-    LOG.info("class path ----end---");
   }
 
   @Override
@@ -131,6 +112,13 @@ public class HdfsBackend implements IBackend {
     return true;
   }
 
+  /**
+   * Ensure the existence of a directory.
+   * Will create the directory if it does not exist.
+   *
+   * @param dir The path of dir to ensure existence
+   * @return true if the directory exists after this call.
+   */
   protected boolean ensureDirExists(String dir) {
     Path path = new Path(dir);
 
