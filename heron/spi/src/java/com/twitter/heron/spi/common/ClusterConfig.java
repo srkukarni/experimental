@@ -67,7 +67,9 @@ public final class ClusterConfig {
         .put(Keys.systemFile(),
             Misc.substitute(heronHome, configPath, Defaults.systemFile()))
         .put(Keys.uploaderFile(),
-            Misc.substitute(heronHome, configPath, Defaults.uploaderFile()));
+            Misc.substitute(heronHome, configPath, Defaults.uploaderFile()))
+        .put(Keys.statefulFile(),
+            Misc.substitute(heronHome, configPath, Defaults.statefulFile()));
     return cb.build();
   }
 
@@ -188,7 +190,8 @@ public final class ClusterConfig {
         .putAll(loadPackingConfig(Context.packingSandboxFile(sandboxConfig)))
         .putAll(loadSchedulerConfig(Context.schedulerSandboxFile(sandboxConfig)))
         .putAll(loadStateManagerConfig(Context.stateManagerSandboxFile(sandboxConfig)))
-        .putAll(loadUploaderConfig(Context.uploaderSandboxFile(sandboxConfig)));
+        .putAll(loadUploaderConfig(Context.uploaderSandboxFile(sandboxConfig)))
+        .putAll(loadStatefulConfig(Context.statefulConfigSandboxFile(sandboxConfig)));
 
     // Add the override config at the end to replace any exisiting configs
     cb.putAll(loadOverrideConfig(Context.overrideSandboxFile(sandboxConfig)));

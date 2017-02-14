@@ -262,6 +262,10 @@ public class Defaults {
     return ConfigDefaults.get("SANDBOX_STATEFUL_YAML");
   }
 
+  public static String statefulFile() {
+    return ConfigDefaults.get("STATEFUL_YAML");
+  }
+
   public static String uploaderSandboxFile() {
     return ConfigDefaults.get("SANDBOX_UPLOADER_YAML");
   }

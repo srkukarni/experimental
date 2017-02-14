@@ -14,6 +14,8 @@
 
 package com.twitter.heron.spi.common;
 
+import java.util.Map;
+
 import com.twitter.heron.common.basics.ByteAmount;
 import com.twitter.heron.common.basics.PackageType;
 
@@ -372,5 +374,13 @@ public class Context {
 
   public static final Boolean isCleanStateCheckpoints(Config cfg) {
     return cfg.getBooleanValue(Keys.IS_CLEAN_STATEFUL_CHECKPOINTS, false);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static final String stateBackendSandboxClassPath(Config config) {
+    String stateBackend = config.getStringValue(Keys.CHECKPOINT_MGR_STATEFUL_BACKEND_ID);
+    Map<String, Object> backendConfig = (Map<String, Object>) config.get(stateBackend);
+    Object o = backendConfig.get("classpath");
+    return o == null ? "" : (String) o;
   }
 }

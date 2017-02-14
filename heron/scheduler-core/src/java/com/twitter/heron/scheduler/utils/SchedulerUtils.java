@@ -237,7 +237,12 @@ public final class SchedulerUtils {
     commands.add(schedulerPort);
     commands.add(Context.pythonInstanceSandboxBinary(config));
     commands.add(Boolean.toString(Context.isStateful(config)));
-    commands.add(Context.ckptmgrSandboxClassPath(config));
+
+    String completeCkptmgrProcessClasspath = new StringBuilder()
+        .append(Context.ckptmgrSandboxClassPath(config)).append(":")
+        .append(Context.stateBackendSandboxClassPath(config))
+        .toString();
+    commands.add(completeCkptmgrProcessClasspath);
     commands.add(ckptmgrPort);
     commands.add(Context.statefulConfigSandboxFile(config));
 

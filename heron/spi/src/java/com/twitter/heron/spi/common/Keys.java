@@ -18,6 +18,7 @@ public class Keys {
   public static final String SCHEDULER_PROPERTIES = "heron.scheduler.properties";
   public static final String SCHEDULER_COMMAND_LINE_PROPERTIES_OVERRIDE_OPTION = "P";
   public static final String IS_CLEAN_STATEFUL_CHECKPOINTS = "is.clean.stateful.checkpoints";
+  public static final String CHECKPOINT_MGR_STATEFUL_BACKEND_ID = "stateful-backend";
 
   protected Keys() {
   }
