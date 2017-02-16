@@ -250,7 +250,7 @@ filegroup(
 
 filegroup(
     name = "hckptmgr",
-    srcs = ["//heron/ckptmgr/src/cpp:heron-ckptmgr"],
+    srcs = ["//heron/ckptmgr/src/java:heron-ckptmgr"],
 )
 
 filegroup(

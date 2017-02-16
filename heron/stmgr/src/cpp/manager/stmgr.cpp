@@ -266,7 +266,7 @@ void StMgr::CreateCheckpointMgrClient() {
   LOG(INFO) << "Creating CheckpointMgr Client at " << IpUtils::getHostName() << ":"
             << checkpoint_manager_port_ << std::endl;
   NetworkOptions client_options;
-  client_options.set_host(IpUtils::getHostName());
+  client_options.set_host("localhost");
   client_options.set_port(checkpoint_manager_port_);
   client_options.set_socket_family(PF_INET);
   client_options.set_max_packet_size(std::numeric_limits<sp_uint32>::max() - 1);

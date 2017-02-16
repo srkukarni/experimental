@@ -87,7 +87,6 @@ public class CheckpointManager {
   }
 
   public static void main(String[] args) throws IOException {
-    System.out.println("Hello World!");
     if (args.length != 9) {
       throw new RuntimeException(
           "Invalid arguments; Usage: java com.twitter.heron.ckptmgr.CheckpointManager "

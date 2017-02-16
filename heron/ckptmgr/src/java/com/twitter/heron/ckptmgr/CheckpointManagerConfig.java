@@ -27,6 +27,7 @@ import com.twitter.heron.common.basics.SysUtils;
 public class CheckpointManagerConfig {
   public static final String CONFIG_KEY_STATEFUL_BACKEND = "stateful-backend";
   public static final String CONFIG_KEY_CLASSNAME = "class";
+  public static final String CONFIG_KEY_CLASSPATH = "classpath";
 
   private final Map<String, Object> backendConfig = new HashMap<>();
 
