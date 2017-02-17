@@ -65,7 +65,7 @@ def id_map(prefix, container_plans, add_zero_id=False):
   return ids
 
 def ckptmgr_map(container_plans):
-  return id_map("ckptmgr", container_plans)
+  return id_map("ckptmgr", container_plans, True)
 
 def stmgr_map(container_plans):
   return id_map("stmgr", container_plans)
@@ -363,6 +363,9 @@ class HeronExecutor(object):
         self.metricsmgr_ids[0],
         self.metrics_sinks_config_file,
         self.metricsmgr_port)
+
+    if self.is_stateful:
+      retval.update(self._get_ckptmgr_process())
 
     return retval
 

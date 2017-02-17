@@ -63,6 +63,8 @@ public class CheckpointManagerServer extends HeronServer {
     registerOnRequest(CheckpointManager.SaveInstanceStateRequest.newBuilder());
 
     registerOnRequest(CheckpointManager.GetInstanceStateRequest.newBuilder());
+
+    registerOnRequest(CheckpointManager.CleanStatefulCheckpointRequest.newBuilder());
   }
 
   @Override
@@ -81,9 +83,36 @@ public class CheckpointManagerServer extends HeronServer {
     } else if (request instanceof CheckpointManager.GetInstanceStateRequest) {
       handleGetInstanceStateRequest(
           rid, channel, (CheckpointManager.GetInstanceStateRequest) request);
+    } else if (request instanceof CheckpointManager.CleanStatefulCheckpointRequest) {
+      handleCleanStatefulCheckpointRequest(
+          rid, channel, (CheckpointManager.CleanStatefulCheckpointRequest) request);
     } else {
       LOG.severe("Unknown kind of request: " + request.getClass().getName());
     }
+  }
+
+  protected void handleCleanStatefulCheckpointRequest(
+      REQID rid,
+      SocketChannel channel,
+      CheckpointManager.CleanStatefulCheckpointRequest request
+  ) {
+    LOG.info("Got a clean request from " + request.toString() + " host:port "
+        + channel.socket().getRemoteSocketAddress());
+
+    boolean res = checkpointsBackend.dispose(request, topologyName);
+    Common.StatusCode statusCode = res ? Common.StatusCode.OK : Common.StatusCode.NOTOK;
+
+    CheckpointManager.CleanStatefulCheckpointResponse.Builder responseBuilder =
+        CheckpointManager.CleanStatefulCheckpointResponse.newBuilder();
+    responseBuilder.setStatus(Common.Status.newBuilder().setStatus(statusCode));
+
+    if (res) {
+      LOG.info("Dispose checkpoint successful");
+    } else {
+      LOG.info("Dispose checkpoint not successful");
+    }
+
+    sendResponse(rid, channel, responseBuilder.build());
   }
 
   protected void handleStMgrRegisterRequest(
