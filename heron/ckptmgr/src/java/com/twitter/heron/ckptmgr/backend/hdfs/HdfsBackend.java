@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -112,6 +113,54 @@ public class HdfsBackend implements IBackend {
     return true;
   }
 
+  @Override
+  public boolean dispose(CheckpointManager.CleanStatefulCheckpointRequest request,
+                         String topologyName) {
+    String topologyCheckpointRoot = getTopologyCheckpointRoot(topologyName);
+    Path topologyRootPath = new Path(topologyCheckpointRoot);
+
+
+    if (request.hasCleanAllCheckpoints() && request.getCleanAllCheckpoints()) {
+      // Clean all checkpoint states
+      try {
+        fileSystem.delete(topologyRootPath, true);
+        if (fileSystem.exists(topologyRootPath)) {
+          return false;
+        }
+      } catch (IOException e) {
+        LOG.log(Level.SEVERE, "Failed to delete: " + topologyCheckpointRoot, e);
+        return false;
+      }
+    } else {
+      String oldestCheckpointPreserved = request.getOldestCheckpointPreserved();
+      try {
+        FileStatus[] statuses = fileSystem.listStatus(topologyRootPath);
+        for (FileStatus status : statuses) {
+          String name = status.getPath().getName();
+          if (name.compareTo(topologyCheckpointRoot) < 0) {
+            fileSystem.delete(status.getPath(), true);
+          }
+        }
+
+        // Do a double check. Now all checkpoints with smaller checkpoint id should be cleaned
+        statuses = fileSystem.listStatus(topologyRootPath);
+        for (FileStatus status : statuses) {
+          String name = status.getPath().getName();
+          if (name.compareTo(topologyCheckpointRoot) < 0) {
+            return false;
+          }
+        }
+
+      } catch (IOException e) {
+        LOG.log(Level.SEVERE, "Failed to clean to: " + oldestCheckpointPreserved, e);
+        return false;
+      }
+    }
+
+
+    return true;
+  }
+
   /**
    * Ensure the existence of a directory.
    * Will create the directory if it does not exist.
@@ -135,13 +184,19 @@ public class HdfsBackend implements IBackend {
     return true;
   }
 
-  protected String getCheckpointDir(Checkpoint checkpoint) {
+  protected String getTopologyCheckpointRoot(String topologyName) {
     return new StringBuilder()
         .append(checkpointRootPath).append("/")
+        .append(topologyName)
+        .toString();
+  }
+
+  protected String getCheckpointDir(Checkpoint checkpoint) {
+    return new StringBuilder()
+        .append(getTopologyCheckpointRoot(checkpoint.getTopologyName())).append("/")
         .append(checkpoint.getCheckpointId()).append("/")
         .append(checkpoint.getComponent())
         .toString();
-
   }
 
   protected String getCheckpointPath(Checkpoint checkpoint) {

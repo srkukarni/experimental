@@ -16,6 +16,8 @@ package com.twitter.heron.ckptmgr.backend;
 
 import java.util.Map;
 
+import com.twitter.heron.proto.ckptmgr.CheckpointManager;
+
 public interface IBackend {
   /**
    * Initialize the Checkpoints Backend
@@ -37,7 +39,13 @@ public interface IBackend {
   // Retrieve the checkpoint
   boolean restore(Checkpoint checkpoint);
 
-//  // Dispose the checkpoint
-//  // TODO(mfu): Define the API
-//  boolean dispose();
+  // TODO(mfu): We should refactor all interfaces in IBackend,
+  // TODO(mfu): instead providing Class Checkpoint, we should provide an Context class,
+  // TODO(mfu): It should:
+  // TODO(mfu): 1. Provide meta data access, like topologyName
+  // TODO(mfu): 2. Provide utils method to parse the protobuf object, like getTaskId()
+  // TODO(mfu): 3. Common methods, like getCheckpointDir()
+  // Dispose the checkpoint
+  boolean dispose(CheckpointManager.CleanStatefulCheckpointRequest request,
+                  String topologyName);
 }

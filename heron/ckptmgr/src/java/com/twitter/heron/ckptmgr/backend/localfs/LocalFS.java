@@ -14,6 +14,7 @@
 
 package com.twitter.heron.ckptmgr.backend.localfs;
 
+import java.io.File;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,13 +93,54 @@ public class LocalFS implements IBackend {
     return false;
   }
 
-  protected String getCheckpointDir(Checkpoint checkpoint) {
+  @Override
+  public boolean dispose(CheckpointManager.CleanStatefulCheckpointRequest request,
+                         String topologyName) {
+    String topologyCheckpointRoot = getTopologyCheckpointRoot(topologyName);
+
+    if (request.hasCleanAllCheckpoints() && request.getCleanAllCheckpoints()) {
+      // Clean all checkpoint states
+      FileUtils.deleteDir(topologyCheckpointRoot);
+
+      if (FileUtils.isDirectoryExists(topologyCheckpointRoot)) {
+        return false;
+      }
+
+    } else {
+      String oldestCheckpointPreserved = request.getOldestCheckpointPreserved();
+
+      String[] names = new File(topologyCheckpointRoot).list();
+      for (String name : names) {
+        if (name.compareTo(oldestCheckpointPreserved) < 0) {
+          FileUtils.deleteDir(new File(topologyCheckpointRoot, name));
+        }
+      }
+
+      // Do a double check. Now all checkpoints with smaller checkpoint id should be cleaned
+      names = new File(topologyCheckpointRoot).list();
+      for (String name : names) {
+        if (name.compareTo(oldestCheckpointPreserved) < 0) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  protected String getTopologyCheckpointRoot(String topologyName) {
     return new StringBuilder()
         .append(checkpointRootPath).append("/")
+        .append(topologyName)
+        .toString();
+  }
+
+  protected String getCheckpointDir(Checkpoint checkpoint) {
+    return new StringBuilder()
+        .append(getTopologyCheckpointRoot(checkpoint.getTopologyName())).append("/")
         .append(checkpoint.getCheckpointId()).append("/")
         .append(checkpoint.getComponent())
         .toString();
-
   }
 
   protected String getCheckpointPath(Checkpoint checkpoint) {
