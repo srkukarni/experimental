@@ -249,17 +249,12 @@ void StMgr::CreateTMasterClient(proto::tmaster::TMasterLocation* tmasterLocation
        [this](sp_string checkpoint_tag) {
     this->StartStatefulProcessing(checkpoint_tag);
   };
-  auto clean_stateful_checkpoint_watch =
-       [this](sp_string _oldest_checkpoint, bool _clean_all) {
-    this->CleanStatefulCheckpoint(_oldest_checkpoint, _clean_all);
-  };
 
   tmaster_client_ = new TMasterClient(eventLoop_, master_options, stmgr_id_, stmgr_port_,
                                       shell_port_, std::move(pplan_watch),
                                       std::move(stateful_checkpoint_watch),
                                       std::move(restore_topology_watch),
-                                      std::move(start_stateful_watch),
-                                      std::move(clean_stateful_checkpoint_watch));
+                                      std::move(start_stateful_watch));
 }
 
 void StMgr::CreateCheckpointMgrClient() {
@@ -276,13 +271,10 @@ void StMgr::CreateCheckpointMgrClient() {
                            std::placeholders::_1, std::placeholders::_2,
                            std::placeholders::_3, std::placeholders::_4);
   auto ckpt_watcher = std::bind(&StMgr::HandleCkptMgrRegistration, this);
-  auto clean_watcher = std::bind(&StMgr::CleanStatefulCheckpointResponse, this,
-                           std::placeholders::_1);
   checkpoint_manager_client_ = new CkptMgrClient(eventLoop_, client_options,
                                                  topology_name_, topology_id_,
                                                  ckptmgr_id_, stmgr_id_,
-                                                 save_watcher, get_watcher, ckpt_watcher,
-                                                 clean_watcher);
+                                                 save_watcher, get_watcher, ckpt_watcher);
   checkpoint_manager_client_->Start();
 }
 
@@ -926,25 +918,6 @@ void StMgr::HandleRestoreInstanceStateResponse(sp_int32 _task_id,
 void StMgr::HandleStatefulRestoreDone(proto::system::StatusCode _status,
                                       std::string _checkpoint_id, sp_int64 _restore_txid) {
   tmaster_client_->SendRestoreTopologyStateResponse(_status, _checkpoint_id, _restore_txid);
-}
-
-void StMgr::CleanStatefulCheckpoint(const std::string& _old_ckpt, bool _clean_all) {
-  LOG(INFO) << "Got a CleanStatefulCheckpoint Request for " << _old_ckpt
-            << " " << _clean_all;
-  if (checkpoint_manager_client_) {
-    checkpoint_manager_client_->CleanStatefulCheckpoint(_old_ckpt, _clean_all);
-  } else {
-    LOG(INFO) << "We are not connected to checkpoint manager, so ignoring...";
-    proto::system::Status status;
-    status.set_status(proto::system::NOTOK);
-    tmaster_client_->SendCleanStatefulCheckpointResponse(status);
-  }
-}
-
-void StMgr::CleanStatefulCheckpointResponse(const proto::system::Status& _status) {
-  LOG(INFO) << "Got a Clean StatefulCheckpoint Response from ckpmgr with status "
-            << _status.status();
-  tmaster_client_->SendCleanStatefulCheckpointResponse(_status);
 }
 }  // namespace stmgr
 }  // namespace heron
