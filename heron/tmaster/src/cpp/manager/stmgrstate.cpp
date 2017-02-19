@@ -143,12 +143,5 @@ bool StMgrState::TimedOut() const {
       config::HeronInternalsConfigReader::Instance()->GetHeronTmasterStmgrStateTimeoutSec();
   return (time(NULL) - last_heartbeat_) > timeout;
 }
-
-void StMgrState::CleanAllStatefulCheckpoints() {
-  LOG(INFO) << "Sending CleanAllStatefulCheckpoint message to stmgr " << stmgr_->id();
-  proto::ckptmgr::CleanStatefulCheckpointRequest message;
-  message.set_clean_all_checkpoints(true);
-  server_->SendMessage(connection_, message);
-}
 }  // namespace tmaster
 }  // namespace heron

@@ -37,6 +37,7 @@ class StatsInterface;
 class TMasterServer;
 class TMetricsCollector;
 class StatefulHelper;
+class CkptMgrClient;
 
 typedef std::map<std::string, StMgrState*> StMgrMap;
 typedef StMgrMap::iterator StMgrMapIter;
@@ -47,7 +48,8 @@ class TMaster {
   TMaster(const std::string& _zk_hostport, const std::string& _topology_name,
           const std::string& _topology_id, const std::string& _topdir,
           const std::vector<std::string>& _stmgrs, sp_int32 _controller_port, sp_int32 _master_port,
-          sp_int32 _stats_port, sp_int32 metricsMgrPort, const std::string& metrics_sinks_yaml,
+          sp_int32 _stats_port, sp_int32 metricsMgrPort, sp_int32 _ckptmgr_port,
+          const std::string& metrics_sinks_yaml,
           const std::string& _myhost_name, EventLoop* eventLoop);
 
   virtual ~TMaster();
@@ -68,7 +70,9 @@ class TMaster {
   proto::system::StatusCode RemoveStMgrConnection(Connection* _conn);
 
   // Called by http server upon receiving a user message to cleanup the state
-  void CleanStatefulCheckpoint(VCallback<proto::system::StatusCode> cb);
+  void CleanAllStatefulCheckpoint();
+  // Called by ckptmgr client upon receiving CleanStatefulCheckpointResponse
+  void HandleCleanStatefulCheckpointResponse(proto::system::StatusCode);
 
   // Accessors
   const proto::system::PhysicalPlan* getPhysicalPlan() const { return current_pplan_; }
@@ -197,6 +201,9 @@ class TMaster {
   sp_int32 mMetricsMgrPort;
   // Metrics Manager
   heron::common::MetricsMgrSt* mMetricsMgrClient;
+
+  // Ckpt Manager
+  CkptMgrClient* ckptmgr_client_;
 
   // Process related metrics
   heron::common::MultiAssignableMetric* tmasterProcessMetrics;

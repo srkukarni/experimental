@@ -34,6 +34,9 @@ class TController {
   // Starts the controller
   sp_int32 Start();
 
+  // Called by the master when it gets response from ckptmgr
+  void HandleCleanStatefulCheckpointResponse(proto::system::StatusCode _status);
+
  private:
   // Handlers for the requests
   // In all the below handlers, the incoming _request
@@ -53,6 +56,9 @@ class TController {
 
   // our tmaster
   TMaster* tmaster_;
+
+  // The callback to be called upon receiving cleanstateful response
+  std::function<void(proto::system::StatusCode)> clean_stateful_checkpoint_cb_;
 };
 }  // namespace tmaster
 }  // namespace heron

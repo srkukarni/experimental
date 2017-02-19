@@ -169,12 +169,25 @@ void TController::HandleCleanStatefulCheckpointRequest(IncomingHTTPRequest* requ
     delete request;
     return;
   }
+  if (clean_stateful_checkpoint_cb_) {
+    LOG(ERROR) << "Another clean request is already pending";
+    http_server_->SendErrorReply(request, 400);
+    delete request;
+    return;
+  }
 
-  auto cb = [request, this](proto::system::StatusCode status) {
+  clean_stateful_checkpoint_cb_ = [request, this](proto::system::StatusCode status) {
     this->HandleCleanStatefulCheckpointRequestDone(request, status);
   };
 
-  tmaster_->CleanStatefulCheckpoint(std::move(cb));
+  tmaster_->CleanAllStatefulCheckpoint();
+}
+
+void TController::HandleCleanStatefulCheckpointResponse(proto::system::StatusCode _status) {
+  if (clean_stateful_checkpoint_cb_) {
+    clean_stateful_checkpoint_cb_(_status);
+    clean_stateful_checkpoint_cb_ = NULL;
+  }
 }
 
 void TController::HandleCleanStatefulCheckpointRequestDone(IncomingHTTPRequest* request,

@@ -59,17 +59,32 @@ message StartStmgrStatefulProcessing {
   required string checkpoint_id = 1;
 }
 
-// Message sent by tmaster to stmgr to cleanup
-// old checkpoint state. Note that this message
-// is also used between stmgr -> ckptmgr
+// tmaster -> ckptmgr messages
+
+// This is the message that a tmaster sends
+// when it wants to establish the connection
+// with checkpoint manager
+message RegisterTMasterRequest{
+  required string topology_name = 1;
+  required string topology_id = 2;
+}
+
+// This is the message that checkpoint manager
+// sends when it receives the register request
+// from tmaster
+message RegisterTMasterResponse {
+  required heron.proto.system.Status status = 1;
+}
+
+// Message sent by tmaster to ckptmgr to cleanup
+// old checkpoint state.
 message CleanStatefulCheckpointRequest {
   // Any checkpoints older than this can be cleaned
   optional string oldest_checkpoint_preserved = 1;
   optional bool clean_all_checkpoints = 2 [default = false];
 }
 
-// Message sent by stmgr to tmaster about the cleanup request
-// Note that this message is also used between ckptmgr -> stmgr
+// Message sent by ckptmgr to tmaster about the cleanup request
 message CleanStatefulCheckpointResponse {
   required heron.proto.system.Status status = 1;
 }

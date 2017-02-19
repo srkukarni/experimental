@@ -43,8 +43,6 @@ class TMasterServer : public Server {
                 TMaster* _tmaster);
   virtual ~TMasterServer();
 
-  void SetCleanStatefulCheckpointCb(VCallback<proto::system::StatusCode> _cb);
-
  protected:
   virtual void HandleNewConnection(Connection* newConnection);
   virtual void HandleConnectionClose(Connection* connection, NetworkErrorCode status);
@@ -61,14 +59,10 @@ class TMasterServer : public Server {
                                      proto::ckptmgr::RestoreTopologyStateResponse* _message);
   void HandleResetTopologyStateMessage(Connection*,
                                      proto::ckptmgr::ResetTopologyState* _message);
-  void HandleCleanStatefulCheckpointResponse(Connection*,
-                                    proto::ckptmgr::CleanStatefulCheckpointResponse* _message);
 
   // our tmaster
   TMetricsCollector* collector_;
   TMaster* tmaster_;
-
-  VCallback<proto::system::StatusCode> clean_stateful_checkpoint_cb_;
 };
 }  // namespace tmaster
 }  // namespace heron

@@ -28,6 +28,7 @@
 #include "manager/tmasterserver.h"
 #include "manager/stmgrstate.h"
 #include "manager/stateful-helper.h"
+#include "manager/ckptmgr-client.h"
 #include "processor/processor.h"
 #include "proto/messages.h"
 #include "basics/basics.h"
@@ -55,6 +56,7 @@ TMaster::TMaster(const std::string& _zk_hostport, const std::string& _topology_n
                  const std::string& _topology_id, const std::string& _topdir,
                  const std::vector<std::string>& _stmgrs, sp_int32 _controller_port,
                  sp_int32 _master_port, sp_int32 _stats_port, sp_int32 metricsMgrPort,
+                 sp_int32 _ckptmgr_port,
                  const std::string& _metrics_sinks_yaml, const std::string& _myhost_name,
                  EventLoop* eventLoop) {
   start_time_ = std::chrono::high_resolution_clock::now();
@@ -86,6 +88,18 @@ TMaster::TMaster(const std::string& _zk_hostport, const std::string& _topology_n
 
   tmasterProcessMetrics = new heron::common::MultiAssignableMetric();
   mMetricsMgrClient->register_metric(METRIC_PREFIX, tmasterProcessMetrics);
+
+  // Establish connection to ckptmgr
+  NetworkOptions ckpt_options;
+  ckpt_options.set_host(myhost_name_);
+  ckpt_options.set_port(_ckptmgr_port);
+  ckpt_options.set_max_packet_size(config::HeronInternalsConfigReader::Instance()
+                                         ->GetHeronTmasterNetworkMasterOptionsMaximumPacketMb() *
+                                     1024 * 1024);
+  ckptmgr_client_ = new CkptMgrClient(eventLoop_, ckpt_options,
+                                      _topology_name, _topology_id,
+                                      std::bind(&TMaster::HandleCleanStatefulCheckpointResponse,
+                                      this, std::placeholders::_1));
 
   // We will keep the list of stmgrs with us.
   // In case a assignment already exists, we will throw this
@@ -169,6 +183,7 @@ TMaster::~TMaster() {
   delete mMetricsMgrClient;
   delete tmasterProcessMetrics;
   delete stateful_helper_;
+  delete ckptmgr_client_;
 }
 
 void TMaster::UpdateProcessMetrics(EventLoop::Status) {
@@ -484,22 +499,12 @@ void TMaster::DeActivateTopology(VCallback<proto::system::StatusCode> cb) {
   state_mgr_->SetPhysicalPlan(*new_pplan, std::move(callback));
 }
 
-void TMaster::CleanStatefulCheckpoint(VCallback<proto::system::StatusCode> _cb) {
-  std::map<std::string, StMgrState*>::size_type* nreplies =
-    new std::map<std::string, StMgrState*>::size_type;
-  *nreplies = 0;
-  auto callback = [this, _cb, nreplies](proto::system::StatusCode code) {
-    *nreplies = *nreplies + 1;
-    if (*nreplies >= stmgrs_.size()) {
-      // TODO(sanjeev): Pass the right status code here
-      _cb(proto::system::OK);
-      delete nreplies;
-    }
-  };
-  master_->SetCleanStatefulCheckpointCb(_cb);
-  for (auto stmgr : stmgrs_) {
-    stmgr.second->CleanAllStatefulCheckpoints();
-  }
+void TMaster::CleanAllStatefulCheckpoint() {
+  ckptmgr_client_->SendCleanStatefulCheckpointRequest("", true);
+}
+
+void TMaster::HandleCleanStatefulCheckpointResponse(proto::system::StatusCode _status) {
+  controller_->HandleCleanStatefulCheckpointResponse(_status);
 }
 
 proto::system::Status* TMaster::RegisterStMgr(

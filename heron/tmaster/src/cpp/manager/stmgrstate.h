@@ -64,9 +64,6 @@ class StMgrState {
   // Send StartStmgrStatefulProcessing to stmgr
   void SendStartStatefulProcessingMessage(const std::string& _checkpoint_id);
 
-  // Send CleanStatefulCheckpoint message to stmgr
-  void CleanAllStatefulCheckpoints();
-
   bool TimedOut() const;
 
   // getters
