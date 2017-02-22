@@ -31,7 +31,8 @@ import com.twitter.heron.spi.statemgr.SchedulerStateManagerAdaptor;
 public final class TMasterUtils {
   public enum TMasterCommand {
     ACTIVATE,
-    DEACTIVATE
+    DEACTIVATE,
+    CLEANSTATEFULCHECKPOINT
   }
 
   private static final Logger LOG = Logger.getLogger(TMasterUtils.class.getName());
@@ -46,8 +47,8 @@ public final class TMasterUtils {
    */
   @VisibleForTesting
   public static void sendToTMaster(String command, String topologyName,
-                                      SchedulerStateManagerAdaptor stateManager,
-                                      NetworkUtils.TunnelConfig tunnelConfig)
+                                   SchedulerStateManagerAdaptor stateManager,
+                                   NetworkUtils.TunnelConfig tunnelConfig)
       throws TMasterException {
     // fetch the TMasterLocation for the topology
     LOG.fine("Fetching TMaster location for topology: " + topologyName);
@@ -55,7 +56,7 @@ public final class TMasterUtils {
     TopologyMaster.TMasterLocation location = stateManager.getTMasterLocation(topologyName);
     if (location == null) {
       throw new TMasterException("Failed to fetch TMaster location for topology: "
-        + topologyName);
+          + topologyName);
     }
 
     LOG.fine("Fetched TMaster location for topology: " + topologyName);
@@ -73,7 +74,7 @@ public final class TMasterUtils {
   }
 
   private static void sendGetRequest(URL endpoint, String command,
-                                        NetworkUtils.TunnelConfig tunnelConfig)
+                                     NetworkUtils.TunnelConfig tunnelConfig)
       throws TMasterException {
     // create a URL connection
     HttpURLConnection connection =
@@ -96,7 +97,7 @@ public final class TMasterUtils {
       } else {
         throw new TMasterException(
             String.format("Non OK HTTP response %d from TMaster for command %s",
-            responseCode, command));
+                responseCode, command));
       }
     } catch (IOException e) {
       throw new TMasterException(String.format(
@@ -116,7 +117,7 @@ public final class TMasterUtils {
 
     if (plan == null) {
       throw new TMasterException(String.format(
-        "Failed to get physical plan for topology '%s'", topologyName));
+          "Failed to get physical plan for topology '%s'", topologyName));
     }
 
     return plan.getTopology().getState();
@@ -151,5 +152,16 @@ public final class TMasterUtils {
 
     LOG.log(Level.INFO,
         "Topology command {0} completed successfully.", topologyStateControlCommand);
+  }
+
+  public static void cleanTopologyStatefulCheckpoint(String topologyName,
+                                                     SchedulerStateManagerAdaptor statemgr,
+                                                     NetworkUtils.TunnelConfig tunnelConfig) {
+    TMasterUtils.sendToTMaster(TMasterCommand.CLEANSTATEFULCHECKPOINT.name().toLowerCase(),
+        topologyName, statemgr, tunnelConfig
+    );
+
+    LOG.log(Level.INFO, "Topology command {0} completed successfully.",
+        TMasterCommand.CLEANSTATEFULCHECKPOINT.name());
   }
 }
