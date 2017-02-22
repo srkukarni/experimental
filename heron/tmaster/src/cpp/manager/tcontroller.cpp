@@ -39,6 +39,12 @@ TController::TController(EventLoop* eventLoop, const NetworkOptions& options, TM
   };
 
   http_server_->InstallCallBack("/deactivate", std::move(cbDeActivate));
+
+  auto cbCleanState = [this](IncomingHTTPRequest* request) {
+    this->HandleCleanStatefulCheckpointRequest(request);
+  };
+
+  http_server_->InstallCallBack("/cleanstatefulcheckpoint", std::move(cbCleanState));
 }
 
 TController::~TController() { delete http_server_; }
