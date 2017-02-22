@@ -45,13 +45,15 @@ StatefulHelper::StatefulHelper(const std::string& _topology_name,
                proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt,
                heron::common::HeronStateMgr* _state_mgr,
                std::chrono::high_resolution_clock::time_point _tmaster_start_time,
-               common::MetricsMgrSt* _metrics_manager_client)
+               common::MetricsMgrSt* _metrics_manager_client,
+               std::function<void(std::string)> _ckpt_save_watcher)
   : topology_name_(_topology_name), ckpt_record_(_ckpt), state_mgr_(_state_mgr),
     metrics_manager_client_(_metrics_manager_client) {
   checkpointer_ = new StatefulCheckpointer(_tmaster_start_time);
   restorer_ = new StatefulRestorer();
   count_metrics_ = new common::MultiCountMetric();
   metrics_manager_client_->register_metric("__stateful_helper", count_metrics_);
+  ckpt_save_watcher_ = _ckpt_save_watcher;
 }
 
 StatefulHelper::~StatefulHelper() {
@@ -154,6 +156,12 @@ void StatefulHelper::HandleCkptSave(proto::ckptmgr::StatefulConsistentCheckpoint
               << " as the new globally consistent checkpoint";
     delete ckpt_record_;
     ckpt_record_ = _new_ckpt;
+    std::string oldest_ckpt = ckpt_record_->most_recent_checkpoint_id();
+    if (ckpt_record_->backup_checkpoint_ids_size() > 0) {
+      oldest_ckpt =
+        ckpt_record_->backup_checkpoint_ids(ckpt_record_->backup_checkpoint_ids_size() - 1);
+    }
+    ckpt_save_watcher_(oldest_ckpt);
   } else {
     LOG(ERROR) << "Error saving " << _new_ckpt->most_recent_checkpoint_id()
               << " as the new globally consistent checkpoint "

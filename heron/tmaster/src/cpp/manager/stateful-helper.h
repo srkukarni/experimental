@@ -42,7 +42,8 @@ class StatefulHelper {
                proto::ckptmgr::StatefulConsistentCheckpoints* _ckpt,
                heron::common::HeronStateMgr* _state_mgr,
                std::chrono::high_resolution_clock::time_point _tmaster_start_time,
-               common::MetricsMgrSt* _metrics_manager_client);
+               common::MetricsMgrSt* _metrics_manager_client,
+               std::function<void(std::string)> _ckpt_save_watcher);
   virtual ~StatefulHelper();
   // Start a new restore process
   void StartRestore(const StMgrMap& _stmgrs, bool _ignore_prev_checkpoints);
@@ -84,6 +85,7 @@ class StatefulHelper {
   StatefulRestorer* restorer_;
   common::MetricsMgrSt* metrics_manager_client_;
   common::MultiCountMetric* count_metrics_;
+  std::function<void(std::string)> ckpt_save_watcher_;
 };
 }  // namespace tmaster
 }  // namespace heron

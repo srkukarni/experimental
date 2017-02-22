@@ -150,6 +150,9 @@ class TMaster {
 
   void UpdateProcessMetrics(EventLoop::Status);
 
+  // Function called when a new stateful ckpt record is saved
+  void HandleStatefulCkptSave(std::string _oldest_ckpt);
+
   // map of active stmgr id to stmgr state
   StMgrMap stmgrs_;
 

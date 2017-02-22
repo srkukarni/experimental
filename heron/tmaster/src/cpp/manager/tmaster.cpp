@@ -310,9 +310,13 @@ void TMaster::SetupStatefulHelper(proto::ckptmgr::StatefulConsistentCheckpoints*
   sp_int64 stateful_checkpoint_interval =
              config::TopologyConfigHelper::GetStatefulCheckpointInterval(*topology_);
   CHECK_GT(stateful_checkpoint_interval, 0);
+
+  auto cb = [this](std::string _oldest_ckptid) {
+    this->HandleStatefulCkptSave(_oldest_ckptid);
+  };
   // Instantiate the stateful restorer/coordinator
   stateful_helper_ = new StatefulHelper(topology_->name(), _ckpt, state_mgr_, start_time_,
-                                        mMetricsMgrClient);
+                                        mMetricsMgrClient, cb);
   LOG(INFO) << "Starting timer to checkpoint state every "
             << stateful_checkpoint_interval << " seconds";
   CHECK_GT(eventLoop_->registerTimer(
@@ -501,6 +505,10 @@ void TMaster::DeActivateTopology(VCallback<proto::system::StatusCode> cb) {
 
 void TMaster::CleanAllStatefulCheckpoint() {
   ckptmgr_client_->SendCleanStatefulCheckpointRequest("", true);
+}
+
+void TMaster::HandleStatefulCkptSave(std::string _oldest_ckpt) {
+  ckptmgr_client_->SendCleanStatefulCheckpointRequest(_oldest_ckpt, false);
 }
 
 void TMaster::HandleCleanStatefulCheckpointResponse(proto::system::StatusCode _status) {
