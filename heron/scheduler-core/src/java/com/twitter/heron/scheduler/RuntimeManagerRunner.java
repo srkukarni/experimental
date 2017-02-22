@@ -150,7 +150,11 @@ public class RuntimeManagerRunner {
     boolean isCleanStatefulCheckpoints = Context.isCleanStateCheckpoints(config);
     if (isCleanStatefulCheckpoints) {
       LOG.info("To kill topology with cleaning the stateful checkpoints");
-      // Add handlers to inform TMaster to clean the stateful checkpoints
+
+      NetworkUtils.TunnelConfig tunnelConfig =
+          NetworkUtils.TunnelConfig.build(config, NetworkUtils.HeronSystem.SCHEDULER);
+      TMasterUtils.cleanTopologyStatefulCheckpoint(topologyName,
+          Runtime.schedulerStateManagerAdaptor(runtime), tunnelConfig);
     } else {
       LOG.info("To kill topology without cleaning the stateful checkpoints");
     }
