@@ -188,12 +188,14 @@ void StartTMaster(EventLoopImpl*& ss, heron::tmaster::TMaster*& tmaster,
                   std::thread*& tmaster_thread, const sp_string& zkhostportlist,
                   const sp_string& topology_name, const sp_string& topology_id,
                   const sp_string& dpath, const std::vector<sp_string>& stmgrs_id_list,
-                  sp_int32 tmaster_port, sp_int32 tmaster_controller_port) {
+                  sp_int32 tmaster_port, sp_int32 tmaster_controller_port,
+                  sp_int32 checkpoint_manager_port) {
   ss = new EventLoopImpl();
   tmaster =
       new heron::tmaster::TMaster(zkhostportlist, topology_name, topology_id, dpath, stmgrs_id_list,
                                   tmaster_controller_port, tmaster_port, tmaster_port + 2,
-                                  tmaster_port + 3, metrics_sinks_config_filename, LOCALHOST, ss);
+                                  tmaster_port + 3, checkpoint_manager_port,
+                                  metrics_sinks_config_filename, LOCALHOST, ss);
   tmaster_thread = new std::thread(StartServer, ss);
   // tmaster_thread->start();
 }
@@ -223,6 +225,7 @@ struct CommonResources {
   sp_int32 tmaster_port_;
   sp_int32 tmaster_controller_port_;
   sp_int32 stmgr_baseport_;
+  sp_int32 checkpoint_manager_port_;
   sp_string zkhostportlist_;
   sp_string topology_name_;
   sp_string topology_id_;
@@ -287,7 +290,8 @@ void StartTMaster(CommonResources& common) {
 
   StartTMaster(tmaster_eventLoop, common.tmaster_, common.tmaster_thread_, common.zkhostportlist_,
                common.topology_name_, common.topology_id_, common.dpath_, common.stmgrs_id_list_,
-               common.tmaster_port_, common.tmaster_controller_port_);
+               common.tmaster_port_, common.tmaster_controller_port_,
+               common.checkpoint_manager_port_);
   common.ss_list_.push_back(tmaster_eventLoop);
 }
 
@@ -351,6 +355,7 @@ void SetUpCommonResources(CommonResources& common) {
   common.tmaster_port_ = 53001;
   common.tmaster_controller_port_ = 53002;
   common.stmgr_baseport_ = 53001;
+  common.checkpoint_manager_port_ = 50000;
   common.topology_name_ = "mytopology";
   common.topology_id_ = "abcd-9999";
   common.num_stmgrs_ = 2;

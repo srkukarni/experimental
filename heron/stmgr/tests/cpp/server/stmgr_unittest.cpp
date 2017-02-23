@@ -185,12 +185,14 @@ void StartTMaster(EventLoopImpl*& ss, heron::tmaster::TMaster*& tmaster,
                   const sp_string& topology_name, const sp_string& topology_id,
                   const sp_string& dpath, const std::vector<sp_string>& stmgrs_id_list,
                   sp_int32 tmaster_port, sp_int32 tmaster_controller_port,
-                  sp_int32 tmaster_stats_port, sp_int32 metrics_mgr_port) {
+                  sp_int32 tmaster_stats_port, sp_int32 metrics_mgr_port,
+                  sp_int32 checkpoint_manager_port) {
   ss = new EventLoopImpl();
   tmaster =
       new heron::tmaster::TMaster(zkhostportlist, topology_name, topology_id, dpath, stmgrs_id_list,
                                   tmaster_controller_port, tmaster_port, tmaster_stats_port,
-                                  metrics_mgr_port, metrics_sinks_config_filename, LOCALHOST, ss);
+                                  metrics_mgr_port, checkpoint_manager_port,
+                                  metrics_sinks_config_filename, LOCALHOST, ss);
   tmaster_thread = new std::thread(StartServer, ss);
 }
 
@@ -386,7 +388,7 @@ void StartTMaster(CommonResources& common) {
   StartTMaster(tmaster_eventLoop, common.tmaster_, common.tmaster_thread_, common.zkhostportlist_,
                common.topology_name_, common.topology_id_, common.dpath_, common.stmgrs_id_list_,
                common.tmaster_port_, common.tmaster_controller_port_, common.tmaster_stats_port_,
-               common.metricsmgr_port_ + 1);
+               common.metricsmgr_port_ + 1, common.checkpoint_manager_port_);
   common.ss_list_.push_back(tmaster_eventLoop);
 }
 
