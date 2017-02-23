@@ -39,7 +39,7 @@ public class CheckpointManagerServer extends HeronServer {
   private final String checkpointMgrId;
   private final IBackend checkpointsBackend;
 
-  private SocketChannel stmgrConnection;
+  private SocketChannel connection;
 
   public CheckpointManagerServer(
       String topologyName, String topologyId, String checkpointMgrId,
@@ -52,13 +52,15 @@ public class CheckpointManagerServer extends HeronServer {
     this.checkpointMgrId = checkpointMgrId;
     this.checkpointsBackend = checkpointsBackend;
 
-    this.stmgrConnection = null;
+    this.connection = null;
 
     registerInitialization();
   }
 
   private void registerInitialization() {
     registerOnRequest(CheckpointManager.RegisterStMgrRequest.newBuilder());
+
+    registerOnRequest(CheckpointManager.RegisterTMasterRequest.newBuilder());
 
     registerOnRequest(CheckpointManager.SaveInstanceStateRequest.newBuilder());
 
@@ -77,6 +79,8 @@ public class CheckpointManagerServer extends HeronServer {
   public void onRequest(REQID rid, SocketChannel channel, Message request) {
     if (request instanceof CheckpointManager.RegisterStMgrRequest) {
       handleStMgrRegisterRequest(rid, channel, (CheckpointManager.RegisterStMgrRequest) request);
+    } else if (request instanceof CheckpointManager.RegisterTMasterRequest) {
+      handleTMasterRegisterRequest(rid, channel, (CheckpointManager.RegisterTMasterRequest) request);
     } else if (request instanceof CheckpointManager.SaveInstanceStateRequest) {
       handleSaveInstanceStateRequest(
           rid, channel, (CheckpointManager.SaveInstanceStateRequest) request);
@@ -115,6 +119,47 @@ public class CheckpointManagerServer extends HeronServer {
     sendResponse(rid, channel, responseBuilder.build());
   }
 
+  protected void handleTMasterRegisterRequest(
+      REQID rid,
+      SocketChannel channel,
+      CheckpointManager.RegisterTMasterRequest request
+  ) {
+    LOG.info("Got a register request from TMaster host:port "
+        + channel.socket().getRemoteSocketAddress());
+
+    CheckpointManager.RegisterTMasterResponse.Builder responseBuilder =
+        CheckpointManager.RegisterTMasterResponse.newBuilder();
+
+    if (!request.getTopologyName().equals(topologyName)) {
+      LOG.severe("The register message was from a different topology: "
+          + request.getTopologyName());
+      responseBuilder.setStatus(Common.Status.newBuilder().setStatus(Common.StatusCode.NOTOK));
+    } else if (!request.getTopologyId().equals(topologyId)) {
+      LOG.severe("The register message was from a different topology id: "
+          + request.getTopologyName());
+      responseBuilder.setStatus(Common.Status.newBuilder().setStatus(Common.StatusCode.NOTOK));
+    } else if (connection != null) {
+      // TODO(mfu): Should we do this?
+      LOG.warning("We already have an active connection from the tmaster "
+          + "Closing existing connection...");
+
+      try {
+        connection.close();
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to close connection from: "
+            + connection.socket().getRemoteSocketAddress());
+      }
+
+      connection = null;
+      responseBuilder.setStatus(Common.Status.newBuilder().setStatus(Common.StatusCode.NOTOK));
+    } else {
+      connection = channel;
+      responseBuilder.setStatus(Common.Status.newBuilder().setStatus(Common.StatusCode.OK));
+    }
+
+    sendResponse(rid, channel, responseBuilder.build());
+  }
+
   protected void handleStMgrRegisterRequest(
       REQID rid,
       SocketChannel channel,
@@ -134,22 +179,22 @@ public class CheckpointManagerServer extends HeronServer {
       LOG.severe("The register message was from a different topology id: "
           + request.getTopologyName());
       responseBuilder.setStatus(Common.Status.newBuilder().setStatus(Common.StatusCode.NOTOK));
-    } else if (stmgrConnection != null) {
+    } else if (connection != null) {
       // TODO(mfu): Should we do this?
       LOG.warning("We already have an active connection from the stmgr "
           + request.getStmgr() + ". Closing existing connection...");
 
       try {
-        stmgrConnection.close();
+        connection.close();
       } catch (IOException e) {
         throw new RuntimeException("Failed to close connection from: "
-            + stmgrConnection.socket().getRemoteSocketAddress());
+            + connection.socket().getRemoteSocketAddress());
       }
 
-      stmgrConnection = null;
+      connection = null;
       responseBuilder.setStatus(Common.Status.newBuilder().setStatus(Common.StatusCode.NOTOK));
     } else {
-      stmgrConnection = channel;
+      connection = channel;
       responseBuilder.setStatus(Common.Status.newBuilder().setStatus(Common.StatusCode.OK));
     }
 
@@ -244,7 +289,7 @@ public class CheckpointManagerServer extends HeronServer {
         new Object[]{channel.socket().getRemoteSocketAddress()});
 
     // Reset the connection
-    stmgrConnection = null;
+    connection = null;
 
     // TODO(mfu): More handling
   }
