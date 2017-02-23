@@ -91,7 +91,7 @@ TMaster::TMaster(const std::string& _zk_hostport, const std::string& _topology_n
 
   // Establish connection to ckptmgr
   NetworkOptions ckpt_options;
-  ckpt_options.set_host(myhost_name_);
+  ckpt_options.set_host("localhost");
   ckpt_options.set_port(_ckptmgr_port);
   ckpt_options.set_max_packet_size(config::HeronInternalsConfigReader::Instance()
                                          ->GetHeronTmasterNetworkMasterOptionsMaximumPacketMb() *
@@ -100,6 +100,8 @@ TMaster::TMaster(const std::string& _zk_hostport, const std::string& _topology_n
                                       _topology_name, _topology_id,
                                       std::bind(&TMaster::HandleCleanStatefulCheckpointResponse,
                                       this, std::placeholders::_1));
+  // Start the client
+  ckptmgr_client_->Start();
 
   // We will keep the list of stmgrs with us.
   // In case a assignment already exists, we will throw this
