@@ -354,7 +354,8 @@ class HeronExecutor(object):
         ','.join(self.stmgr_ids.values()),
         self.heron_internals_config_file,
         self.metrics_sinks_config_file,
-        self.metricsmgr_port]
+        self.metricsmgr_port,
+        self.ckptmgr_port]
     retval["heron-tmaster"] = tmaster_cmd
 
     # metricsmgr_metrics_sink_config_file = 'metrics_sinks.yaml'
