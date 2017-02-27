@@ -80,7 +80,8 @@ public class CheckpointManagerServer extends HeronServer {
     if (request instanceof CheckpointManager.RegisterStMgrRequest) {
       handleStMgrRegisterRequest(rid, channel, (CheckpointManager.RegisterStMgrRequest) request);
     } else if (request instanceof CheckpointManager.RegisterTMasterRequest) {
-      handleTMasterRegisterRequest(rid, channel, (CheckpointManager.RegisterTMasterRequest) request);
+      handleTMasterRegisterRequest(rid, channel,
+                                   (CheckpointManager.RegisterTMasterRequest) request);
     } else if (request instanceof CheckpointManager.SaveInstanceStateRequest) {
       handleSaveInstanceStateRequest(
           rid, channel, (CheckpointManager.SaveInstanceStateRequest) request);
