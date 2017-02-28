@@ -37,12 +37,10 @@ class PhysicalPlan;
 namespace heron {
 namespace tmaster {
 
-class TMasterServer;
-
 class StMgrState {
  public:
   StMgrState(Connection* _conn, const proto::system::StMgr& _info,
-             const std::vector<proto::system::Instance*>& _instances, TMasterServer* _server);
+             const std::vector<proto::system::Instance*>& _instances, Server* _tmaster);
   virtual ~StMgrState();
 
   void UpdateWithNewStMgr(const proto::system::StMgr& _info,
@@ -88,7 +86,7 @@ class StMgrState {
   // The connection used by the nodemanager to contact us
   Connection* connection_;
   // Our link to our TMaster
-  TMasterServer* server_;
+  Server* tmaster_;
 };
 }  // namespace tmaster
 }  // namespace heron
