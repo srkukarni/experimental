@@ -51,7 +51,6 @@ class StatefulRestorer {
   int64_t restore_txid_;
   std::string checkpoint_id_in_progress_;
   std::set<std::string> unreplied_stmgrs_;
-  std::function<void()> after_2pc_cb_;
 };
 }  // namespace tmaster
 }  // namespace heron
