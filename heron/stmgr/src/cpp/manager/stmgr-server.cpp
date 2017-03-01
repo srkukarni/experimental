@@ -166,6 +166,7 @@ StMgrServer::~StMgrServer() {
       delete qmmIter->second;
     }
   }
+
   metrics_manager_client_->unregister_metric("__server");
   metrics_manager_client_->unregister_metric(METRIC_TIME_SPENT_BACK_PRESSURE_AGGR);
   metrics_manager_client_->unregister_metric(METRIC_TIME_SPENT_BACK_PRESSURE_INIT);
@@ -265,6 +266,7 @@ void StMgrServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) {
     CHECK(instance_info_.find(task_id) != instance_info_.end());
     sp_string instance_id = instance_info_[task_id]->instance_->instance_id();
     LOG(INFO) << "Instance " << instance_id << " closed connection";
+
     instance_info_[task_id]->set_connection(NULL);
     active_instances_.erase(_conn);
 
@@ -272,6 +274,7 @@ void StMgrServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) {
     if (qmmiter != connection_buffer_metric_map_.end()) {
       connection_buffer_metric_map_.erase(instance_id);
     }
+
     stmgr_->HandleDeadInstance(task_id);
   }
 }

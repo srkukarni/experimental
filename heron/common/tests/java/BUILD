@@ -7,6 +7,7 @@ java_library(
         "//heron/common/src/java:common-java",
         "//heron/proto:proto_networktests_java",
         "//third_party/java:powermock",
+        "@commons_io_commons_io//jar",
         "@com_google_protobuf_protobuf_java//jar",
         "//third_party/java:mockito",
         "//third_party/java:junit4",
@@ -24,12 +25,11 @@ java_tests(
         "com.twitter.heron.common.network.EchoTest",
         "com.twitter.heron.common.network.HeronServerTest",
         "com.twitter.heron.common.config.ConfigReaderTest",
-        "com.twitter.heron.common.config.ClusterConfigReaderTest",
         "com.twitter.heron.common.config.SystemConfigTest",
     ],
     runtime_deps = [
         ":common-tests",
     ],
-    data = glob(["**/config/testdata/**/*.yaml"]),
+    resources = ["//heron/common/tests/resources:common-resources"],
     size = "small",
 )

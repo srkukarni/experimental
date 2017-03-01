@@ -26,8 +26,8 @@ import com.twitter.heron.common.basics.SysUtils;
 import com.twitter.heron.proto.scheduler.Scheduler;
 import com.twitter.heron.proto.system.PackingPlans;
 import com.twitter.heron.scheduler.client.ISchedulerClient;
+import com.twitter.heron.scheduler.dryrun.UpdateDryRunResponse;
 import com.twitter.heron.scheduler.utils.Runtime;
-import com.twitter.heron.spi.common.Command;
 import com.twitter.heron.spi.common.Config;
 import com.twitter.heron.spi.common.Context;
 import com.twitter.heron.spi.packing.IRepacking;
@@ -60,7 +60,8 @@ public class RuntimeManagerRunner {
   }
 
   public void call()
-      throws TMasterException, TopologyRuntimeManagementException, PackingException {
+      throws TMasterException, TopologyRuntimeManagementException,
+      PackingException, UpdateDryRunResponse {
     // execute the appropriate command
     String topologyName = Context.topologyName(config);
     switch (command) {
@@ -176,7 +177,7 @@ public class RuntimeManagerRunner {
    */
   @VisibleForTesting
   void updateTopologyHandler(String topologyName, String newParallelism)
-      throws TopologyRuntimeManagementException, PackingException {
+      throws TopologyRuntimeManagementException, PackingException, UpdateDryRunResponse {
     LOG.fine(String.format("updateTopologyHandler called for %s with %s",
         topologyName, newParallelism));
     SchedulerStateManagerAdaptor manager = Runtime.schedulerStateManagerAdaptor(runtime);
@@ -192,6 +193,13 @@ public class RuntimeManagerRunner {
 
     PackingPlans.PackingPlan proposedPlan = buildNewPackingPlan(currentPlan, changeRequests,
         topology);
+
+    if (Context.dryRun(config)) {
+      PackingPlanProtoDeserializer deserializer = new PackingPlanProtoDeserializer();
+      PackingPlan oldPlan = deserializer.fromProto(currentPlan);
+      PackingPlan newPlan = deserializer.fromProto(proposedPlan);
+      throw new UpdateDryRunResponse(topology, config, newPlan, oldPlan, changeRequests);
+    }
 
     Scheduler.UpdateTopologyRequest updateTopologyRequest =
         Scheduler.UpdateTopologyRequest.newBuilder()
@@ -352,7 +360,7 @@ public class RuntimeManagerRunner {
     return changes;
   }
 
-  private boolean changeDetected(PackingPlans.PackingPlan currentProtoPlan,
+  private static boolean changeDetected(PackingPlans.PackingPlan currentProtoPlan,
                                  Map<String, Integer> changeRequests) {
     PackingPlanProtoDeserializer deserializer = new PackingPlanProtoDeserializer();
     PackingPlan currentPlan = deserializer.fromProto(currentProtoPlan);
