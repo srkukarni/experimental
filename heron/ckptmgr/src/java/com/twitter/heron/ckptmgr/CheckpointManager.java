@@ -106,9 +106,7 @@ public class CheckpointManager {
     String role = args[6];
     String environ = args[7];
 
-    String systemConfigFilename = args[8];
-
-    SystemConfig systemConfig = new SystemConfig(systemConfigFilename, true);
+    SystemConfig systemConfig = SystemConfig.newBuilder(true).putAll(args[8], true).build();
     CheckpointManagerConfig ckptmgrConfig = new CheckpointManagerConfig(stateConfigFilename);
 
     // Add the SystemConfig into SingletonRegistry

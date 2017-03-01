@@ -245,11 +245,11 @@ class HeronExecutor(object):
     parser.add_argument("metrics_sinks_config_file")
     parser.add_argument("scheduler_classpath")
     parser.add_argument("scheduler_port")
-    parser.add_argument("python_instance_binary")
     parser.add_argument("is_stateful", type=bool)
     parser.add_argument("ckptmgr_classpath")
     parser.add_argument("ckptmgr_port")
     parser.add_argument("stateful_config_file")
+    parser.add_argument("python_instance_binary")
 
     parsed_args, unknown_args = parser.parse_known_args(args[1:])
 
